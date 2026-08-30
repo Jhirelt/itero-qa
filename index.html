@@ -53,10 +53,10 @@
   .brand-mark-wrap, .save-toast{
     transition: background-color .32s ease, color .32s ease, border-color .32s ease, opacity .18s ease;
   }
-  #view-eval, #view-config{
+  #view-eval, #view-config, #view-agents{
     transition: opacity .18s ease, transform .18s ease;
   }
-  #view-eval.view-fade, #view-config.view-fade{
+  #view-eval.view-fade, #view-config.view-fade, #view-agents.view-fade{
     opacity:0; transform:translateY(8px);
   }
   ::selection{ background: var(--accent-soft); }
@@ -170,8 +170,8 @@
   .agent-panel .agent-input-wrap{ position:relative; }
   .agent-input-big{
     width:100%; background:transparent; border:none; outline:none; color:var(--text);
-    font-size:19px; font-weight:800; padding:2px 0 6px; border-bottom:2px solid var(--border);
-    transition: border-color .2s ease;
+    font-size:14.5px; font-weight:700; padding:2px 0 6px; border-bottom:2px solid var(--border);
+    transition: border-color .2s ease; box-sizing:border-box;
   }
   .agent-input-big::placeholder{ color:var(--text-faint); font-weight:700; }
   .agent-input-big:focus{ border-bottom-color:var(--accent); }
@@ -284,6 +284,17 @@
   .side{ position:sticky; top:74px; display:flex; flex-direction:column; gap:12px; }
   .panel{ background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
   .panel h4{ margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); }
+  .panel-head-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .panel-head-row h4{ margin:0; }
+  .collapse-toggle{
+    display:flex; align-items:center; justify-content:center; width:22px; height:22px;
+    border-radius:6px; border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim);
+    cursor:pointer; padding:0; flex-shrink:0;
+  }
+  .collapse-toggle:hover{ color:var(--text); border-color:var(--text-dim); }
+  .collapse-toggle .chev{ width:13px; height:13px; transition:transform .18s ease; }
+  .collapse-toggle.collapsed .chev{ transform:rotate(-90deg); }
+  textarea#output.summary-collapsed{ display:none; }
   .score-big{ display:flex; align-items:baseline; gap:6px; }
   .score-big b{ font-size:34px; line-height:1; }
   .score-big span{ font-size:13px; color:var(--text-dim); }
@@ -321,6 +332,73 @@
   /* ---------- Configuration tab ---------- */
   #view-config{ display:none; }
   .cfg-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+
+  /* ---------- Agents view ---------- */
+  .agents-filter-row{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:14px; margin-bottom:10px; }
+  .agents-filter-field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; margin-bottom:6px; }
+  .agents-filter-field select, .agents-filter-field input{
+    padding:9px 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev);
+    color:var(--text); font-size:13px; outline:none; min-width:190px;
+  }
+  .agents-filter-field select:focus, .agents-filter-field input:focus{ border-color:var(--accent); }
+  .agents-range-inputs{ display:flex; align-items:center; gap:6px; }
+  .agents-range-inputs input{ min-width:130px; }
+  .agents-range-inputs span{ color:var(--text-faint); font-size:12px; }
+  .agents-scope-note{ font-size:12px; color:var(--text-dim); font-style:italic; margin-bottom:18px; }
+
+  .agent-stat-card{
+    background:var(--bg-elev); border:1px solid var(--accent-dim); border-radius:var(--radius);
+    padding:18px 20px; margin-bottom:18px;
+  }
+  .agent-stat-card h3{ margin:0 0 14px; font-size:15px; color:var(--accent); }
+  .agent-stat-row{ display:flex; gap:14px; margin-bottom:16px; flex-wrap:wrap; }
+  .agent-stat-box{
+    flex:1 1 180px; background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    padding:12px 16px;
+  }
+  .agent-stat-box .lbl{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
+  .agent-stat-box .val{ font-size:26px; font-weight:800; margin-top:4px; }
+  .agent-stat-box .sub{ font-size:11px; color:var(--text-faint); margin-top:2px; }
+  .agent-fail-title{ font-size:12.5px; font-weight:700; color:var(--text-dim); margin-bottom:8px; }
+  .fail-list{ display:flex; flex-direction:column; gap:6px; }
+  .fail-item{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 12px;
+  }
+  .fail-item .name{ font-size:12.5px; color:var(--text); }
+  .fail-item .count{ font-size:11.5px; font-weight:800; color:var(--no); flex-shrink:0; white-space:nowrap; }
+  .fail-empty{ font-size:12.5px; color:var(--text-faint); font-style:italic; }
+
+  .team-grid{ display:grid; grid-template-columns: 1fr 1.4fr; gap:14px; margin-bottom:14px; }
+  @media (max-width: 980px){ .team-grid{ grid-template-columns: 1fr; } }
+  .team-card{
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:18px 20px;
+  }
+  .team-card h3{ margin:0 0 14px; font-size:13px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); }
+  .team-avg-big{ font-size:42px; font-weight:800; color:var(--accent); line-height:1; }
+  .team-avg-sub{ font-size:12px; color:var(--text-dim); margin-top:8px; }
+  .team-sections{ display:flex; flex-direction:column; gap:10px; }
+  .section-avg-row{ cursor:pointer; }
+  .section-avg-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:5px; }
+  .section-avg-top .name{ font-size:12.5px; font-weight:700; }
+  .section-avg-top .pct{ font-size:12.5px; font-weight:800; color:var(--accent); }
+  .section-avg-bar{ height:6px; border-radius:99px; background:var(--bg-elev-2); overflow:hidden; }
+  .section-avg-bar > div{ height:100%; border-radius:99px; background:var(--accent); }
+  .section-fail-panel{
+    margin:8px 0 4px; padding:10px 12px; background:var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); display:none;
+  }
+  .section-avg-row.open .section-fail-panel{ display:block; }
+  .section-avg-row.open .section-avg-top .name::after{ content:' (click to close)'; color:var(--text-faint); font-weight:400; font-size:10.5px; }
+
+  .ranking-table{ width:100%; border-collapse:collapse; }
+  .ranking-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); padding:6px 10px; border-bottom:1px solid var(--border); }
+  .ranking-table td{ padding:9px 10px; font-size:12.5px; border-bottom:1px solid var(--border); }
+  .ranking-table tr:last-child td{ border-bottom:none; }
+  .ranking-table .rank{ font-weight:800; color:var(--text-dim); width:32px; }
+  .ranking-table .rank.top1{ color:#f0ad2e; }
+  .ranking-table .score-cell{ font-weight:800; }
+  .agents-empty{ font-size:12.5px; color:var(--text-faint); font-style:italic; padding:8px 0; }
   .cfg-toolbar p{ margin:0; font-size:12.5px; color:var(--text-dim); max-width:640px; }
   .cfg-block{ background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px; }
   .cfg-block h4{ margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--accent); }
@@ -534,6 +612,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
   <div class="tabs" id="mainTabs">
     <button class="tab-btn active" data-view="eval">Evaluation</button>
+    <button class="tab-btn" data-view="agents">Agents</button>
     <button class="tab-btn" data-view="config" id="tabConfigBtn">Configuration</button>
   </div>
 
@@ -563,8 +642,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="main-grid">
       <div class="sections-col">
-        <div class="fields fields-5">
-          <div class="field field-med"><label for="fEvaluator">QA evaluator</label><input id="fEvaluator" placeholder="QA evaluator"></div>
+        <div class="fields fields-4">
           <div class="field field-wide"><label for="fReason">Call reason</label><input id="fReason" placeholder="Call reason"></div>
           <div class="field field-med"><label for="fCaller">Caller's name</label><input id="fCaller" placeholder="Caller's name"></div>
           <div class="field field-narrow"><label for="fTicket">Ticket ID</label><input id="fTicket" placeholder="Ticket ID"></div>
@@ -591,23 +669,28 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
       <div class="side">
         <div class="panel agent-panel">
-          <h4>Agent</h4>
           <div class="agent-input-wrap">
             <input id="fAgent" autocomplete="off" placeholder="Agent's name" class="agent-input-big">
             <div class="autocomplete-list" id="agentList"></div>
           </div>
         </div>
         <div class="panel">
-          <h4>Score</h4>
           <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
           <div class="score-bar"><div id="statBar" style="width:100%"></div></div>
-          <div class="stat-row"><span>Points earned</span><b id="statEarned">0</b></div>
-          <div class="stat-row"><span>Points possible</span><b id="statPossible">0</b></div>
-          <div class="stat-row"><span>Evaluated</span><b id="statCount">0 / 70</b></div>
+          <div style="display:none;">
+            <div class="stat-row"><span>Points earned</span><b id="statEarned">0</b></div>
+            <div class="stat-row"><span>Points possible</span><b id="statPossible">0</b></div>
+            <div class="stat-row"><span>Evaluated</span><b id="statCount">0 / 70</b></div>
+          </div>
         </div>
         <div class="panel">
-          <h4>Evaluation summary</h4>
-          <textarea id="output" placeholder="Summary"></textarea>
+          <div class="panel-head-row">
+            <h4>Evaluation summary</h4>
+            <button class="collapse-toggle collapsed" id="btnToggleSummary" title="Show or hide the summary text">
+              <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <textarea id="output" placeholder="Summary" class="summary-collapsed"></textarea>
           <div class="btn-row">
             <button class="btn btn-primary" id="btnCopy">
               <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
@@ -622,8 +705,73 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 15l5-5 4 4 5-6 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r="1.3" fill="currentColor"/></svg>
             Generate outcome report
           </button>
+          <button class="btn btn-primary" id="btnSaveEvaluation" style="width:100%; margin-top:8px; background:#2fae74;">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+            Save evaluation
+          </button>
         </div>
       </div>
+    </div>
+  </div>
+
+  <!-- =============== AGENTS VIEW =============== -->
+  <div id="view-agents" class="view-hidden" style="display:none;">
+    <div class="agents-filter-row">
+      <div class="agents-filter-field">
+        <label for="agentsSelect">Agent</label>
+        <select id="agentsSelect">
+          <option value="">Team overview (all agents)</option>
+        </select>
+      </div>
+      <div class="agents-filter-field">
+        <label for="agentsMonth">Month</label>
+        <input type="month" id="agentsMonth">
+      </div>
+      <div class="agents-filter-field agents-filter-range">
+        <label>Custom range</label>
+        <div class="agents-range-inputs">
+          <input type="date" id="agentsFrom">
+          <span>to</span>
+          <input type="date" id="agentsTo">
+        </div>
+      </div>
+      <button class="btn btn-ghost" id="btnAgentsClearFilter" style="flex:none;">Clear filter</button>
+    </div>
+    <div class="agents-scope-note" id="agentsScopeNote">Showing all-time data across every agent.</div>
+
+    <div id="agentCard" class="agent-stat-card" style="display:none;">
+      <h3 id="agentCardName">Agent</h3>
+      <div class="agent-stat-row">
+        <div class="agent-stat-box">
+          <div class="lbl">General average</div>
+          <div class="val" id="agentGeneralAvg">—</div>
+          <div class="sub" id="agentGeneralCount"></div>
+        </div>
+        <div class="agent-stat-box">
+          <div class="lbl">Monthly average</div>
+          <div class="val" id="agentMonthlyAvg">—</div>
+          <div class="sub" id="agentMonthlyCount"></div>
+        </div>
+      </div>
+      <div class="agent-fail-title">Rubrics this agent fails most</div>
+      <div id="agentFailList" class="fail-list"></div>
+    </div>
+
+    <div class="team-grid">
+      <div class="team-card">
+        <h3>Team weighted average</h3>
+        <div class="team-avg-big" id="teamAvgBig">—</div>
+        <div class="team-avg-sub" id="teamAvgSub"></div>
+      </div>
+      <div class="team-card">
+        <h3>Average by section</h3>
+        <div id="teamSections" class="team-sections"></div>
+      </div>
+    </div>
+
+    <div class="team-card">
+      <h3>Monthly ranking</h3>
+      <div id="rankingTable"></div>
     </div>
   </div>
 
@@ -1446,7 +1594,7 @@ function formatLine(icon, cfg, text, kind){
 function buildOutput(score, earned, possible, zeroTriggered){
  try{
   const rawAgent = document.getElementById('fAgent').value.trim();
-  const rawEvaluator = document.getElementById('fEvaluator').value.trim();
+  const rawEvaluator = (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : '';
   const rawCaller = document.getElementById('fCaller').value.trim();
   const rawTicket = document.getElementById('fTicket').value.trim();
   const rawOrder = document.getElementById('fOrder').value.trim();
@@ -1817,19 +1965,19 @@ function setupDragAndDrop(root){
    ============================================================ */
 function switchTab(view){
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
-  const evalEl = document.getElementById('view-eval');
-  const cfgEl = document.getElementById('view-config');
-  const showEl = view==='eval' ? evalEl : cfgEl;
-  const hideEl = view==='eval' ? cfgEl : evalEl;
+  const views = { eval: document.getElementById('view-eval'), agents: document.getElementById('view-agents'), config: document.getElementById('view-config') };
+  const showEl = views[view];
+  const hideEls = Object.keys(views).filter(k=>k!==view).map(k=>views[k]).filter(el=> getComputedStyle(el).display !== 'none');
 
   const populate = ()=>{
     if(view==='config'){
       renderConfigNames(); renderConfigSections();
       document.getElementById('cfgSummaryTemplate').value = CONFIG.summaryTemplate;
       document.getElementById('cfgItemTemplate').value = CONFIG.itemTemplate;
-    refreshScenarioUI();
+      refreshScenarioUI();
     }
     if(view==='eval'){ renderSections(); refreshEval(); }
+    if(view==='agents'){ refreshAgentsView(); }
   };
 
   const revealShowEl = ()=>{
@@ -1839,17 +1987,15 @@ function switchTab(view){
     requestAnimationFrame(()=> showEl.classList.remove('view-fade'));
   };
 
-  const hideVisible = getComputedStyle(hideEl).display !== 'none';
-  if(!hideVisible){
+  if(!hideEls.length){
     populate();
     revealShowEl();
     return;
   }
 
-  hideEl.classList.add('view-fade');
+  hideEls.forEach(el=> el.classList.add('view-fade'));
   setTimeout(()=>{
-    hideEl.style.display = 'none';
-    hideEl.classList.remove('view-fade');
+    hideEls.forEach(el=>{ el.style.display = 'none'; el.classList.remove('view-fade'); });
     populate();
     revealShowEl();
   }, 150);
@@ -1913,7 +2059,7 @@ function computeSectionBreakdown(){
 function buildOutcomeHTML(){
   const sections = computeSectionBreakdown();
   const rawAgent = document.getElementById('fAgent').value.trim() || 'Agent';
-  const rawEvaluator = document.getElementById('fEvaluator').value.trim() || 'N/A';
+  const rawEvaluator = (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : 'N/A';
   const rawTicket = document.getElementById('fTicket').value.trim() || 'N/A';
   const rawOrder = document.getElementById('fOrder').value.trim();
   const rawReason = document.getElementById('fReason').value.trim() || 'N/A';
@@ -2016,7 +2162,7 @@ async function init(){
     document.getElementById('iconSun').classList.toggle('on', next==='light');
   });
 
-  ['fAgent','fEvaluator','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
+  ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
     document.getElementById(id).addEventListener('input', refreshEval);
   });
 
@@ -2028,9 +2174,14 @@ async function init(){
 
   document.getElementById('btnClear').addEventListener('click', ()=>{
     resetAnswersToDefault();
-    ['fAgent','fEvaluator','fCaller','fTicket','fOrder','fReason'].forEach(id=> document.getElementById(id).value = '');
+    ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=> document.getElementById(id).value = '');
     refreshEval();
     showToast('Reset — everything marked as Met again');
+  });
+
+  document.getElementById('btnToggleSummary').addEventListener('click', ()=>{
+    document.getElementById('output').classList.toggle('summary-collapsed');
+    document.getElementById('btnToggleSummary').classList.toggle('collapsed', document.getElementById('output').classList.contains('summary-collapsed'));
   });
 
   document.getElementById('btnOutcomeReport').addEventListener('click', ()=>{
@@ -2339,6 +2490,318 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
 document.getElementById('btnLogout').addEventListener('click', async ()=>{
   if(supabaseClient) await supabaseClient.auth.signOut();
   window.location.reload();
+});
+
+async function saveEvaluationToDatabase(){
+  const btn = document.getElementById('btnSaveEvaluation');
+  const original = btn.innerHTML;
+
+  if(!supabaseClient){ showToast('Not connected to the database — check your connection.'); return; }
+
+  const agentName = document.getElementById('fAgent').value.trim();
+  if(!agentName){ showToast('Enter the agent name before saving.'); return; }
+
+  const evaluatorName = CURRENT_USER ? CURRENT_USER.display_name : '';
+  const ticketId = document.getElementById('fTicket').value.trim();
+  const callReason = document.getElementById('fReason').value.trim();
+
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+
+  try{
+    const { data: agentRow, error: agentErr } = await supabaseClient
+      .from('agents').select('id').ilike('name', agentName).maybeSingle();
+    if(agentErr) throw agentErr;
+    if(!agentRow){
+      showToast('"' + agentName + '" is not in the agent list yet — ask the admin to add them.');
+      return;
+    }
+
+    const { data: evalRow, error: evalErr } = await supabaseClient
+      .from('evaluations')
+      .insert({
+        agent_id: agentRow.id,
+        evaluator_name: evaluatorName || null,
+        call_date: new Date().toISOString().slice(0, 10),
+        ticket_id: ticketId || null,
+        call_reason: callReason || null,
+        score: LAST_STATE.score,
+        points_earned: LAST_STATE.earned,
+        points_possible: LAST_STATE.possible,
+        zero_triggered: LAST_STATE.zeroTriggered,
+      })
+      .select('id').single();
+    if(evalErr) throw evalErr;
+    const evaluationId = evalRow.id;
+
+    const sections = computeSectionBreakdown();
+
+    const sectionRows = sections
+      .filter(sec => !sec.isZeroSection && sec.possible > 0)
+      .map(sec => ({
+        evaluation_id: evaluationId,
+        section_key: sec.key,
+        section_title: sec.title,
+        points_earned: sec.earned,
+        points_possible: sec.possible,
+      }));
+    if(sectionRows.length){
+      const { error: secErr } = await supabaseClient.from('evaluation_sections').insert(sectionRows);
+      if(secErr) throw secErr;
+    }
+
+    const deductionRows = [];
+    sections.forEach(sec=>{
+      sec.deductions.forEach(d=> deductionRows.push({
+        evaluation_id: evaluationId, section_key: sec.key, rubric_label: d.label, points_lost: d.pts,
+      }));
+      sec.zeroList.forEach(d=> deductionRows.push({
+        evaluation_id: evaluationId, section_key: sec.key, rubric_label: d.label, points_lost: 0,
+      }));
+    });
+    if(deductionRows.length){
+      const { error: dedErr } = await supabaseClient.from('evaluation_deductions').insert(deductionRows);
+      if(dedErr) throw dedErr;
+    }
+
+    showToast('Evaluation saved to the database');
+  }catch(err){
+    console.error('Save evaluation failed', err);
+    showToast('Could not save: ' + (err.message || 'unknown error'));
+  }finally{
+    btn.disabled = false;
+    btn.innerHTML = original;
+  }
+}
+
+document.getElementById('btnSaveEvaluation').addEventListener('click', saveEvaluationToDatabase);
+
+let AGENTS_LIST_CACHE = null;
+
+async function ensureAgentsListLoaded(){
+  if(AGENTS_LIST_CACHE) return AGENTS_LIST_CACHE;
+  const { data, error } = await supabaseClient.from('agents').select('id,name').order('name');
+  if(error){ console.error('Could not load agents', error); return []; }
+  AGENTS_LIST_CACHE = data || [];
+  const sel = document.getElementById('agentsSelect');
+  const current = sel.value;
+  sel.innerHTML = '<option value="">Team overview (all agents)</option>' +
+    AGENTS_LIST_CACHE.map(a=>'<option value="' + a.id + '">' + escapeHtml(a.name) + '</option>').join('');
+  sel.value = current;
+  return AGENTS_LIST_CACHE;
+}
+
+function fmtPct(n){ return (isFinite(n) ? Math.round(n) : 0) + '%'; }
+
+function weightedAvg(evals){
+  const possible = evals.reduce((s,e)=> s + Number(e.points_possible || 0), 0);
+  const earned = evals.reduce((s,e)=> s + Number(e.points_earned || 0), 0);
+  return possible > 0 ? (earned / possible) * 100 : 0;
+}
+
+function getAgentsDateRange(){
+  const from = document.getElementById('agentsFrom').value;
+  const to = document.getElementById('agentsTo').value;
+  if(from || to) return { startDate: from || null, endDate: to || null };
+  const month = document.getElementById('agentsMonth').value; // "YYYY-MM"
+  if(month){
+    const [y, m] = month.split('-').map(Number);
+    const start = month + '-01';
+    const lastDay = new Date(y, m, 0).getDate();
+    const end = month + '-' + String(lastDay).padStart(2, '0');
+    return { startDate: start, endDate: end };
+  }
+  return { startDate: null, endDate: null };
+}
+
+async function fetchEvaluations(opts){
+  opts = opts || {};
+  let q = supabaseClient.from('evaluations').select('id, agent_id, score, points_earned, points_possible, call_date, zero_triggered, agents(name)');
+  if(opts.agentId) q = q.eq('agent_id', opts.agentId);
+  if(opts.startDate) q = q.gte('call_date', opts.startDate);
+  if(opts.endDate) q = q.lte('call_date', opts.endDate);
+  const { data, error } = await q;
+  if(error) throw error;
+  return data || [];
+}
+
+async function fetchSectionsFor(evalIds){
+  if(!evalIds.length) return [];
+  const { data, error } = await supabaseClient.from('evaluation_sections')
+    .select('evaluation_id, section_key, section_title, points_earned, points_possible').in('evaluation_id', evalIds);
+  if(error) throw error;
+  return data || [];
+}
+
+async function fetchDeductionsFor(evalIds){
+  if(!evalIds.length) return [];
+  const { data, error } = await supabaseClient.from('evaluation_deductions')
+    .select('evaluation_id, section_key, rubric_label, points_lost').in('evaluation_id', evalIds);
+  if(error) throw error;
+  return data || [];
+}
+
+function renderFailList(container, deductions){
+  const counts = {};
+  deductions.forEach(d=>{ counts[d.rubric_label] = (counts[d.rubric_label] || 0) + 1; });
+  const sorted = Object.entries(counts).sort((a, b)=> b[1] - a[1]).slice(0, 10);
+  if(!sorted.length){
+    container.innerHTML = '<div class="fail-empty">No deductions recorded in this scope.</div>';
+    return;
+  }
+  container.innerHTML = sorted.map(([label, count])=>
+    '<div class="fail-item"><span class="name">' + escapeHtml(label) + '</span><span class="count">' + count + '×</span></div>'
+  ).join('');
+}
+
+async function renderTeamOverview(evals){
+  const avg = weightedAvg(evals);
+  document.getElementById('teamAvgBig').textContent = evals.length ? fmtPct(avg) : '—';
+  document.getElementById('teamAvgSub').textContent = evals.length + ' evaluation' + (evals.length === 1 ? '' : 's') + ' in this scope';
+
+  const ids = evals.map(e=> e.id);
+  const sections = await fetchSectionsFor(ids);
+  const bySection = {};
+  sections.forEach(s=>{
+    if(!bySection[s.section_key]) bySection[s.section_key] = { title: s.section_title, earned: 0, possible: 0 };
+    bySection[s.section_key].earned += Number(s.points_earned || 0);
+    bySection[s.section_key].possible += Number(s.points_possible || 0);
+  });
+  const deductions = await fetchDeductionsFor(ids);
+
+  const root = document.getElementById('teamSections');
+  root.innerHTML = '';
+  const keys = Object.keys(bySection);
+  if(!keys.length){
+    root.innerHTML = '<div class="agents-empty">No evaluations in this scope yet.</div>';
+    return;
+  }
+  keys.forEach(key=>{
+    const s = bySection[key];
+    const pct = s.possible > 0 ? Math.round((s.earned / s.possible) * 100) : 0;
+    const row = document.createElement('div');
+    row.className = 'section-avg-row';
+    row.innerHTML =
+      '<div class="section-avg-top"><span class="name">' + escapeHtml(s.title) + '</span><span class="pct">' + pct + '%</span></div>' +
+      '<div class="section-avg-bar"><div style="width:' + pct + '%"></div></div>' +
+      '<div class="section-fail-panel"></div>';
+    row.addEventListener('click', ()=>{
+      const wasOpen = row.classList.contains('open');
+      root.querySelectorAll('.section-avg-row.open').forEach(r=> r.classList.remove('open'));
+      if(!wasOpen){
+        row.classList.add('open');
+        const panel = row.querySelector('.section-fail-panel');
+        const sectionDeductions = deductions.filter(d=> d.section_key === key);
+        panel.innerHTML = '<div class="fail-list"></div>';
+        renderFailList(panel.querySelector('.fail-list'), sectionDeductions);
+      }
+    });
+    root.appendChild(row);
+  });
+}
+
+function renderRanking(evals){
+  const byAgent = {};
+  evals.forEach(e=>{
+    const name = e.agents ? e.agents.name : 'Unknown';
+    if(!byAgent[name]) byAgent[name] = { earned: 0, possible: 0, count: 0 };
+    byAgent[name].earned += Number(e.points_earned || 0);
+    byAgent[name].possible += Number(e.points_possible || 0);
+    byAgent[name].count += 1;
+  });
+  const rows = Object.entries(byAgent).map(([name, v])=> ({
+    name, count: v.count, avg: v.possible > 0 ? (v.earned / v.possible) * 100 : 0,
+  })).sort((a, b)=> b.avg - a.avg);
+
+  const root = document.getElementById('rankingTable');
+  if(!rows.length){
+    root.innerHTML = '<div class="agents-empty">No evaluations in this scope yet.</div>';
+    return;
+  }
+  let html = '<table class="ranking-table"><thead><tr><th>#</th><th>Agent</th><th>Avg score</th><th>Evaluations</th></tr></thead><tbody>';
+  rows.forEach((r, i)=>{
+    html += '<tr><td class="rank' + (i === 0 ? ' top1' : '') + '">' + (i + 1) + '</td><td>' + escapeHtml(r.name) +
+      '</td><td class="score-cell">' + Math.round(r.avg) + '%</td><td>' + r.count + '</td></tr>';
+  });
+  html += '</tbody></table>';
+  root.innerHTML = html;
+}
+
+async function refreshAgentsView(){
+  if(!supabaseClient){
+    document.getElementById('agentsScopeNote').textContent = 'Not connected to the database.';
+    return;
+  }
+  await ensureAgentsListLoaded();
+
+  const selectedAgentId = document.getElementById('agentsSelect').value || null;
+  const { startDate, endDate } = getAgentsDateRange();
+  const hasFilter = !!(startDate || endDate);
+
+  const noteParts = [hasFilter ? 'Showing data' : 'Showing all-time data'];
+  if(startDate) noteParts.push('from ' + startDate);
+  if(endDate) noteParts.push('to ' + endDate);
+  noteParts.push('across every agent (team panel below).');
+  document.getElementById('agentsScopeNote').textContent = noteParts.join(' ');
+
+  try{
+    const teamEvals = await fetchEvaluations({ startDate, endDate });
+    await renderTeamOverview(teamEvals);
+    renderRanking(teamEvals);
+
+    if(selectedAgentId){
+      const agentMeta = AGENTS_LIST_CACHE.find(a=> a.id === selectedAgentId);
+      document.getElementById('agentCard').style.display = 'block';
+      document.getElementById('agentCardName').textContent = agentMeta ? agentMeta.name : 'Agent';
+
+      const generalEvals = await fetchEvaluations({ agentId: selectedAgentId });
+      const generalAvg = weightedAvg(generalEvals);
+      document.getElementById('agentGeneralAvg').textContent = generalEvals.length ? fmtPct(generalAvg) : '—';
+      document.getElementById('agentGeneralCount').textContent = generalEvals.length + ' evaluation' + (generalEvals.length === 1 ? '' : 's') + ' total';
+
+      let scopedAgentEvals = generalEvals;
+      if(hasFilter){
+        scopedAgentEvals = await fetchEvaluations({ agentId: selectedAgentId, startDate, endDate });
+        const monthlyAvg = weightedAvg(scopedAgentEvals);
+        document.getElementById('agentMonthlyAvg').textContent = scopedAgentEvals.length ? fmtPct(monthlyAvg) : '—';
+        document.getElementById('agentMonthlyCount').textContent = scopedAgentEvals.length + ' evaluation' + (scopedAgentEvals.length === 1 ? '' : 's') + ' in range';
+      }else{
+        document.getElementById('agentMonthlyAvg').textContent = '—';
+        document.getElementById('agentMonthlyCount').textContent = 'Pick a month or range above';
+      }
+
+      const scopedIds = scopedAgentEvals.map(e=> e.id);
+      const deductions = await fetchDeductionsFor(scopedIds);
+      renderFailList(document.getElementById('agentFailList'), deductions);
+    }else{
+      document.getElementById('agentCard').style.display = 'none';
+    }
+  }catch(err){
+    console.error('refreshAgentsView failed', err);
+    document.getElementById('agentsScopeNote').textContent = 'Could not load data: ' + (err.message || 'unknown error');
+  }
+}
+
+document.getElementById('agentsSelect').addEventListener('change', refreshAgentsView);
+document.getElementById('agentsMonth').addEventListener('change', ()=>{
+  document.getElementById('agentsFrom').value = '';
+  document.getElementById('agentsTo').value = '';
+  refreshAgentsView();
+});
+document.getElementById('agentsFrom').addEventListener('change', ()=>{
+  document.getElementById('agentsMonth').value = '';
+  refreshAgentsView();
+});
+document.getElementById('agentsTo').addEventListener('change', ()=>{
+  document.getElementById('agentsMonth').value = '';
+  refreshAgentsView();
+});
+document.getElementById('btnAgentsClearFilter').addEventListener('click', ()=>{
+  document.getElementById('agentsMonth').value = '';
+  document.getElementById('agentsFrom').value = '';
+  document.getElementById('agentsTo').value = '';
+  document.getElementById('agentsSelect').value = '';
+  refreshAgentsView();
 });
 
 async function bootAuth(){
