@@ -429,6 +429,18 @@
   }
   .edit-eval-field input:focus{ border-color:var(--accent); }
   .edit-eval-field-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
+  .edit-eval-score-preview{
+    font-size:13px; color:var(--text-dim); margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border);
+  }
+  .edit-eval-score-preview b{ color:var(--text); font-size:16px; }
+  .fail-item .remove-fail-btn{
+    display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px;
+    border:1px solid var(--border); background:var(--bg-elev); color:var(--text-dim); cursor:pointer; flex-shrink:0;
+  }
+  .fail-item .remove-fail-btn:hover{ color:var(--yes); border-color:var(--yes); }
+  .fail-item .remove-fail-btn svg{ width:13px; height:13px; }
+  .fail-item{ justify-content:space-between; }
+  .fail-item .name{ flex-grow:1; }
 
   .agent-stat-card{
     background:var(--bg-elev); border:1px solid var(--accent-dim); border-radius:var(--radius);
@@ -910,12 +922,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="edit-eval-field"><label>Call date</label><input type="date" id="editEvalDate"></div>
       <div class="edit-eval-field"><label>Ticket ID</label><input type="text" id="editEvalTicket"></div>
       <div class="edit-eval-field"><label>Call reason</label><input type="text" id="editEvalReason"></div>
-      <div class="edit-eval-field-row">
-        <div class="edit-eval-field"><label>Score</label><input type="number" id="editEvalScore"></div>
-        <div class="edit-eval-field"><label>Points earned</label><input type="number" id="editEvalEarned"></div>
-        <div class="edit-eval-field"><label>Points possible</label><input type="number" id="editEvalPossible"></div>
-      </div>
-      <button class="btn btn-primary" id="btnSaveEditEval" style="width:100%; margin-top:8px;">Save changes</button>
+      <div class="edit-eval-score-preview">Current score: <b id="editEvalScorePreview">—</b></div>
+      <div class="agent-fail-title">Failed rubrics — remove one if it was marked in error</div>
+      <div id="editEvalFailList" class="fail-list"></div>
+      <button class="btn btn-primary" id="btnSaveEditEval" style="width:100%; margin-top:14px;">Save changes</button>
     </div>
   </div>
 
@@ -3144,6 +3154,7 @@ document.getElementById('teamHeadRow').addEventListener('click', ()=>{
 
 /* ---------- Agent evaluations list: edit / delete (admin only for actions) ---------- */
 let EDITING_EVAL_ID = null;
+let EDITING_EVAL_ROW = null;
 
 function renderEvalList(evals){
   const container = document.getElementById('agentEvalList');
@@ -3194,21 +3205,108 @@ async function deleteEvaluation(evalId){
   }
 }
 
-function openEditEvalModal(ev){
+async function openEditEvalModal(ev){
   EDITING_EVAL_ID = ev.id;
+  EDITING_EVAL_ROW = ev;
   document.getElementById('editEvalDate').value = ev.call_date || '';
   document.getElementById('editEvalTicket').value = ev.ticket_id || '';
   document.getElementById('editEvalReason').value = ev.call_reason || '';
-  document.getElementById('editEvalScore').value = ev.score;
-  document.getElementById('editEvalEarned').value = ev.points_earned;
-  document.getElementById('editEvalPossible').value = ev.points_possible;
   document.getElementById('editEvalOverlay').classList.add('show');
+  document.getElementById('editEvalFailList').innerHTML = '<div class="fail-empty">Loading...</div>';
+  await refreshEditEvalFailList();
 }
+
+async function refreshEditEvalFailList(){
+  document.getElementById('editEvalScorePreview').textContent =
+    Math.round(EDITING_EVAL_ROW.score) + '% (' + EDITING_EVAL_ROW.points_earned + ' / ' + EDITING_EVAL_ROW.points_possible + ' pts)';
+
+  try{
+    const { data, error } = await supabaseClient.from('evaluation_deductions')
+      .select('id, section_key, rubric_label, points_lost').eq('evaluation_id', EDITING_EVAL_ID);
+    if(error) throw error;
+
+    const container = document.getElementById('editEvalFailList');
+    if(!data.length){
+      container.innerHTML = '<div class="fail-empty">No failed rubrics on this evaluation.</div>';
+      return;
+    }
+    container.innerHTML = data.map(d=>{
+      const isZero = d.section_key === 'zero';
+      const tag = isZero ? 'Auto-Zero' : ('-' + d.points_lost + 'pts');
+      return '<div class="fail-item"><span class="name">' + escapeHtml(d.rubric_label) + ' (' + tag + ')</span>' +
+        '<button class="remove-fail-btn" data-id="' + d.id + '" title="Remove this deduction">' +
+        '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>';
+    }).join('');
+
+    container.querySelectorAll('.remove-fail-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=> removeDeductionFromEvaluation(btn.dataset.id, data.find(d=> d.id === btn.dataset.id)));
+    });
+  }catch(err){
+    console.error('Could not load failed rubrics', err);
+    document.getElementById('editEvalFailList').innerHTML = '<div class="fail-empty">Could not load: ' + (err.message || 'unknown error') + '</div>';
+  }
+}
+
+async function removeDeductionFromEvaluation(deductionId, deduction){
+  if(!deduction || !confirm('Remove "' + deduction.rubric_label + '" as a failed rubric? Points will be re-assigned.')) return;
+  try{
+    const { error: delErr } = await supabaseClient.from('evaluation_deductions').delete().eq('id', deductionId);
+    if(delErr) throw delErr;
+
+    const isZeroType = deduction.section_key === 'zero';
+
+    const { data: remaining, error: remErr } = await supabaseClient.from('evaluation_deductions')
+      .select('section_key').eq('evaluation_id', EDITING_EVAL_ID);
+    if(remErr) throw remErr;
+    const stillZeroTriggered = remaining.some(d=> d.section_key === 'zero');
+
+    let newEarned = EDITING_EVAL_ROW.points_earned;
+
+    if(!isZeroType){
+      newEarned = Number(EDITING_EVAL_ROW.points_earned) + Number(deduction.points_lost);
+
+      const { data: sectionRow, error: secErr } = await supabaseClient.from('evaluation_sections')
+        .select('id, points_earned').eq('evaluation_id', EDITING_EVAL_ID).eq('section_key', deduction.section_key).maybeSingle();
+      if(secErr) throw secErr;
+      if(sectionRow){
+        const { error: secUpdErr } = await supabaseClient.from('evaluation_sections')
+          .update({ points_earned: Number(sectionRow.points_earned) + Number(deduction.points_lost) }).eq('id', sectionRow.id);
+        if(secUpdErr) throw secUpdErr;
+      }
+    }
+
+    const newScore = stillZeroTriggered
+      ? 0
+      : (EDITING_EVAL_ROW.points_possible > 0 ? Math.round((newEarned / EDITING_EVAL_ROW.points_possible) * 100) : 100);
+
+    const { error: evalUpdErr } = await supabaseClient.from('evaluations').update({
+      points_earned: newEarned,
+      score: newScore,
+      zero_triggered: stillZeroTriggered,
+    }).eq('id', EDITING_EVAL_ID);
+    if(evalUpdErr) throw evalUpdErr;
+
+    EDITING_EVAL_ROW.points_earned = newEarned;
+    EDITING_EVAL_ROW.score = newScore;
+    EDITING_EVAL_ROW.zero_triggered = stillZeroTriggered;
+
+    showToast('Rubric removed — score recalculated');
+    await refreshEditEvalFailList();
+  }catch(err){
+    console.error('Could not remove deduction', err);
+    showToast('Could not remove: ' + (err.message || 'unknown error'));
+  }
+}
+
 document.getElementById('btnCloseEditEval').addEventListener('click', ()=>{
   document.getElementById('editEvalOverlay').classList.remove('show');
+  refreshAgentsView();
 });
 document.getElementById('editEvalOverlay').addEventListener('click', (e)=>{
-  if(e.target.id === 'editEvalOverlay') e.currentTarget.classList.remove('show');
+  if(e.target.id === 'editEvalOverlay'){
+    e.currentTarget.classList.remove('show');
+    refreshAgentsView();
+  }
 });
 document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
   if(!EDITING_EVAL_ID) return;
@@ -3221,9 +3319,6 @@ document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
       call_date: document.getElementById('editEvalDate').value || null,
       ticket_id: document.getElementById('editEvalTicket').value.trim() || null,
       call_reason: document.getElementById('editEvalReason').value.trim() || null,
-      score: Number(document.getElementById('editEvalScore').value),
-      points_earned: Number(document.getElementById('editEvalEarned').value),
-      points_possible: Number(document.getElementById('editEvalPossible').value),
     }).eq('id', EDITING_EVAL_ID);
     if(error) throw error;
     showToast('Evaluation updated');
