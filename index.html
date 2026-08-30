@@ -1,0 +1,2359 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QA Evaluation — iTero Tech Support</title>
+<style>
+  :root{
+    --accent: #50bbbb;
+    --accent-dim: #3d9494;
+    --accent-soft: rgba(80,187,187,0.14);
+    --yes: #34c77b;
+    --yes-soft: rgba(52,199,123,0.15);
+    --no: #ef5b6a;
+    --no-soft: rgba(239,91,106,0.15);
+    --warn: #f0ad2e;
+    --warn-soft: rgba(240,173,46,0.16);
+    --radius: 10px;
+    --radius-sm: 6px;
+  }
+  html[data-theme="dark"]{
+    --bg: #000000;
+    --bg-elev: #0a0a0a;
+    --bg-elev-2: #141414;
+    --border: #262626;
+    --text: #f2f2f2;
+    --text-dim: #9a9a9a;
+    --text-faint: #5c5c5c;
+    --shadow: 0 10px 28px rgba(0,0,0,0.55);
+  }
+  html[data-theme="light"]{
+    --bg: #f2f4f6;
+    --bg-elev: #ffffff;
+    --bg-elev-2: #f8f9fb;
+    --border: #dde3ea;
+    --text: #14181d;
+    --text-dim: #5c6774;
+    --text-faint: #97a1ac;
+    --shadow: 0 8px 24px rgba(30,40,60,0.08);
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    font-family: -apple-system, "Segoe UI", Roboto, Inter, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    transition: background .32s ease, color .32s ease;
+    min-height:100vh;
+  }
+  body, .topbar, .panel, .section-card, .section-head, .item-card, .items, .field input,
+  .btn, .pill, .cfg-item, .cfg-block, .rubric-search, .default-note, .autocomplete-list,
+  .name-chip, .scenario-chip, .scenario-select-wrap select, textarea, input, select,
+  .brand-mark-wrap, .save-toast{
+    transition: background-color .32s ease, color .32s ease, border-color .32s ease, opacity .18s ease;
+  }
+  #view-eval, #view-config{
+    transition: opacity .18s ease, transform .18s ease;
+  }
+  #view-eval.view-fade, #view-config.view-fade{
+    opacity:0; transform:translateY(8px);
+  }
+  ::selection{ background: var(--accent-soft); }
+
+  /* ---------- Top bar ---------- */
+  .topbar{
+    display:flex; align-items:center; gap:16px;
+    padding:10px 22px;
+    background: var(--bg-elev);
+    border-bottom:1px solid var(--border);
+    position:sticky; top:0; z-index:40;
+  }
+  .brand{ display:flex; align-items:center; gap:12px; margin-right:auto; }
+  .brand-mark-wrap{ display:flex; align-items:center; }
+  .brand-mark{ height:34px; width:auto; display:block; }
+  html[data-theme="dark"] .brand-mark.for-light{ display:none; }
+  html[data-theme="light"] .brand-mark.for-dark{ display:none; }
+  .brand-text{ display:flex; flex-direction:column; line-height:1.15; }
+  .brand-text b{ font-size:15px; letter-spacing:.2px; }
+  .brand-text span{ font-size:11.5px; color:var(--text-dim); }
+
+  .tabs{ display:flex; gap:2px; background:var(--bg-elev-2); border:1px solid var(--border); border-radius:999px; padding:3px; }
+  .tab-btn{
+    border:none; background:transparent; color:var(--text-dim);
+    padding:7px 16px; border-radius:999px; font-size:13px; font-weight:600;
+    cursor:pointer; transition:.15s;
+  }
+  .tab-btn.active{ background:var(--accent); color:#00110f; }
+
+  .theme-switch{
+    display:flex; align-items:center; gap:8px; cursor:pointer;
+    border:1px solid var(--border); background:var(--bg-elev-2);
+    padding:6px 10px; border-radius:999px;
+  }
+  .theme-switch svg{ width:15px; height:15px; color:var(--text-dim); transition: color .32s ease, transform .35s cubic-bezier(.34,1.56,.64,1); }
+  .theme-switch svg.on{ color: var(--accent); transform:scale(1.18) rotate(-12deg); }
+
+  .user-badge{
+    display:flex; align-items:center; gap:8px;
+    border:1px solid var(--border); background:var(--bg-elev-2);
+    padding:6px 8px 6px 14px; border-radius:999px;
+  }
+  .user-badge .name{ font-size:12.5px; font-weight:700; color:var(--text); }
+  .user-badge .role{
+    font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px;
+    color:var(--accent); background:var(--accent-soft); border:1px solid var(--accent-dim);
+    padding:2px 7px; border-radius:999px;
+  }
+  .user-badge button{
+    display:flex; align-items:center; justify-content:center; width:26px; height:26px;
+    border-radius:50%; border:none; background:transparent; color:var(--text-faint); cursor:pointer;
+  }
+  .user-badge button:hover{ background:var(--bg-elev); color:var(--no); }
+  .user-badge button svg{ width:14px; height:14px; }
+
+  .login-overlay{
+    position:fixed; inset:0; background:var(--bg); z-index:500;
+    display:flex; align-items:center; justify-content:center; padding:20px;
+  }
+  .login-overlay.hidden{ display:none; }
+  .login-box{
+    width:100%; max-width:340px; background:var(--bg-elev); border:1px solid var(--border);
+    border-radius:var(--radius); padding:28px 26px; box-shadow:var(--shadow);
+  }
+  .login-box .login-logo{ display:flex; justify-content:center; margin-bottom:18px; }
+  .login-box .login-logo img{ height:28px; width:auto; }
+  .login-box h2{ text-align:center; font-size:15px; margin:0 0 22px; color:var(--text); }
+  .login-field{ margin-bottom:14px; }
+  .login-field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; margin-bottom:6px; }
+  .login-field input{
+    width:100%; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:13.5px; outline:none; box-sizing:border-box;
+  }
+  .login-field input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .login-error{
+    font-size:12px; color:var(--no); background:var(--no-soft); border:1px solid var(--no);
+    border-radius:var(--radius-sm); padding:8px 10px; margin-bottom:14px; display:none;
+  }
+  .login-error.show{ display:block; }
+  .login-box .btn{ width:100%; justify-content:center; }
+
+  /* ---------- Layout ---------- */
+  .wrap{ max-width:1720px; margin:0 auto; padding:18px 22px; }
+  .fields{
+    display:flex; flex-wrap:wrap; gap:12px;
+    margin-bottom:18px;
+  }
+  .field{ position:relative; flex:0 1 auto; width:200px; }
+  .field.field-wide{ width:280px; }
+  .field.field-med{ width:220px; }
+  .field.field-narrow{ width:150px; }
+  .field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
+  .field input{
+    width:100%; padding:10px 12px; border-radius:var(--radius-sm);
+    border:1px solid var(--border); background:var(--bg-elev); color:var(--text);
+    font-size:13.5px; outline:none; transition:.15s;
+  }
+  .field input:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+
+  .add-name{ display:flex; gap:8px; margin-top:12px; }
+  .add-name input{ flex-grow:1; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; outline:none; }
+  .add-name button{
+    flex-shrink:0; display:flex; align-items:center; gap:5px;
+    background:var(--accent-soft); border:1px solid var(--accent-dim); color:var(--accent);
+    border-radius:var(--radius-sm); padding:0 14px; font-size:12.5px; font-weight:700; cursor:pointer;
+    transition:.12s; white-space:nowrap;
+  }
+  .add-name button svg{ width:13px; height:13px; }
+  .add-name button:hover{ background:var(--accent); color:#00110f; }
+
+  .agent-panel .agent-input-wrap{ position:relative; }
+  .agent-input-big{
+    width:100%; background:transparent; border:none; outline:none; color:var(--text);
+    font-size:19px; font-weight:800; padding:2px 0 6px; border-bottom:2px solid var(--border);
+    transition: border-color .2s ease;
+  }
+  .agent-input-big::placeholder{ color:var(--text-faint); font-weight:700; }
+  .agent-input-big:focus{ border-bottom-color:var(--accent); }
+
+  .autocomplete-list{
+    position:absolute; top:calc(100% + 4px); left:0; right:0;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-sm);
+    box-shadow:var(--shadow); max-height:220px; overflow-y:auto; z-index:30; display:none;
+  }
+  .autocomplete-list.open{ display:block; }
+  .autocomplete-item{ padding:9px 12px; font-size:13.5px; cursor:pointer; }
+  .autocomplete-item:hover, .autocomplete-item.hi{ background:var(--accent-soft); }
+  .autocomplete-empty{ padding:9px 12px; font-size:12.5px; color:var(--text-faint); }
+
+  .main-grid{ display:grid; grid-template-columns: 1fr 320px; gap:18px; align-items:start; }
+  .sections-col{ min-width:0; }
+  .default-note{
+    font-size:12px; color:var(--text-dim); background:var(--accent-soft); border:1px solid var(--accent-dim);
+    border-radius:var(--radius-sm); padding:8px 12px; margin-bottom:10px; line-height:1.4;
+  }
+  .default-note b{ color:var(--accent); font-weight:800; }
+  .search-scenario-row{ display:flex; align-items:stretch; gap:12px; margin-bottom:14px; }
+  .search-scenario-row .rubric-search{ flex-grow:1; margin-bottom:0; }
+  .search-scenario-row .scenario-row{ flex:0 0 auto; margin-bottom:0; }
+  .scenario-row{ display:flex; align-items:center; gap:10px; }
+  .scenario-row label{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:800; flex-shrink:0; }
+  .scenario-select-wrap{ position:relative; flex-grow:1; width:220px; }
+  .scenario-select-wrap svg{ position:absolute; right:10px; top:50%; transform:translateY(-50%); width:13px; height:13px; color:var(--text-dim); pointer-events:none; }
+  .scenario-select-wrap select{
+    width:100%; height:100%; appearance:none; background:var(--accent-soft); border:1px solid var(--accent-dim); color:var(--accent);
+    font-weight:700; font-size:13px; padding:9px 30px 9px 14px; border-radius:var(--radius-sm); cursor:pointer; outline:none;
+  }
+  .scenario-select-wrap select:hover{ border-color:var(--accent); }
+  .rubric-search{
+    display:flex; align-items:center; gap:8px;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    padding:10px 14px;
+  }
+  .rubric-search svg{ width:16px; height:16px; color:var(--text-faint); flex-shrink:0; }
+  .rubric-search input{
+    flex-grow:1; background:transparent; border:none; outline:none; color:var(--text); font-size:13.5px;
+  }
+  .rubric-search input::placeholder{ color:var(--text-faint); }
+  .rubric-search button{
+    background:none; border:none; color:var(--text-faint); cursor:pointer; display:flex; flex-shrink:0;
+  }
+  .rubric-search button svg{ width:14px; height:14px; }
+  .rubric-search button:hover{ color:var(--text); }
+  .item-card.search-hidden{ display:none; }
+  .section-card.search-hidden{ display:none; }
+  .section-card.search-match .section-head .count{ color:var(--accent); }
+
+  .section-card{
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    margin-bottom:14px; overflow:hidden;
+  }
+  .section-head{
+    display:flex; align-items:center; gap:10px; padding:11px 14px;
+    cursor:pointer; user-select:none; background:var(--bg-elev-2);
+    border-bottom:1px solid var(--border);
+  }
+  .section-head .num{
+    width:20px; height:20px; border-radius:6px; background:var(--accent-soft); color:var(--accent);
+    display:flex; align-items:center; justify-content:center; font-size:10.5px; font-weight:800; flex-shrink:0;
+  }
+  .section-head h3{ margin:0; font-size:13px; letter-spacing:.2px; flex-grow:1; }
+  .section-head .count{ font-size:11px; color:var(--text-dim); }
+  .section-head .chev{ width:14px; height:14px; color:var(--text-dim); transition:transform .2s; }
+  .section-card.collapsed .chev{ transform:rotate(-90deg); }
+  .section-card.collapsed .items{ display:none; }
+
+  .replacement-toggle{
+    display:flex; align-items:center; gap:5px; flex-shrink:0; margin-right:10px;
+    background:var(--bg-elev); border:1px solid var(--border); color:var(--text-dim);
+    border-radius:999px; padding:4px 10px; font-size:11px; font-weight:700; cursor:pointer; transition:.12s;
+  }
+  .replacement-toggle svg{ width:11px; height:11px; }
+  .replacement-toggle.on{ background:var(--accent-soft); border-color:var(--accent-dim); color:var(--accent); }
+  .replacement-toggle:hover{ border-color:var(--accent-dim); }
+
+  .items{
+    display:grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap:1px; background:var(--border);
+  }
+  .item-card{
+    display:flex; align-items:center; gap:8px; padding:9px 12px;
+    background:var(--bg-elev);
+  }
+  .item-card.not-applicable{ opacity:.45; }
+  .item-card.not-applicable:hover{ opacity:.8; }
+  .item-card .lbl{ flex-grow:1; font-size:12.5px; line-height:1.25; }
+  .item-card .lbl em{ color:var(--text-faint); font-style:italic; font-size:11px; }
+  .item-card .pts{
+    font-size:10px; color:var(--text-dim); font-weight:700; flex-shrink:0; white-space:nowrap; margin-left:6px;
+  }
+  .item-card .pts.zero{ color:var(--no); }
+  .ic-controls{ display:flex; gap:5px; flex-shrink:0; margin-left:auto; }
+  .pill{
+    border:2px solid var(--text-dim); background:transparent; color:var(--text-dim);
+    width:25px; height:25px; border-radius:6px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; transition:.12s; flex-shrink:0;
+  }
+  .pill svg{ width:13px; height:13px; }
+  .pill:hover{ border-color:var(--text); color:var(--text); }
+  .pill.yes.active{ background:var(--yes-soft); border-color:var(--yes); color:var(--yes); }
+  .pill.no.active{ background:var(--no-soft); border-color:var(--no); color:var(--no); }
+  .pill.warn.active{ background:var(--warn-soft); border-color:var(--warn); color:var(--warn); }
+
+  /* ---------- Output side panel ---------- */
+  .side{ position:sticky; top:74px; display:flex; flex-direction:column; gap:12px; }
+  .panel{ background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:14px; }
+  .panel h4{ margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); }
+  .score-big{ display:flex; align-items:baseline; gap:6px; }
+  .score-big b{ font-size:34px; line-height:1; }
+  .score-big span{ font-size:13px; color:var(--text-dim); }
+  .stat-row{ display:flex; justify-content:space-between; font-size:12.5px; padding:5px 0; color:var(--text-dim); }
+  .stat-row b{ color:var(--text); }
+  .score-bar{ height:6px; border-radius:99px; background:var(--bg-elev-2); overflow:hidden; margin-top:10px; }
+  .score-bar > div{ height:100%; background:var(--accent); transition:width .25s; }
+  .score-bar.zeroed > div{ background:var(--no); }
+
+  textarea#output{
+    width:100%; min-height:320px; resize:vertical;
+    background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--text); font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size:11.5px; line-height:1.55; padding:12px; outline:none;
+  }
+  .btn-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+  .btn{
+    flex:1 1 calc(50% - 4px); border:none; border-radius:var(--radius-sm); padding:9px 8px; font-size:12px; font-weight:700;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; gap:5px; transition:.12s; white-space:nowrap;
+  }
+  .btn svg{ width:13px; height:13px; flex-shrink:0; }
+  .btn-primary{ background:var(--accent); color:#00110f; }
+  .btn-primary:disabled{ background:var(--bg-elev-2); color:var(--text-faint); cursor:default; border:1px solid var(--border); }
+  .btn-primary:hover{ background:var(--accent-dim); }
+  .btn-ghost{ background:var(--bg-elev-2); border:1px solid var(--border); color:var(--text-dim); }
+  .btn-ghost:hover{ color:var(--text); }
+
+  .zero-flag{
+    display:none; align-items:center; gap:8px; background:var(--no-soft); border:1px solid var(--no);
+    color:var(--no); padding:9px 12px; border-radius:var(--radius-sm); font-size:12.5px; font-weight:700; margin-bottom:14px;
+  }
+  .zero-flag.show{ display:flex; }
+  .zero-flag svg{ width:15px; height:15px; flex-shrink:0; }
+
+  /* ---------- Configuration tab ---------- */
+  #view-config{ display:none; }
+  .cfg-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+  .cfg-toolbar p{ margin:0; font-size:12.5px; color:var(--text-dim); max-width:640px; }
+  .cfg-block{ background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); padding:14px; margin-bottom:16px; }
+  .cfg-block h4{ margin:0 0 10px; font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--accent); }
+  .cfg-block-head{ display:flex; align-items:center; gap:8px; margin-bottom:10px; }
+  .cfg-block-head h4{ margin:0; }
+  .help-btn{
+    width:19px; height:19px; border-radius:50%; border:1px solid var(--accent-dim); background:var(--accent-soft);
+    color:var(--accent); font-size:11px; font-weight:800; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    flex-shrink:0; padding:0; line-height:1;
+  }
+  .help-btn:hover{ background:var(--accent); color:#00110f; }
+
+  .modal-overlay{
+    display:none; position:fixed; inset:0; background:rgba(0,0,0,0.55); z-index:200;
+    align-items:center; justify-content:center; padding:24px;
+  }
+  .modal-overlay.show{ display:flex; }
+  .modal-box{
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    max-width:640px; width:100%; max-height:80vh; overflow-y:auto; padding:22px 24px; box-shadow:var(--shadow);
+  }
+  .modal-box h3{ margin:0 0 4px; font-size:16px; }
+  .modal-box .modal-close{
+    float:right; background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:18px; line-height:1; padding:2px;
+  }
+  .modal-box .modal-close:hover{ color:var(--text); }
+  .modal-box p{ font-size:13px; color:var(--text-dim); line-height:1.6; margin:10px 0; }
+  .modal-box code{ background:var(--bg-elev-2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-size:12px; color:var(--accent); }
+  .modal-box .modal-table{ width:100%; border-collapse:collapse; margin:10px 0; font-size:12.5px; }
+  .modal-box .modal-table th, .modal-box .modal-table td{ text-align:left; padding:6px 8px; border-bottom:1px solid var(--border); color:var(--text-dim); }
+  .modal-box .modal-table code{ white-space:nowrap; }
+
+  /* ---------- Outcome report (always light, print/email friendly) ---------- */
+  .outcome-modal-box{
+    background:#f2f3f1; border-radius:12px; max-width:600px; width:100%; max-height:90vh; overflow-y:auto;
+    box-shadow:0 20px 60px rgba(0,0,0,0.4); padding:14px;
+  }
+  .outcome-modal-actions{ display:flex; flex-wrap:wrap; justify-content:flex-end; gap:8px; margin-bottom:10px; }
+  .outcome-capture{ background:#ffffff; border-radius:10px; overflow:hidden; font-family:-apple-system,"Segoe UI",Roboto,Arial,sans-serif; color:#1c211d; }
+
+  .oc-header{
+    background:#1c211d; padding:14px 20px; display:flex; align-items:center; justify-content:space-between; gap:12px;
+  }
+  .oc-header img{ height:20px; width:auto; display:block; }
+  .oc-header-title{ text-align:right; }
+  .oc-header-title .t1{ color:#ffffff; font-size:12.5px; font-weight:800; letter-spacing:.3px; }
+  .oc-header-title .t2{ color:#9fb0a3; font-size:9.5px; margin-top:1px; }
+
+  .oc-top-row{ display:flex; align-items:stretch; gap:16px; padding:14px 20px; border-bottom:1px solid #e6e8e3; }
+  .oc-meta-grid{ flex-grow:1; display:grid; grid-template-columns:repeat(3, 1fr); gap:0; border:1px solid #e6e8e3; border-radius:8px; overflow:hidden; }
+  .oc-meta-item{ padding:7px 10px; border-right:1px solid #e6e8e3; border-bottom:1px solid #e6e8e3; }
+  .oc-meta-item:nth-child(3n){ border-right:none; }
+  .oc-meta-item:nth-child(n+4){ border-bottom:none; }
+  .oc-meta-item .lbl{ font-size:8px; text-transform:uppercase; letter-spacing:.5px; color:#8b9389; font-weight:700; }
+  .oc-meta-item .val{ font-size:11px; font-weight:700; color:#1c211d; margin-top:2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+
+  .oc-score-col{ flex:0 0 auto; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px; width:92px; }
+  .oc-score-ring{
+    width:74px; height:74px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    background:conic-gradient(var(--ring-color, #2dd4bf) calc(var(--ring-pct, 100) * 1%), #e6e8e3 0);
+  }
+  .oc-score-ring-inner{
+    width:60px; height:60px; border-radius:50%; background:#ffffff; display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+  }
+  .oc-score-ring-inner b{ font-size:18px; line-height:1; color:#1c211d; }
+  .oc-score-ring-inner span{ font-size:7.5px; color:#8b9389; font-weight:700; }
+  .oc-score-points{ font-size:9.5px; color:#5b6357; font-weight:700; text-align:center; }
+
+  .oc-flags-box{
+    margin:14px 20px 0; border:1.5px solid #e0554a; border-radius:8px; padding:10px 12px;
+    display:flex; flex-direction:column; gap:6px; min-height:20px;
+  }
+  .oc-flag-item{
+    display:flex; gap:6px; align-items:flex-start; font-size:10.5px; color:#3a1f1c; line-height:1.4;
+  }
+  .oc-flag-item.oc-flag-feedback{ color:#5c4a1c; }
+  .oc-flag-item .flag{ flex-shrink:0; }
+  .oc-flag-item b{ color:#8a2e24; }
+  .oc-flag-item.oc-flag-feedback b{ color:#8a6d1c; }
+  .oc-none{ font-size:10.5px; color:#8b9389; font-style:italic; }
+
+  .oc-sections-box{
+    margin:14px 20px 18px; border:1.5px solid #2fae74; border-radius:8px; padding:12px 16px;
+    display:flex; flex-direction:column; gap:10px;
+  }
+  .oc-section-row-top{ display:flex; align-items:center; justify-content:space-between; margin-bottom:4px; }
+  .oc-section-row-top .name{ font-size:11px; font-weight:800; color:#1c211d; }
+  .oc-section-row-top .pct{ font-size:11px; font-weight:800; color:#1a8f5c; }
+  .oc-bar{ height:6px; border-radius:99px; background:#eef0eb; overflow:hidden; }
+  .oc-bar > div{ height:100%; border-radius:99px; background:#2dd4bf; }
+
+  .cfg-block .hint{ font-size:11.5px; color:var(--text-faint); margin:6px 0 10px; }
+  .cfg-block textarea{
+    width:100%; min-height:110px; resize:vertical; background:var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text); font-size:12px; padding:10px; outline:none;
+    font-family: ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  }
+  .cfg-block textarea:focus{ border-color:var(--accent); }
+  .cfg-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(460px, 1fr)); gap:10px; min-height:44px; border-radius:var(--radius); transition:.15s; }
+  .cfg-grid.drag-over{ outline:2px dashed var(--accent); outline-offset:4px; background:var(--accent-soft); }
+  .cfg-item{
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    padding:11px 13px; cursor:grab;
+  }
+  .cfg-item.dragging{ opacity:.35; }
+  .drag-handle{ display:flex; align-items:center; color:var(--text-faint); flex-shrink:0; cursor:grab; }
+  .drag-handle svg{ width:14px; height:16px; }
+  .drag-handle:active{ cursor:grabbing; }
+  .cfg-item-top{ display:flex; align-items:center; gap:10px; margin-bottom:9px; }
+  .cfg-item-top input.cfg-label{
+    flex-grow:1; font-size:13px; font-weight:700; background:transparent; border:none; color:var(--text);
+    border-bottom:1px dashed var(--border); padding:4px 2px; outline:none;
+  }
+  .cfg-item-top input.cfg-label:focus{ border-color:var(--accent); }
+  .reorder{ display:flex; gap:3px; }
+  .reorder button{
+    width:22px; height:22px; border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim);
+    border-radius:5px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+  }
+  .reorder button svg{ width:11px; height:11px; }
+  .cfg-texts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .cfg-texts div label{ font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; display:flex; align-items:center; gap:5px; margin-bottom:4px;}
+  .cfg-texts div label.y{ color:var(--yes); }
+  .cfg-texts div label.n{ color:var(--no); }
+  .cfg-texts textarea{
+    width:100%; min-height:48px; resize:vertical; background:var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text); font-size:11.5px; padding:7px; outline:none; font-family:inherit;
+  }
+  .cfg-texts textarea:focus{ border-color:var(--accent); }
+  .cfg-feedback-note{ margin-top:8px; padding-top:8px; border-top:1px dashed var(--border); font-size:11px; color:var(--text-faint); font-style:italic; }
+  .cfg-section-title{ font-size:12px; text-transform:uppercase; letter-spacing:.6px; color:var(--accent); margin:20px 0 10px; font-weight:800; }
+  .cfg-names{ display:flex; flex-wrap:wrap; gap:8px; margin-top:6px; }
+
+  .scenario-chip-row{ display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 14px; }
+  .scenario-chip{
+    display:flex; align-items:center; gap:6px; background:var(--bg-elev-2); border:1.5px solid var(--border);
+    padding:6px 12px; border-radius:999px; font-size:12.5px; font-weight:700; color:var(--text-dim);
+    cursor:pointer; transition:.12s;
+  }
+  .scenario-chip:hover{ border-color:var(--text-dim); color:var(--text); }
+  .scenario-chip.active{ background:var(--accent-soft); border-color:var(--accent-dim); color:var(--accent); }
+  .scenario-chip.editing{ border-color:var(--text); box-shadow:0 0 0 1px var(--text) inset; }
+  .scenario-chip .active-dot{ width:6px; height:6px; border-radius:50%; background:var(--accent); flex-shrink:0; }
+  .scenario-editor-head{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin-bottom:14px; padding-bottom:14px; border-bottom:1px solid var(--border); }
+  .scenario-editing-name{ font-size:13px; font-weight:800; color:var(--text); margin-right:4px; white-space:nowrap; }
+  .scenario-editor-head label{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:800; color:var(--text-dim); }
+  .scenario-editor-head select, .scenario-editor-head input{
+    padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2);
+    color:var(--text); font-size:12.5px; outline:none;
+  }
+  .scenario-editor-head input{ flex-grow:1; min-width:160px; }
+  .scenario-applic-section-title{ font-size:11.5px; text-transform:uppercase; letter-spacing:.5px; font-weight:800; color:var(--text-dim); margin:14px 0 8px; }
+  .scenario-applic-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:1px; background:var(--border); border:1px solid var(--border); border-radius:var(--radius-sm); overflow:hidden; }
+  .scenario-applic-item{ display:flex; align-items:center; justify-content:space-between; gap:8px; background:var(--bg-elev); padding:8px 12px; font-size:12px; }
+  .scenario-applic-item span{ flex-grow:1; }
+  .scenario-applic-switch{
+    width:34px; height:19px; border-radius:999px; background:var(--bg-elev-2); border:1px solid var(--border);
+    position:relative; cursor:pointer; flex-shrink:0; transition:.15s;
+  }
+  .scenario-applic-switch::after{
+    content:''; position:absolute; top:1px; left:1px; width:15px; height:15px; border-radius:50%;
+    background:var(--text-faint); transition:.15s;
+  }
+  .scenario-applic-switch.on{ background:var(--accent-soft); border-color:var(--accent-dim); }
+  .scenario-applic-switch.on::after{ background:var(--accent); transform:translateX(15px); }
+
+  .new-rubric-grid{ display:grid; grid-template-columns: 2fr 1fr 100px; gap:10px; margin-bottom:10px; }
+  .new-rubric-grid:last-of-type{ grid-template-columns: 1fr 1fr; }
+  .new-rubric-field label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; color:var(--text-dim); margin-bottom:4px; }
+  .new-rubric-field label.y{ color:var(--yes); }
+  .new-rubric-field label.n{ color:var(--no); }
+  .new-rubric-field input, .new-rubric-field select, .new-rubric-field textarea{
+    width:100%; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:12.5px; outline:none; font-family:inherit;
+  }
+  .new-rubric-field textarea{ min-height:56px; resize:vertical; }
+  .new-rubric-field input:focus, .new-rubric-field select:focus, .new-rubric-field textarea:focus{ border-color:var(--accent); }
+  .name-chip{ display:flex; align-items:center; gap:6px; background:var(--bg-elev-2); border:1px solid var(--border); padding:6px 8px 6px 12px; border-radius:999px; font-size:12.5px; }
+  .name-chip button{ background:none; border:none; color:var(--text-faint); cursor:pointer; display:flex; }
+  .name-chip button svg{ width:12px; height:12px; }
+  .add-name{ display:flex; gap:8px; margin-top:12px; }
+  .add-name input{ flex-grow:1; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; outline:none; }
+
+  .save-toast{
+    position:fixed; bottom:20px; right:20px; background:var(--accent); color:#00110f; font-weight:700;
+    padding:10px 16px; border-radius:var(--radius-sm); font-size:12.5px; box-shadow:var(--shadow);
+    opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:100;
+  }
+  .save-toast.show{ opacity:1; transform:translateY(0); }
+
+  @media (max-width: 980px){
+    .field, .field.field-wide, .field.field-med, .field.field-narrow{ width:calc(50% - 6px); }
+    .main-grid{ grid-template-columns: 1fr; }
+    .side{ position:static; }
+    .items{ grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="brand">
+    <div class="brand-mark-wrap"><img class="brand-mark for-dark" alt="iTero" src="data:image/png;base64,
+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"><img class="brand-mark for-light" alt="iTero" src="data:image/png;base64,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"></div>
+    <div class="brand-text">
+      <b>QA Evaluation</b>
+      <span>iTero Technical Support</span>
+    </div>
+  </div>
+
+  <div class="tabs" id="mainTabs">
+    <button class="tab-btn active" data-view="eval">Evaluation</button>
+    <button class="tab-btn" data-view="config" id="tabConfigBtn">Configuration</button>
+  </div>
+
+  <div class="user-badge" id="userBadge" style="display:none;">
+    <span class="name" id="userBadgeName"></span>
+    <span class="role" id="userBadgeRole"></span>
+    <button id="btnLogout" title="Log out">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </button>
+  </div>
+
+  <div class="theme-switch" id="themeSwitch">
+    <svg class="on" id="iconMoon" viewBox="0 0 24 24" fill="none"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+    <svg id="iconSun" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.4M12 19.1v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.5 12h2.4M19.1 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <!-- =============== EVALUATION VIEW =============== -->
+  <div id="view-eval">
+
+    <div class="zero-flag" id="zeroFlag">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4.5M12 16.5h.01M10.3 3.9 2.7 17.3a1.8 1.8 0 0 0 1.56 2.7h15.48a1.8 1.8 0 0 0 1.56-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+      <span>Zero call driver triggered — this evaluation is an automatic zero.</span>
+    </div>
+
+    <div class="main-grid">
+      <div class="sections-col">
+        <div class="fields fields-5">
+          <div class="field field-med"><label for="fEvaluator">QA evaluator</label><input id="fEvaluator" placeholder="QA evaluator"></div>
+          <div class="field field-wide"><label for="fReason">Call reason</label><input id="fReason" placeholder="Call reason"></div>
+          <div class="field field-med"><label for="fCaller">Caller's name</label><input id="fCaller" placeholder="Caller's name"></div>
+          <div class="field field-narrow"><label for="fTicket">Ticket ID</label><input id="fTicket" placeholder="Ticket ID"></div>
+          <div class="field field-narrow"><label for="fOrder">Order ID</label><input id="fOrder" placeholder="Order ID"></div>
+        </div>
+        <div class="search-scenario-row">
+          <div class="rubric-search">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="11" cy="11" r="7" stroke="currentColor" stroke-width="2"/><path d="m20 20-3.5-3.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            <input id="rubricSearch" placeholder="Search rubrics">
+            <button id="rubricSearchClear" title="Clear search" style="display:none;">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="scenario-row">
+            <label for="scenarioSelect">Call type</label>
+            <div class="scenario-select-wrap">
+              <select id="scenarioSelect"></select>
+              <svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </div>
+          </div>
+        </div>
+        <div id="sections"></div>
+      </div>
+
+      <div class="side">
+        <div class="panel agent-panel">
+          <h4>Agent</h4>
+          <div class="agent-input-wrap">
+            <input id="fAgent" autocomplete="off" placeholder="Agent's name" class="agent-input-big">
+            <div class="autocomplete-list" id="agentList"></div>
+          </div>
+        </div>
+        <div class="panel">
+          <h4>Score</h4>
+          <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
+          <div class="score-bar"><div id="statBar" style="width:100%"></div></div>
+          <div class="stat-row"><span>Points earned</span><b id="statEarned">0</b></div>
+          <div class="stat-row"><span>Points possible</span><b id="statPossible">0</b></div>
+          <div class="stat-row"><span>Evaluated</span><b id="statCount">0 / 70</b></div>
+        </div>
+        <div class="panel">
+          <h4>Evaluation summary</h4>
+          <textarea id="output" placeholder="Summary"></textarea>
+          <div class="btn-row">
+            <button class="btn btn-primary" id="btnCopy">
+              <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
+              Copy summary
+            </button>
+            <button class="btn btn-ghost" id="btnClear">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+              Clear all
+            </button>
+          </div>
+          <button class="btn btn-primary" id="btnOutcomeReport" style="width:100%; margin-top:8px;">
+            <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 15l5-5 4 4 5-6 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r="1.3" fill="currentColor"/></svg>
+            Generate outcome report
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =============== CONFIGURATION VIEW =============== -->
+  <div id="view-config">
+    <div class="cfg-toolbar">
+      <p>Edit each rubric's label and its detailed pass / fail text, reorder items, manage agent names, and customize the summary format. Changes save with the button below.</p>
+      <button class="btn btn-primary" id="btnSaveCfg" style="flex:none;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Save changes
+      </button>
+    </div>
+
+    <div class="cfg-block">
+      <div class="cfg-block-head">
+        <h4>Summary format</h4>
+        <button class="help-btn" id="btnSummaryHelp" title="How to customize the summary">?</button>
+      </div>
+      <textarea id="cfgSummaryTemplate"></textarea>
+      <textarea id="cfgItemTemplate" style="min-height:52px; margin-top:10px;"></textarea>
+    </div>
+
+    <div class="cfg-block">
+      <h4>Agent names</h4>
+      <div class="cfg-names" id="cfgNames"></div>
+      <div class="add-name">
+        <input id="newNameInput" placeholder="Agent name">
+        <button id="btnAddName" title="Add this name to the list">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add
+        </button>
+      </div>
+    </div>
+
+    <div class="cfg-block">
+      <h4>Call type scenarios</h4>
+      <div class="hint">Each scenario defines which rubrics apply by default for that kind of call. Click a scenario below to view and edit it. The highlighted one is what agents currently get on the Evaluation tab.</div>
+      <div class="scenario-chip-row" id="scenarioChips"></div>
+      <div class="add-name" style="margin-bottom:16px;">
+        <input id="newScenarioInput" placeholder="Scenario name">
+        <button id="btnAddScenario" title="Create a new scenario">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add scenario
+        </button>
+      </div>
+      <div class="scenario-editor-head">
+        <div class="scenario-editing-name" id="scenarioEditingName">Editing: General Call</div>
+        <input id="scenarioRenameInput" placeholder="New name">
+        <button id="btnScenarioRename" class="btn btn-ghost" style="flex:none; padding:8px 12px;">Rename</button>
+        <button id="btnScenarioDuplicate" class="btn btn-ghost" style="flex:none; padding:8px 12px;">Duplicate</button>
+        <button id="btnScenarioSetActive" class="btn btn-primary" style="flex:none; padding:8px 12px;">Set as active</button>
+        <button id="btnScenarioDelete" class="btn btn-ghost" style="flex:none; padding:8px 12px; color:var(--no);">Delete</button>
+      </div>
+      <div id="scenarioApplicability"></div>
+      <button class="btn btn-primary" id="btnSaveScenarios" style="flex:none; margin-top:14px;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Save scenarios
+      </button>
+    </div>
+
+    <div class="cfg-block">
+      <h4>Add a custom rubric</h4>
+      <div class="new-rubric-grid">
+        <div class="new-rubric-field new-rubric-wide">
+          <label>Rubric name</label>
+          <input id="newRubricLabel" placeholder="Short rubric name">
+        </div>
+        <div class="new-rubric-field">
+          <label>Category</label>
+          <select id="newRubricSection"></select>
+        </div>
+        <div class="new-rubric-field new-rubric-pts">
+          <label>Points</label>
+          <input id="newRubricPts" type="number" min="0" step="1" placeholder="0">
+        </div>
+      </div>
+      <div class="new-rubric-grid" id="newRubricTextsRow">
+        <div class="new-rubric-field new-rubric-half">
+          <label class="y" id="newRubricYesLabel">Met (yes) text</label>
+          <textarea id="newRubricYes" placeholder="Text shown when this rubric is met"></textarea>
+        </div>
+        <div class="new-rubric-field new-rubric-half">
+          <label class="n" id="newRubricNoLabel">Not met (no) text</label>
+          <textarea id="newRubricNo" placeholder="Text shown when this rubric is not met"></textarea>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btnAddRubric" style="flex:none; margin-top:12px;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+        Add rubric
+      </button>
+    </div>
+
+    <div id="cfgSections"></div>
+  </div>
+
+</div>
+
+<div class="save-toast" id="saveToast">Saved</div>
+
+<div class="modal-overlay" id="summaryHelpOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="btnCloseSummaryHelp">&times;</button>
+    <h3>Customizing the summary</h3>
+    <p>The summary is built from two text boxes above: the <b>overall template</b> (the full message, with a header, the accomplishments/deductions/feedback sections and the score line) and the <b>item line format</b> (how each single rubric line looks inside those sections). Edit either one and click <b>Save changes</b> — the Evaluation tab will use your version from then on.</p>
+    <p>To design a different style, just rewrite the template text using the placeholders below anywhere you like — reorder them, remove sections you don't need, or add your own wording around them. To go back to the built-in wording, retype it manually (there's no "several saved templates" list — only one template is active at a time).</p>
+    <table class="modal-table">
+      <tr><th>Placeholder</th><th>What it inserts</th></tr>
+      <tr><td><code>{{fields}}</code></td><td>Call detail lines (Agent, QA evaluator, Caller, Ticket ID, Call reason, Order ID) — Order ID is skipped when empty, the rest show N/A</td></tr>
+      <tr><td><code>{{agent}}</code> <code>{{evaluator}}</code> <code>{{caller}}</code> <code>{{ticket}}</code> <code>{{order}}</code> <code>{{reason}}</code></td><td>Just that one field's value, on its own</td></tr>
+      <tr><td><code>{{deductions}}</code></td><td>A "Deductions" heading plus every rubric marked ✕, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
+      <tr><td><code>{{feedback}}</code></td><td>A "Feedback" heading plus every rubric flagged ⚠, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
+      <tr><td><code>{{accomplishments}}</code></td><td>An "Accomplishments" heading plus every rubric marked ✓, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
+      <tr><td><code>{{score}}</code> <code>{{earned}}</code> <code>{{possible}}</code></td><td>The score out of 100, and the raw points earned / possible</td></tr>
+      <tr><td><code>{{zeroline}}</code></td><td>The automatic-zero warning line, only when triggered</td></tr>
+    </table>
+    <p>In the <b>item line format</b> box: <code>{{icon}}</code> is ✓ / ✕ / ⚠, <code>{{label}}</code> is the short rubric name, <code>{{text}}</code> is its met/not‑met/reason text, and <code>{{pts}}</code> already includes its own suffix — "(Npts)" for accomplishments and feedback, "(-Npts)" for deductions, or "(Auto‑Zero)" for zero call drivers.</p>
+  </div>
+</div>
+
+<div class="login-overlay" id="loginOverlay">
+  <div class="login-box">
+    <div class="login-logo" id="loginLogo"></div>
+    <h2>Sign in to QA Evaluation</h2>
+    <div class="login-error" id="loginError"></div>
+    <form id="loginForm">
+      <div class="login-field">
+        <label for="loginEmail">Email</label>
+        <input id="loginEmail" type="email" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label for="loginPassword">Password</label>
+        <input id="loginPassword" type="password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="btn btn-primary" id="btnLogin">Sign in</button>
+    </form>
+  </div>
+</div>
+
+<div class="modal-overlay" id="outcomeOverlay">
+  <div class="outcome-modal-box">
+    <div class="outcome-modal-actions">
+      <button class="btn btn-primary" id="btnCopyOutcomeImage" style="flex:none;">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
+        Copy image for email
+      </button>
+      <button class="btn btn-ghost" id="btnDownloadOutcome" style="flex:none;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v12m0 0 4-4m-4 4-4-4M4 18v1a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Download
+      </button>
+      <button class="btn btn-ghost" id="btnCloseOutcome" style="flex:none;">Close</button>
+    </div>
+    <div id="outcomeCapture" class="outcome-capture"></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ============================================================
+   DATA — [id, label, points, yesText, noText]
+   ============================================================ */
+const SECTIONS = [
+  { key:"protocol", title:"Call Protocol", items:[
+    ["1.1","Greeting",2,
+      "Started the call with a warm, friendly greeting that set a positive tone.",
+      "Used the correct greeting.",
+      "Used the correct greeting."],
+    ["1.2","Offer Help at End",2,
+      "Closed by checking if there was anything else they could help with, showing genuine care.",
+      "Offered additional assistance at the end of the call.",
+      "Offered additional assistance at the end of the call."],
+    ["1.3","Proper Closing",2,
+      "Wrapped up the conversation politely and professionally, leaving a good final impression.",
+      "Did a proper and professional closing.",
+      "Did a proper and professional closing."],
+    ["1.4","Call Validation",7,
+      "Confirmed the account with the customer before moving forward, ensuring accuracy.",
+      "The agent validated the call, asking for the ticket ID in case of a transfer and/or validated the account name/information with the customer and/or the FL agent.",
+      "The agent validated the call, asking for the ticket ID in case of a transfer and validated the account name with the customer and/or the FL agent."],
+  ]},
+  { key:"soft", title:"Soft Skills & Professionalism", items:[
+    ["2.1","Courtesy Language",5,
+      "Maintained polite and respectful language throughout, keeping the tone professional.",
+      "The agent used courteous phrases during the call, demonstrating a clear willingness to assist and using professional business Language.",
+      "The agent used courteous phrases during the call, demonstrating a clear willingness to assist and using professional business Language."],
+    ["2.2","Blame Avoidance",4,
+      "Focused on solving the issue without placing blame, keeping the conversation positive.",
+      "The agent did not blame our products, coworkers, or teams negatively and rather focused on the resolution and helping our customers.",
+      "The agent did not blame our products, coworkers, or teams negatively and rather focused on the resolution and helping our customers."],
+    ["2.3","Used Customer Name",2,
+      "Used the customer's name early on, creating a personal and friendly connection.",
+      "The agent used the caller's name from the beginning of the call.",
+      "The agent used the caller's name from the beginning of the call."],
+    ["2.4","No Interruptions",2,
+      "Let the customer speak without interruptions and acknowledged them respectfully.",
+      "The agent did not interrupt the customer, and in case of an accidental interruption, the agent apologized. Remember to apologize and let the customer finish what they were saying.",
+      "The agent did not interrupt the customer, and in case of an accidental interruption, the agent apologized. Remember to apologize and let the customer finish what they were saying."],
+    ["2.5","Tone and Energy",4,
+      "Spoke with energy and warmth, making the conversation pleasant and engaging.",
+      "There was energy and enthusiasm during the call. The tone of voice was polite and did not sound robotic or scripted.",
+      "There was energy and enthusiasm during the call. The tone of voice was polite and did not sound robotic or scripted."],
+    ["2.6","Conversation Flow",2,
+      "Kept the discussion flowing naturally, making it easy for the customer to follow.",
+      "The conversation was fluid throughout the call, and the customer was able to understand what was discussed.",
+      "The conversation was fluid throughout the call, and the customer was able to understand what was discussed."],
+    ["2.7","Filler Words",2,
+      "Spoke clearly without relying on filler words, keeping communication smooth.",
+      "The agent did not use filler words during the call.",
+      "The agent did not use filler words during the call."],
+    ["2.8","Empathy",5,
+      "Showed understanding and empathy, helping the customer feel heard and valued.",
+      "The agent showed genuine empathy during the call, acknowledging the scenario and offering help.",
+      "The agent showed genuine empathy during the call, acknowledging the scenario and offering help."],
+    ["2.9","Customer emotions",2,
+      "Helped turn the conversation around so the customer felt better by the end.",
+      "The agent created a positive emotion change by the end of the interaction.",
+      "The agent created a positive emotion change by the end of the interaction."],
+    ["2.10","Apology",5,
+      "Offered a genuine apology when needed, showing accountability.",
+      "The agent genuinely apologized to the customer in case of a business mistake.",
+      "The agent genuinely apologized to the customer in case of a business mistake."],
+  ]},
+  { key:"doc", title:"Documentation", items:[
+    ["3.1","Symptom Codes",4,
+      "Chose the most accurate and specific Symptom Codes for the issue.",
+      "The selected symptom codes match the current scenario and are specific to the main reason for the call. (Ticket type, issue type, & sub-issue type)",
+      "The selected symptom codes match the current scenario and are specific to the main reason for the call. (Ticket type, issue type, & sub-issue type)"],
+    ["3.2","RMA Fields",8,
+      "Completed all RMA request fields accurately, ensuring a smooth process.",
+      "RMA ticket(s) were created, and all required fields were filled appropriately depending on the part(s) requested.",
+      "RMA ticket(s) were created, and all required fields were filled appropriately depending on the part(s) requested."],
+    ["3.3","Alt. Address",2,
+      "Entered the alternate shipping address correctly, meeting the customer's request.",
+      "If an alternative address is required by the customer, the agent should fill in the appropriate fields to accomplish the request.",
+      "If an alternative address is required by the customer, the agent should fill in the appropriate fields to accomplish the request."],
+    ["3.4","Product Complaint",4,
+      "Logged the product complaint with all needed details for proper follow-up.",
+      "Product complaint ticket(s) were created, and all required fields were filled appropriately depending on the hardware issue.",
+      "Product complaint ticket(s) were created, and all required fields were filled appropriately depending on the hardware issue."],
+    ["3.5","Software Complaint",3,
+      "Created a software complaint ticket when appropriate, ensuring it was tracked.",
+      "Software complaint was created if applicable.",
+      "Software complaint was created if applicable."],
+    ["3.6","Service Complaint",3,
+      "Properly documented a service complaint when needed.",
+      "A service complaint was created if applicable.",
+      "A service complaint was created if applicable."],
+    ["3.8","Correct Template",2,
+      "Used the correct documentation template to maintain consistency.",
+      "The agent used an adequate documentation template.",
+      "The agent used an adequate documentation template."],
+    ["3.9","Ticket notes",5,
+      "Documented clear and concise notes that captured all key points discussed during the call.",
+      "The content of the ticket's notes was clear and concise, and described all talking points during the call.",
+      "The content of the ticket's notes was clear and concise, and described all the talking points during the call."],
+    ["3.10","True documentation",3,
+      "Documentation was fully accurate and reliable.",
+      "The documentation contained only true and accurate information.",
+      "The documentation contained only true and accurate information."],
+    ["3.11","Attachments",5,
+      "Added relevant attachments (e.g., screenshots, logs) to support the resolution.",
+      "The agent attached the required screenshots, videos, emails, logs, or any other relevant information to back up the resolution. Also, remember to rename the attachments with appropriate names so it's clear what is being added to the ticket.",
+      "The agent attached the required screenshots, videos, emails, logs, or any other relevant information to back up the resolution. Also, remember to rename the attachments with appropriate names so it's clear what is being added to the ticket."],
+    ["3.12","Ticket Fields",4,
+      "Filled all required ticket fields correctly.",
+      "All the main ticket fields were filled out properly, depending on the scenario.",
+      "All the main ticket fields were filled out properly, depending on the scenario."],
+    ["3.13","Return Checkbox",8,
+      "Correctly marked the return checkbox to trigger the process.",
+      "The return checkbox was selected to trigger the return process.",
+      "The return checkbox was selected to trigger the return process."],
+    ["3.14","Correct Ticket/Account",4,
+      "Logged the interaction under the correct ticket and account.",
+      "Documented the call under the wrong ticket or account.",
+      "Documented the call under the wrong ticket or account."],
+    ["3.15","Correct Asset",8,
+      "Selected the correct asset for the case.",
+      "The correct asset was selected, if applicable.",
+      "The correct asset was selected, if applicable."],
+    ["3.16","Correct Part",8,
+      "Chose the correct part or documented it if not listed.",
+      "The correct part was selected in the parts list on SFDC, and in case the part does not exist, it was documented in the ticket's notes accordingly.",
+      "The correct part was selected in the parts list on SFDC, and in case the part does not exist, it was documented in the ticket's notes accordingly."],
+    ["3.17","Email Clarity",4,
+      "Sent a clear, professional email free of errors.",
+      "The content of customer-facing emails was clear and grammatically correct.",
+      "The content of customer-facing emails was clear and grammatically correct."],
+    ["3.18","Email Template",3,
+      "Used the right email template for the situation.",
+      "The correct templates were used for customer-facing emails.",
+      "The correct templates were used for customer-facing emails."],
+    ["3.19","Name documentation",2,
+      "Recorded the customer's name correctly.",
+      "The agent documented the customer's name correctly.",
+      "The agent documented the customer's name correctly."],
+    ["3.20","Ticket Subject",3,
+      "Ticket subject clearly matched the scenario.",
+      "The agent used the correct subject on all tickets relevant to the scenario. Remember that we should use our documentation template to create the subject for all our scenarios.",
+      "The agent used the correct subject on all tickets relevant to the scenario. Remember that we should use our documentation template to create the subject for all our scenarios."],
+    ["3.21","KB Article",4,
+      "Attached the relevant KB article when helpful.",
+      "The agent attached the relevant KB article to the ticket if applicable.",
+      "The agent attached the relevant KB article to the ticket if applicable."],
+    ["3.22","RMA info",3,
+      "Validated the required RMA information with the customer.",
+      "The agent did not validate the required RMA information with the customer before proceeding.",
+      "Remember to validate all required RMA information with the customer before submitting the request."],
+  ]},
+  { key:"mgmt", title:"Call Management", items:[
+    ["4.1","AHT Usage",5,
+      "Managed time well, keeping the call efficient and on point.",
+      "The agent used the appropriate AHT based on the scenario to resolve the call efficiently and correctly.",
+      "The agent used the appropriate AHT based on the scenario to resolve the call efficiently and correctly."],
+    ["4.2","Avoid Dead Air",2,
+      "Kept the customer informed of what we were doing to prevent awkward silences.",
+      "The agent avoided dead air by keeping the customer informed of what was being done during the call.",
+      "The agent avoided dead air by keeping the customer informed of what was being done during the call."],
+    ["4.3","Quick Answer",6,
+      "Answered the call promptly, within 5 seconds.",
+      "The agent answered the call in 5 seconds or less.",
+      "The agent answered the call in 5 seconds or less."],
+    ["4.4","Hold Reason",2,
+      "The hold/mute protocol was followed appropriately.",
+      "Had a valid reason to place the customer on hold/mute.",
+      "Had a valid reason to place the customer on hold/mute."],
+    ["4.5","Hold Permission",2,
+      "The hold/mute protocol was followed appropriately.",
+      "The agent asked for permission before placing the customer on hold/mute.",
+      "The agent asked for permission before placing the customer on hold/mute."],
+    ["4.6","Hold Explanation",2,
+      "The hold/mute protocol was followed appropriately.",
+      "A valid reason was provided to use hold/mute.",
+      "A valid reason was provided to use hold/mute."],
+    ["4.7","Hold Timeframe",2,
+      "The hold/mute protocol was followed appropriately.",
+      "A timeframe of no longer than 5 minutes was provided to the customer before placing the call on hold/mute.",
+      "A timeframe of no longer than 5 minutes was provided to the customer before placing the call on hold/mute."],
+    ["4.8","Timeframe Met",2,
+      "The hold/mute protocol was followed appropriately.",
+      "The agent accomplished the timeframe provided to the customer and refreshed the call if applicable.",
+      "The agent accomplished the timeframe provided to the customer and refreshed the call if applicable."],
+    ["4.9","Hold Thanks",2,
+      "The hold/mute protocol was followed appropriately.",
+      "The agent thanked the customer when returning from hold/mute.",
+      "The agent thanked the customer when returning from hold/mute."],
+    ["4.10","Transfer Info",2,
+      "Clearly explained the transfer and mentioned the department.",
+      "Connected the customer to the correct department/queue and informed the customer where and why they were transferred if applicable.",
+      "Connected the customer to the correct department/queue and informed the customer where and why they were transferred, if applicable."],
+  ]},
+  { key:"knowledge", title:"Knowledge & Resolution", items:[
+    ["5.1","Probing questions",6,
+      "Asked thoughtful questions to fully understand the issue.",
+      "Asked appropriate and complete probing questions relevant to the scenario.",
+      "Asked appropriate and complete probing questions relevant to the scenario."],
+    ["5.2","Avoid Jargon",2,
+      "Used plain language so all customers could follow along.",
+      "The agent did not use any technical or internal vocabulary during the call with non-tech-savvy customers.",
+      "The agent did not use any technical or internal vocabulary during the call with non-tech-savvy customers."],
+    ["5.3","Accurate Info",8,
+      "All shared information was accurate and confirmed.",
+      "Shared inaccurate or unchecked information. Remember to check the KB or with an SME if we are not sure about a topic.",
+      "Shared inaccurate or unchecked information. Remember to check the KB or with an SME if we are not sure about a topic."],
+    ["5.4","Accomplished all requests",8,
+      "Completed all customer requests during the call.",
+      "Accomplished all the customer's requests during the call.",
+      "Accomplished all the customer's requests during the call."],
+    ["5.5","Resolution",10,
+      "Solved the issue through appropriate troubleshooting, taking all required actions to reach the best outcome.",
+      "Resolved the scenario by following the appropriate troubleshooting process. Remember that we should follow the parts replacement procedure described in KB 4363 for parts request tickets. For this scenario, we failed to validate the required information, which is deducted as part of the resolution.",
+      "Resolved the scenario by following the appropriate troubleshooting process."],
+    ["5.6","Callback",8,
+      "Called back promptly after disconnection or as promised.",
+      "Contacted the customer back in case of a disconnection or if a callback was requested by the customer.",
+      "Contacted the customer back in case of a disconnection or if a callback was requested by the customer."],
+    ["5.7","Proper Escalation",6,
+      "Escalated the case to the correct team when required.",
+      "The agent escalated the ticket to the appropriate team if necessary.",
+      "The agent escalated the ticket to the appropriate team if necessary."],
+    ["5.8","Ticket Closed",10,
+      "The ticket was closed appropriately, after the resolution was reached, well done.",
+      "The agent closed the ticket without any resolution.",
+      "The agent closed the ticket without any resolution."],
+    ["5.9","Ticket Open",5,
+      "Ticket was left open/on hold whenever necessary or applicable.",
+      "The agent left the ticket open after the resolution was provided.",
+      "The agent left the ticket open after the resolution was provided."],
+    ["5.10","Educate Customer",5,
+      "The customer was educated about the process to prevent similar issues in the future.",
+      "The agent provided all the necessary information to educate the customer and avoid a future callback.",
+      "The agent provided all the necessary information to educate the customer and avoid a future callback."],
+    ["5.11","Part Coherence",10,
+      "Requested part matched the issue and troubleshooting history.",
+      "The part(s) requested are coherent based on previous ticket history and troubleshooting performed if applicable.",
+      "The part(s) requested are coherent based on previous ticket history and troubleshooting performed, if applicable."],
+    ["5.12","Ticket Follow-Up",8,
+      "Reviewed the ticket within the expected timeframe.",
+      "Followed up on the ticket based on the appropriate or requested follow-up timeframes.",
+      "Followed up on the ticket based on the appropriate or requested follow-up timeframes."],
+    ["5.13","Customer Follow-up",8,
+      "Provided timely updates to the customer by phone or email.",
+      "Updated the customer via email or phone following the appropriate or requested update timeframes.",
+      "Updated the customer via email or phone following the appropriate or requested update timeframes."],
+    ["5.14","Ticket Approval - FU",3,
+      "The agent mentioned the evaluation survey at the end of the call.",
+      "The agent did not mention the evaluation survey at the end of the call.",
+      "The agent did not mention the evaluation survey at the end of the call."],
+  ]},
+  { key:"zero", title:"Zero Call Drivers", items:[
+    ["6.1","No Documentation",0,
+      "Failed to document the interaction.",
+      "Failed to document the interaction."],
+    ["6.2","Professionalism",0,
+      "The agent was unprofessional.",
+      "The agent was unprofessional."],
+    ["6.3","No Assistance",0,
+      "The agent rejected a transfer for a tech support scenario or did not assist the customer at all.",
+      "The agent rejected a transfer for a tech support scenario or did not assist the customer at all."],
+    ["6.4","Disconnected the call",0,
+      "Disconnected the call.",
+      "Disconnected the call."],
+    ["6.5","Line open (1 min)",0,
+      "Left the call line open after the call finished. (1 minute)",
+      "Left the call line open after the call finished. (1 minute)"],
+    ["6.6","Recording disclaimer",0,
+      "Recording disclaimer.",
+      "Recording disclaimer."],
+    ["6.7","Ticket abandonment",0,
+      "Ticket abandonment.",
+      "Ticket abandonment."],
+    ["6.8","Product Safety",0,
+      "The product safety process was not followed if applicable.",
+      "The product safety process was not followed if applicable."],
+    ["6.9","10 Seconds answer",0,
+      "The agent did not complete the greeting within 10 seconds of receiving the call.",
+      "The agent did not complete the greeting within 10 seconds of receiving the call."],
+    ["6.10","Sensitive Info",0,
+      "Released sensitive information to an unknown requestor.",
+      "Released sensitive information to an unknown requestor."],
+    ["6.11","Product Safety Ticket",0,
+      "Did not create a product safety ticket despite it being required.",
+      "Did not create a product safety ticket despite it being required."],
+  ]},
+];
+
+const DEFAULT_NAMES = [
+  "Aaron Ramirez Loria","Adrian Quesada",
+  "Andrea Trejos Flores","Angelo Miguel Espinoza Flores",
+  "Brandon Jesus Navarro Camareno","Christopher Arguedas Solera",
+  "Dariel Acuña Barrantes","Diego Emanuel Mora Trejos",
+  "Isaac Andres Barrientos Varela","Jeffrie Azofeifa",
+  "Jhirelt Mora Calderon","Jorge Lopez Barquero",
+  "Jose Fabio Granados Urena","Sebastian Castro Molina",
+  "Sebastian Espinoza Arias","Steffany Barboza Marin",
+  "Vanessa Alejandra Ulloa Martinez"
+];
+
+const DEFAULT_SUMMARY_TEMPLATE =
+`Hello {{agent}},
+
+You can find the details about your evaluation below:
+
+{{fields}}
+{{deductions}}{{feedback}}{{accomplishments}}____________________________
+Score: {{score}} / 100  ({{earned}} / {{possible}} pts)
+{{zeroline}}`;
+
+const DEFAULT_ITEM_TEMPLATE = `{{icon}} {{text}}{{pts}}`;
+
+let CONFIG = null;
+let ANSWERS = {};
+let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zeroReasons: [] };
+
+// Seed scenarios built from the same defaults the tool shipped with —
+// fully editable afterwards from Configuration > Call Type Scenarios.
+function buildSeedScenarios(){
+  const offBase = {
+    soft: ['2.8','2.9','2.10'],
+    mgmt: ['4.4','4.5','4.6','4.7','4.8','4.9'],
+    knowledge: ['5.1','5.5','5.6','5.7','5.8','5.9','5.10','5.11','5.12','5.13','5.14'],
+  };
+  const docReplacementOff = ['3.3','3.13'];
+  const docNonReplacementOn = ['3.3','3.5','3.16','3.18','3.22','3.2','3.4','3.11','3.13','3.15','3.17'];
+
+  function baseApplicability(docApplies){
+    const map = {};
+    SECTIONS.forEach(sec=>{
+      if(sec.key === 'zero') return;
+      sec.items.forEach(it=>{
+        const id = it[0];
+        if(sec.key === 'doc'){ map[id] = docApplies(id); return; }
+        const offList = offBase[sec.key] || [];
+        map[id] = !offList.includes(id);
+      });
+    });
+    return map;
+  }
+
+  return {
+    order: ['general','replacement','non_replacement'],
+    items: {
+      general: { name: 'General Call', applicability: baseApplicability(id => !docReplacementOff.includes(id)) },
+      replacement: { name: 'Parts Replacement', applicability: baseApplicability(id => !docReplacementOff.includes(id)) },
+      non_replacement: { name: 'Non-Replacement', applicability: baseApplicability(id => docNonReplacementOn.includes(id)) },
+    },
+  };
+}
+
+function sortByApplicability(key){
+  const arr = CONFIG.order[key];
+  const applied = arr.filter(id=>ANSWERS[id]);
+  const notApplied = arr.filter(id=>!ANSWERS[id]);
+  CONFIG.order[key] = applied.concat(notApplied);
+}
+
+function applyScenario(scenarioId){
+  const scenario = CONFIG.scenarios.items[scenarioId];
+  if(!scenario) return;
+  CONFIG.activeScenarioId = scenarioId;
+  ANSWERS = {};
+  SECTIONS.forEach(sec=>{
+    if(sec.key === 'zero') return;
+    CONFIG.order[sec.key].forEach(id=>{
+      if(scenario.applicability[id]) ANSWERS[id] = 'yes';
+    });
+    sortByApplicability(sec.key);
+  });
+}
+
+function resetAnswersToDefault(){
+  applyScenario(CONFIG.activeScenarioId || CONFIG.scenarios.order[0]);
+}
+
+/* ============================================================
+   STORAGE
+   ============================================================ */
+async function loadConfig(){
+  let stored = null;
+  try{
+    const res = await window.storage.get('qa_config_v4');
+    if(res && res.value) stored = JSON.parse(res.value);
+  }catch(e){ /* no saved config yet */ }
+
+  const items = {};
+  const order = {};
+  SECTIONS.forEach(sec=>{
+    order[sec.key] = sec.items.map(it=>it[0]);
+    const isZero = sec.key === 'zero';
+    sec.items.forEach(([id,label,pts,a,b])=>{
+      items[id] = isZero
+        ? { label, pts, reason: a, zeroType: true }
+        : { label, pts, yes: a, no: b, zeroType: false };
+    });
+  });
+
+  CONFIG = {
+    items, order,
+    names: DEFAULT_NAMES.slice(),
+    summaryTemplate: DEFAULT_SUMMARY_TEMPLATE,
+    itemTemplate: DEFAULT_ITEM_TEMPLATE,
+    scenarios: buildSeedScenarios(),
+    activeScenarioId: 'general',
+  };
+
+  if(stored){
+    try{
+      // Restore any custom (non-factory) items first, so they aren't dropped
+      // by the defensive "unknown id" filtering below.
+      if(stored.items){
+        Object.keys(stored.items).forEach(id=>{
+          if(CONFIG.items[id]) return; // factory item, handled in the next pass
+          const src = stored.items[id];
+          if(!src || typeof src.label !== 'string' || !src.label.trim()) return;
+          if(src.zeroType){
+            if(typeof src.reason === 'string') CONFIG.items[id] = { label: src.label, pts: 0, reason: src.reason, zeroType: true };
+          } else if(typeof src.yes === 'string' && typeof src.no === 'string' && typeof src.pts === 'number'){
+            CONFIG.items[id] = { label: src.label, pts: src.pts, yes: src.yes, no: src.no, zeroType: false };
+          }
+        });
+      }
+      if(stored.items){
+        Object.keys(stored.items).forEach(id=>{
+          if(!CONFIG.items[id]) return; // drop unknown/stale ids from old versions
+          const cur = CONFIG.items[id];
+          const src = stored.items[id] || {};
+          const allowed = cur.zeroType ? ['label','reason'] : ['label','yes','no'];
+          allowed.forEach(k=>{ if(typeof src[k] === 'string' && src[k].length) cur[k] = src[k]; });
+        });
+      }
+      if(stored.order){
+        Object.keys(stored.order).forEach(k=>{
+          if(!CONFIG.order[k] || !Array.isArray(stored.order[k])) return;
+          const valid = stored.order[k].filter(id=>CONFIG.items[id]);
+          CONFIG.order[k].forEach(id=>{ if(!valid.includes(id)) valid.push(id); }); // keep any new/missing ids
+          CONFIG.order[k] = valid;
+        });
+      }
+      if(stored.names && Array.isArray(stored.names) && stored.names.length) CONFIG.names = stored.names;
+      if(typeof stored.summaryTemplate === 'string' && stored.summaryTemplate.trim()) CONFIG.summaryTemplate = stored.summaryTemplate;
+      if(typeof stored.itemTemplate === 'string' && stored.itemTemplate.trim()) CONFIG.itemTemplate = stored.itemTemplate;
+      if(stored.scenarios && stored.scenarios.items && Array.isArray(stored.scenarios.order)){
+        const validIds = stored.scenarios.order.filter(id=> stored.scenarios.items[id] && stored.scenarios.items[id].applicability);
+        if(validIds.length){
+          const cleanItems = {};
+          validIds.forEach(id=>{
+            const src = stored.scenarios.items[id];
+            const applicability = {};
+            Object.keys(CONFIG.items).forEach(itemId=>{
+              const cfg = CONFIG.items[itemId];
+              if(cfg.zeroType) return;
+              applicability[itemId] = !!src.applicability[itemId];
+            });
+            cleanItems[id] = { name: typeof src.name === 'string' && src.name.trim() ? src.name : id, applicability };
+          });
+          CONFIG.scenarios = { order: validIds, items: cleanItems };
+        }
+      }
+      if(typeof stored.activeScenarioId === 'string' && CONFIG.scenarios.items[stored.activeScenarioId]){
+        CONFIG.activeScenarioId = stored.activeScenarioId;
+      }
+    }catch(e){ console.error('Ignoring incompatible saved configuration', e); }
+  }
+}
+
+async function saveConfig(){
+  try{ await window.storage.set('qa_config_v4', JSON.stringify(CONFIG)); return true; }
+  catch(e){ return false; }
+}
+
+function showToast(msg){
+  const t = document.getElementById('saveToast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'), 1600);
+}
+
+/* ============================================================
+   RENDER — Evaluation tab
+   ============================================================ */
+function applyRubricSearch(){
+  const q = (document.getElementById('rubricSearch').value || '').trim().toLowerCase();
+  document.getElementById('rubricSearchClear').style.display = q ? 'flex' : 'none';
+
+  document.querySelectorAll('.section-card').forEach(card=>{
+    let anyMatch = false;
+    card.querySelectorAll('.item-card').forEach(item=>{
+      const label = item.querySelector('.lbl').textContent.toLowerCase();
+      const match = !q || label.includes(q);
+      item.classList.toggle('search-hidden', !match);
+      if(match) anyMatch = true;
+    });
+    card.classList.toggle('search-hidden', q && !anyMatch);
+    card.classList.toggle('search-match', !!q && anyMatch);
+    if(q && anyMatch) card.classList.remove('collapsed');
+  });
+}
+
+function renderSections(){
+  const root = document.getElementById('sections');
+  root.innerHTML = '';
+  SECTIONS.forEach((sec, idx)=>{
+    const card = document.createElement('div');
+    card.className = 'section-card';
+    const total = CONFIG.order[sec.key].length;
+
+    const holdToggle = sec.key === 'mgmt' ? `
+      <button class="replacement-toggle ${isHoldActive() ? 'on' : ''}" id="btnHoldToggle" title="Turn all hold/mute rubrics on or off for this call">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 5v14M15 5v14" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+        Hold: ${isHoldActive() ? 'ON' : 'OFF'}
+      </button>` : '';
+
+    card.innerHTML = `
+      <div class="section-head" data-sec="${sec.key}">
+        <div class="num">${idx+1}</div>
+        <h3>${sec.title}</h3>
+        ${holdToggle}
+        <span class="count" data-count="${sec.key}">0 / ${total}</span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="items" data-items="${sec.key}"></div>
+    `;
+    root.appendChild(card);
+    card.querySelector('.section-head').addEventListener('click', (e)=>{
+      if(e.target.closest('#btnHoldToggle')) return;
+      card.classList.toggle('collapsed');
+    });
+    const holdBtn = card.querySelector('#btnHoldToggle');
+    if(holdBtn){
+      holdBtn.addEventListener('click', (e)=>{
+        e.stopPropagation();
+        toggleHoldGroup();
+      });
+    }
+
+    const itemsWrap = card.querySelector(`[data-items="${sec.key}"]`);
+    CONFIG.order[sec.key].forEach(id=>{
+      try{
+        const cfg = CONFIG.items[id];
+        if(!cfg) return;
+        const row = document.createElement('div');
+        row.className = 'item-card' + (!cfg.zeroType && !ANSWERS[id] ? ' not-applicable' : '');
+        row.dataset.id = id;
+        const fbBtn = `
+              <button class="pill warn" data-id="${id}" data-val="feedback" title="Feedback only (no score impact)">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 22 20H2L12 3.5Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 9.5v3.6M12 16.2h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+              </button>`;
+        if(cfg.zeroType){
+          row.innerHTML = `
+            <span class="lbl">${cfg.label}</span>
+            <span class="pts zero">auto-0</span>
+            <div class="ic-controls">
+              <button class="pill no" data-id="${id}" data-val="no" title="Triggered">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              ${fbBtn}
+            </div>
+          `;
+        }else{
+          row.innerHTML = `
+            <span class="lbl">${cfg.label}</span>
+            <span class="pts">${cfg.pts}pt</span>
+            <div class="ic-controls">
+              <button class="pill yes" data-id="${id}" data-val="yes" title="Met">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button class="pill no" data-id="${id}" data-val="no" title="Not met">
+                <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              ${fbBtn}
+            </div>
+          `;
+        }
+        itemsWrap.appendChild(row);
+      }catch(e){ console.error('Skipping broken item', id, e); }
+    });
+  });
+
+  root.querySelectorAll('.pill').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const id = btn.dataset.id, val = btn.dataset.val;
+      ANSWERS[id] = (ANSWERS[id] === val) ? undefined : val;
+      if(ANSWERS[id] === undefined) delete ANSWERS[id];
+      refreshEval();
+    });
+  });
+
+  applyRubricSearch();
+}
+
+function refreshEval(){
+ try{
+  SECTIONS.forEach(sec=>{
+    let answered = 0;
+    CONFIG.order[sec.key].forEach(id=>{ if(ANSWERS[id]) answered++; });
+    const el = document.querySelector(`[data-count="${sec.key}"]`);
+    if(el) el.textContent = `${answered} / ${CONFIG.order[sec.key].length}`;
+  });
+  document.querySelectorAll('.pill').forEach(btn=>{
+    const id = btn.dataset.id, val = btn.dataset.val;
+    btn.classList.toggle('active', ANSWERS[id] === val);
+  });
+  document.querySelectorAll('.item-card[data-id]').forEach(row=>{
+    const cfg = CONFIG.items[row.dataset.id];
+    if(!cfg || cfg.zeroType) return;
+    row.classList.toggle('not-applicable', !ANSWERS[row.dataset.id]);
+  });
+
+  let earned = 0, possible = 0, count = 0, total = 0, zeroTriggered = false;
+  let zeroReasons = [];
+  SECTIONS.forEach(sec=>{
+    CONFIG.order[sec.key].forEach(id=>{
+      total++;
+      const cfg = CONFIG.items[id];
+      if(!cfg) return;
+      const val = ANSWERS[id];
+      if(val) count++;
+      if(cfg.zeroType){
+        if(val === 'no'){ zeroTriggered = true; zeroReasons.push(cfg.label); }
+        return;
+      }
+      if(val === 'yes'){ earned += cfg.pts; possible += cfg.pts; }
+      else if(val === 'no'){ possible += cfg.pts; }
+      // 'feedback' or unanswered items stay outside the pool entirely
+    });
+  });
+  let score = possible > 0 ? Math.round((earned / possible) * 100) : 100;
+  if(zeroTriggered) score = 0;
+
+  LAST_STATE = { score, earned, possible, zeroTriggered, zeroReasons: zeroReasons.slice() };
+
+  document.getElementById('statScore').textContent = score;
+  document.getElementById('statEarned').textContent = earned;
+  document.getElementById('statPossible').textContent = possible;
+  document.getElementById('statCount').textContent = `${count} / ${total}`;
+  document.getElementById('statBar').style.width = score + '%';
+  document.getElementById('statBar').parentElement.classList.toggle('zeroed', zeroTriggered);
+  const flag = document.getElementById('zeroFlag');
+  flag.classList.toggle('show', zeroTriggered);
+  if(zeroTriggered) flag.querySelector('span').textContent = 'Automatic zero — ' + zeroReasons.join('; ');
+
+  buildOutput(score, earned, possible, zeroTriggered);
+ }catch(e){ console.error('refreshEval failed', e); }
+}
+
+function ptsSuffix(cfg, kind){
+  if(cfg.zeroType) return ' (Auto-Zero)';
+  if(kind === 'no') return ' (-' + cfg.pts + 'pts)';
+  return ' (' + cfg.pts + 'pts)';
+}
+function noText(cfg){
+  return cfg.zeroType ? cfg.reason : cfg.no;
+}
+function formatLine(icon, cfg, text, kind){
+  return CONFIG.itemTemplate
+    .replace(/{{icon}}/g, icon)
+    .replace(/{{label}}/g, cfg.label)
+    .replace(/{{text}}/g, text)
+    .replace(/{{pts}}/g, ptsSuffix(cfg, kind));
+}
+
+function buildOutput(score, earned, possible, zeroTriggered){
+ try{
+  const rawAgent = document.getElementById('fAgent').value.trim();
+  const rawEvaluator = document.getElementById('fEvaluator').value.trim();
+  const rawCaller = document.getElementById('fCaller').value.trim();
+  const rawTicket = document.getElementById('fTicket').value.trim();
+  const rawOrder = document.getElementById('fOrder').value.trim();
+  const rawReason = document.getElementById('fReason').value.trim();
+
+  let fieldsBlock = [];
+  fieldsBlock.push('QA Evaluator: ' + (rawEvaluator || 'N/A'));
+  fieldsBlock.push('Caller: ' + (rawCaller || 'N/A'));
+  fieldsBlock.push('Ticket ID: ' + (rawTicket || 'N/A'));
+  fieldsBlock.push('Call Reason: ' + (rawReason || 'N/A'));
+  if(rawOrder) fieldsBlock.push('Order ID: ' + rawOrder);
+
+  const sections = computeSectionBreakdown();
+
+  function sectionGroups(pickItems){
+    const blocks = [];
+    sections.forEach(sec=>{
+      const items = pickItems(sec);
+      if(!items.length) return;
+      const lines = items.map(it=> formatLine(it.icon, { label: it.label, pts: it.pts, zeroType: sec.isZeroSection }, it.text, it.kind));
+      blocks.push('*' + sec.title + '*\n' + lines.join('\n\n'));
+    });
+    return blocks;
+  }
+
+  const deductionBlocks = sectionGroups(sec => [
+    ...sec.deductions.map(d=> ({ ...d, icon: '\uD83D\uDEA9', kind: 'no' })),
+    ...sec.zeroList.map(d=> ({ ...d, icon: '\uD83D\uDEA9', kind: 'no' })),
+  ]);
+  const feedbackBlocks = sectionGroups(sec => [
+    ...sec.feedbacks.map(d=> ({ ...d, icon: '\u26A0\uFE0F', kind: 'feedback' })),
+    ...sec.zeroFeedback.map(d=> ({ ...d, icon: '\u26A0\uFE0F', kind: 'feedback' })),
+  ]);
+  const accompBlocks = sectionGroups(sec => sec.accomplishments.map(d=> ({ ...d, icon: '\u2705', kind: 'yes' })));
+
+  function namedBlock(title, blocks){
+    if(!blocks.length) return '';
+    return '____________________________\n**' + title + '**\n\n' + blocks.join('\n\n') + '\n';
+  }
+
+  const deductions = namedBlock('Deductions', deductionBlocks);
+  const feedback = namedBlock('Feedback', feedbackBlocks);
+  const accomplishments = namedBlock('Accomplishments', accompBlocks);
+
+  const zeroline = zeroTriggered ? 'AUTOMATIC ZERO — zero call driver triggered.' : '';
+
+  const out = CONFIG.summaryTemplate
+    .replace(/{{fields}}/g, fieldsBlock.join('\n'))
+    .replace(/{{agent}}/g, rawAgent || 'there')
+    .replace(/{{evaluator}}/g, rawEvaluator || 'N/A')
+    .replace(/{{caller}}/g, rawCaller || 'N/A')
+    .replace(/{{ticket}}/g, rawTicket || 'N/A')
+    .replace(/{{order}}/g, rawOrder || 'N/A')
+    .replace(/{{reason}}/g, rawReason || 'N/A')
+    .replace(/{{score}}/g, score)
+    .replace(/{{earned}}/g, earned)
+    .replace(/{{possible}}/g, possible)
+    .replace(/{{accomplishments}}/g, accomplishments)
+    .replace(/{{deductions}}/g, deductions)
+    .replace(/{{feedback}}/g, feedback)
+    .replace(/{{zeroline}}/g, zeroline);
+
+  document.getElementById('output').value = out.trim();
+ }catch(e){ console.error('buildOutput failed', e); }
+}
+
+/* ---------- Agent autocomplete ---------- */
+function setupAutocomplete(){
+  const input = document.getElementById('fAgent');
+  const list = document.getElementById('agentList');
+  let hiIndex = -1;
+
+  function render(matches){
+    list.innerHTML = '';
+    if(!matches.length){
+      list.innerHTML = '<div class="autocomplete-empty">No matching agents</div>';
+    }else{
+      matches.forEach((name,i)=>{
+        const d = document.createElement('div');
+        d.className = 'autocomplete-item' + (i===hiIndex ? ' hi':'');
+        d.textContent = name;
+        d.addEventListener('mousedown', (e)=>{ e.preventDefault(); input.value = name; list.classList.remove('open'); refreshEval(); });
+        list.appendChild(d);
+      });
+    }
+    list.classList.add('open');
+  }
+  function matchesFor(q){
+    q = q.trim().toLowerCase();
+    if(!q) return CONFIG.names.slice();
+    return CONFIG.names.filter(n=>n.toLowerCase().startsWith(q) || n.toLowerCase().split(' ').some(p=>p.startsWith(q)));
+  }
+  input.addEventListener('input', ()=>{ hiIndex=-1; render(matchesFor(input.value)); refreshEval(); });
+  input.addEventListener('focus', ()=> render(matchesFor(input.value)));
+  input.addEventListener('keydown', (e)=>{
+    const items = Array.from(list.querySelectorAll('.autocomplete-item'));
+    if(e.key==='ArrowDown'){ e.preventDefault(); hiIndex = Math.min(items.length-1, hiIndex+1); render(matchesFor(input.value)); }
+    else if(e.key==='ArrowUp'){ e.preventDefault(); hiIndex = Math.max(0, hiIndex-1); render(matchesFor(input.value)); }
+    else if(e.key==='Enter'){ if(hiIndex>=0 && items[hiIndex]){ input.value = items[hiIndex].textContent; list.classList.remove('open'); refreshEval(); } }
+    else if(e.key==='Escape'){ list.classList.remove('open'); }
+  });
+  document.addEventListener('click', (e)=>{ if(!list.contains(e.target) && e.target!==input) list.classList.remove('open'); });
+}
+
+/* ============================================================
+   RENDER — Configuration tab
+   ============================================================ */
+function renderConfigNames(){
+  const wrap = document.getElementById('cfgNames');
+  wrap.innerHTML = '';
+  CONFIG.names.forEach((name, i)=>{
+    const chip = document.createElement('div');
+    chip.className = 'name-chip';
+    chip.innerHTML = `<span>${name}</span><button title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>`;
+    chip.querySelector('button').addEventListener('click', ()=>{ CONFIG.names.splice(i,1); renderConfigNames(); });
+    wrap.appendChild(chip);
+  });
+}
+
+function renderConfigNames(){
+  const wrap = document.getElementById('cfgNames');
+  wrap.innerHTML = '';
+  CONFIG.names.forEach((name, i)=>{
+    const chip = document.createElement('div');
+    chip.className = 'name-chip';
+    chip.innerHTML = `<span>${name}</span><button title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>`;
+    chip.querySelector('button').addEventListener('click', ()=>{ CONFIG.names.splice(i,1); renderConfigNames(); });
+    wrap.appendChild(chip);
+  });
+}
+
+/* ---------- Call type scenarios ---------- */
+// Hold/mute is a common variable that cuts across every call type, so it
+// gets its own quick group toggle instead of being tied to a scenario.
+const HOLD_IDS = ['4.4','4.5','4.6','4.7','4.8','4.9'];
+
+function isHoldActive(){
+  return HOLD_IDS.every(id => !!ANSWERS[id]);
+}
+function toggleHoldGroup(){
+  if(isHoldActive()){
+    HOLD_IDS.forEach(id => { delete ANSWERS[id]; });
+  }else{
+    HOLD_IDS.forEach(id => { ANSWERS[id] = 'yes'; });
+  }
+  renderSections();
+  refreshEval();
+}
+
+let editingScenarioId = null;
+
+function slugify(name){
+  const base = name.toLowerCase().replace(/[^a-z0-9]+/g,'_').replace(/^_+|_+$/g,'') || 'scenario';
+  let id = base, n = 1;
+  while(CONFIG.scenarios.items[id]) id = base + '_' + (++n);
+  return id;
+}
+
+function renderScenarioChips(){
+  const wrap = document.getElementById('scenarioChips');
+  wrap.innerHTML = '';
+  CONFIG.scenarios.order.forEach(id=>{
+    const s = CONFIG.scenarios.items[id];
+    const isActive = id === CONFIG.activeScenarioId;
+    const isEditing = id === editingScenarioId;
+    const chip = document.createElement('div');
+    chip.className = 'scenario-chip' + (isActive ? ' active' : '') + (isEditing ? ' editing' : '');
+    chip.dataset.id = id;
+    chip.innerHTML = (isActive ? '<span class="active-dot" title="Currently active"></span>' : '') + s.name;
+    chip.addEventListener('click', ()=>{
+      editingScenarioId = id;
+      renderScenarioChips();
+      renderScenarioEditSelect();
+      renderScenarioApplicability();
+    });
+    wrap.appendChild(chip);
+  });
+}
+
+function renderScenarioEditSelect(){
+  if(!editingScenarioId || !CONFIG.scenarios.items[editingScenarioId]){
+    editingScenarioId = CONFIG.activeScenarioId || CONFIG.scenarios.order[0];
+  }
+  const isActive = editingScenarioId === CONFIG.activeScenarioId;
+  document.getElementById('scenarioEditingName').textContent =
+    'Editing: ' + CONFIG.scenarios.items[editingScenarioId].name + (isActive ? ' (active now)' : '');
+  document.getElementById('scenarioRenameInput').value = CONFIG.scenarios.items[editingScenarioId].name;
+  document.getElementById('btnScenarioSetActive').disabled = isActive;
+  document.getElementById('btnScenarioSetActive').textContent = isActive ? 'Active now' : 'Set as active';
+}
+
+function renderScenarioApplicability(){
+  const root = document.getElementById('scenarioApplicability');
+  root.innerHTML = '';
+  const scenario = CONFIG.scenarios.items[editingScenarioId];
+  if(!scenario) return;
+  SECTIONS.forEach(sec=>{
+    if(sec.key === 'zero') return;
+    const title = document.createElement('div');
+    title.className = 'scenario-applic-section-title';
+    title.textContent = sec.title;
+    root.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'scenario-applic-grid';
+    CONFIG.order[sec.key].forEach(id=>{
+      const cfg = CONFIG.items[id];
+      if(!cfg) return;
+      const label = cfg.label;
+      const on = !!scenario.applicability[id];
+      const row = document.createElement('div');
+      row.className = 'scenario-applic-item';
+      row.innerHTML = `<span>${label}</span><div class="scenario-applic-switch ${on?'on':''}" data-id="${id}"></div>`;
+      grid.appendChild(row);
+    });
+    root.appendChild(grid);
+  });
+
+  root.querySelectorAll('.scenario-applic-switch').forEach(sw=>{
+    sw.addEventListener('click', ()=>{
+      const id = sw.dataset.id;
+      scenario.applicability[id] = !scenario.applicability[id];
+      sw.classList.toggle('on', scenario.applicability[id]);
+    });
+  });
+}
+
+function refreshScenarioUI(){
+  renderScenarioChips();
+  renderScenarioEditSelect();
+  renderScenarioApplicability();
+  renderScenarioSelect();
+}
+
+function renderConfigSections(){
+  const root = document.getElementById('cfgSections');
+  root.innerHTML = '';
+  SECTIONS.forEach(sec=>{
+    const title = document.createElement('div');
+    title.className = 'cfg-section-title';
+    title.textContent = sec.title;
+    root.appendChild(title);
+
+    const grid = document.createElement('div');
+    grid.className = 'cfg-grid';
+    grid.dataset.sec = sec.key;
+    root.appendChild(grid);
+
+    CONFIG.order[sec.key].forEach(id=>{
+      const cfg = CONFIG.items[id];
+      const box = document.createElement('div');
+      box.className = 'cfg-item';
+      box.dataset.id = id;
+      box.dataset.sec = sec.key;
+      box.draggable = false;
+
+      const textsHtml = cfg.zeroType ? `
+        <div class="cfg-texts">
+          <div style="grid-column:1 / -1;">
+            <label class="n">Reason (shown when triggered)</label>
+            <textarea data-id="${id}" data-field="reason">${cfg.reason}</textarea>
+          </div>
+        </div>
+      ` : `
+        <div class="cfg-texts">
+          <div>
+            <label class="y">Met (yes) text</label>
+            <textarea data-id="${id}" data-field="yes">${cfg.yes}</textarea>
+          </div>
+          <div>
+            <label class="n">Not met (no) text</label>
+            <textarea data-id="${id}" data-field="no">${cfg.no}</textarea>
+          </div>
+        </div>
+      `;
+
+      box.innerHTML = `
+        <div class="cfg-item-top">
+          <span class="drag-handle" title="Drag to reorder or move to another box">
+            <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/><circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/><circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/></svg>
+          </span>
+          <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
+          <input class="cfg-label" data-id="${id}" value="${cfg.label.replace(/"/g,'&quot;')}">
+        </div>
+        ${textsHtml}
+        <div class="cfg-feedback-note">Feedback always reuses the ${cfg.zeroType ? 'Reason' : 'Not met (no)'} text above, marked with ⚠️ instead of 🚩.</div>
+      `;
+      grid.appendChild(box);
+    });
+  });
+
+  root.querySelectorAll('.cfg-label').forEach(inp=>{
+    inp.addEventListener('input', ()=>{ CONFIG.items[inp.dataset.id].label = inp.value; });
+  });
+  root.querySelectorAll('.cfg-texts textarea').forEach(ta=>{
+    ta.addEventListener('input', ()=>{ CONFIG.items[ta.dataset.id][ta.dataset.field] = ta.value; });
+  });
+
+  setupDragAndDrop(root);
+}
+
+/* ---------- Drag & drop reordering across boxes ---------- */
+let dragState = { id: null, from: null };
+
+function setupDragAndDrop(root){
+  root.querySelectorAll('.cfg-item').forEach(card=>{
+    const handle = card.querySelector('.drag-handle');
+    if(handle){
+      handle.addEventListener('mousedown', ()=>{ card.draggable = true; });
+      handle.addEventListener('touchstart', ()=>{ card.draggable = true; }, {passive:true});
+    }
+    card.addEventListener('dragstart', (e)=>{
+      dragState = { id: card.dataset.id, from: card.dataset.sec };
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      try{ e.dataTransfer.setData('text/plain', card.dataset.id); }catch(err){}
+    });
+    card.addEventListener('dragend', ()=>{
+      card.classList.remove('dragging');
+      card.draggable = false;
+      root.querySelectorAll('.cfg-grid').forEach(g=>g.classList.remove('drag-over'));
+    });
+    card.addEventListener('mouseup', ()=>{ card.draggable = false; });
+  });
+
+  root.querySelectorAll('.cfg-grid').forEach(grid=>{
+    grid.addEventListener('dragover', (e)=>{
+      e.preventDefault();
+      e.dataTransfer.dropEffect = 'move';
+      grid.classList.add('drag-over');
+    });
+    grid.addEventListener('dragleave', (e)=>{
+      if(!grid.contains(e.relatedTarget)) grid.classList.remove('drag-over');
+    });
+    grid.addEventListener('drop', (e)=>{
+      e.preventDefault();
+      grid.classList.remove('drag-over');
+      if(!dragState.id) return;
+      const toKey = grid.dataset.sec;
+
+      let beforeId = null;
+      const cards = Array.from(grid.querySelectorAll('.cfg-item:not(.dragging)'));
+      for(const c of cards){
+        const rect = c.getBoundingClientRect();
+        if(e.clientY < rect.top + rect.height/2){ beforeId = c.dataset.id; break; }
+      }
+
+      const fromArr = CONFIG.order[dragState.from];
+      const i = fromArr.indexOf(dragState.id);
+      if(i > -1) fromArr.splice(i,1);
+
+      const toArr = CONFIG.order[toKey];
+      if(beforeId){
+        const bIdx = toArr.indexOf(beforeId);
+        toArr.splice(bIdx === -1 ? toArr.length : bIdx, 0, dragState.id);
+      }else{
+        toArr.push(dragState.id);
+      }
+
+      dragState = { id: null, from: null };
+      renderConfigSections();
+    });
+  });
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function switchTab(view){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  const evalEl = document.getElementById('view-eval');
+  const cfgEl = document.getElementById('view-config');
+  const showEl = view==='eval' ? evalEl : cfgEl;
+  const hideEl = view==='eval' ? cfgEl : evalEl;
+
+  const populate = ()=>{
+    if(view==='config'){
+      renderConfigNames(); renderConfigSections();
+      document.getElementById('cfgSummaryTemplate').value = CONFIG.summaryTemplate;
+      document.getElementById('cfgItemTemplate').value = CONFIG.itemTemplate;
+    refreshScenarioUI();
+    }
+    if(view==='eval'){ renderSections(); refreshEval(); }
+  };
+
+  const revealShowEl = ()=>{
+    showEl.style.display = 'block';
+    showEl.classList.add('view-fade');
+    void showEl.offsetWidth;
+    requestAnimationFrame(()=> showEl.classList.remove('view-fade'));
+  };
+
+  const hideVisible = getComputedStyle(hideEl).display !== 'none';
+  if(!hideVisible){
+    populate();
+    revealShowEl();
+    return;
+  }
+
+  hideEl.classList.add('view-fade');
+  setTimeout(()=>{
+    hideEl.style.display = 'none';
+    hideEl.classList.remove('view-fade');
+    populate();
+    revealShowEl();
+  }, 150);
+}
+
+function renderScenarioSelect(){
+  const sel = document.getElementById('scenarioSelect');
+  sel.innerHTML = CONFIG.scenarios.order.map(id=>{
+    const s = CONFIG.scenarios.items[id];
+    return `<option value="${id}" ${id===CONFIG.activeScenarioId?'selected':''}>${s.name}</option>`;
+  }).join('');
+}
+
+const ITERO_LOGO_WHITE_B64 = "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";
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+}
+
+function loadScriptOnce(src){
+  return new Promise((resolve, reject)=>{
+    if(document.querySelector('script[data-src="'+src+'"]')){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = src;
+    s.dataset.src = src;
+    s.onload = () => resolve();
+    s.onerror = () => reject(new Error('Failed to load ' + src));
+    document.head.appendChild(s);
+  });
+}
+
+function computeSectionBreakdown(){
+  return SECTIONS.map(sec=>{
+    let earned = 0, possible = 0;
+    const deductions = [];
+    const accomplishments = [];
+    const feedbacks = [];
+    const zeroList = [];
+    const zeroFeedback = [];
+    CONFIG.order[sec.key].forEach(id=>{
+      const cfg = CONFIG.items[id];
+      if(!cfg) return;
+      const val = ANSWERS[id];
+      if(cfg.zeroType){
+        if(val === 'no') zeroList.push({ label: cfg.label, text: cfg.reason, pts: cfg.pts });
+        else if(val === 'feedback') zeroFeedback.push({ label: cfg.label, text: cfg.reason, pts: cfg.pts });
+        return;
+      }
+      if(val === 'yes'){ earned += cfg.pts; possible += cfg.pts; accomplishments.push({ label: cfg.label, text: cfg.yes, pts: cfg.pts }); }
+      else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, text: cfg.no, pts: cfg.pts }); }
+      else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, text: cfg.no, pts: cfg.pts }); }
+    });
+    return {
+      key: sec.key, title: sec.title, earned, possible,
+      deductions, accomplishments, feedbacks, zeroList, zeroFeedback,
+      isZeroSection: sec.key === 'zero',
+    };
+  });
+}
+
+function buildOutcomeHTML(){
+  const sections = computeSectionBreakdown();
+  const rawAgent = document.getElementById('fAgent').value.trim() || 'Agent';
+  const rawEvaluator = document.getElementById('fEvaluator').value.trim() || 'N/A';
+  const rawTicket = document.getElementById('fTicket').value.trim() || 'N/A';
+  const rawOrder = document.getElementById('fOrder').value.trim();
+  const rawReason = document.getElementById('fReason').value.trim() || 'N/A';
+  const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+
+  const zeroTriggered = LAST_STATE.zeroTriggered;
+  const score = LAST_STATE.score;
+  const ringColor = zeroTriggered ? '#e5544a' : (score >= 85 ? '#2dd4bf' : score >= 60 ? '#f0ad2e' : '#e5544a');
+  const ringPct = zeroTriggered ? 100 : score;
+  const FLAG = "🚩", WARN = "⚠️";
+
+  let html = '';
+  html += '<div class="oc-header"><img src="data:image/png;base64,' + ITERO_LOGO_WHITE_B64 + '" alt="iTero">' +
+    '<div class="oc-header-title"><div class="t1">QA Evaluation</div><div class="t2">iTero Tech Support</div></div></div>';
+
+  html += '<div class="oc-top-row">' +
+    '<div class="oc-meta-grid">' +
+      '<div class="oc-meta-item"><div class="lbl">Agent</div><div class="val">' + escapeHtml(rawAgent) + '</div></div>' +
+      '<div class="oc-meta-item"><div class="lbl">QA Evaluator</div><div class="val">' + escapeHtml(rawEvaluator) + '</div></div>' +
+      '<div class="oc-meta-item"><div class="lbl">Date</div><div class="val">' + dateStr + '</div></div>' +
+      '<div class="oc-meta-item"><div class="lbl">Ticket ID</div><div class="val">' + escapeHtml(rawTicket) + '</div></div>' +
+      '<div class="oc-meta-item"><div class="lbl">Call Reason</div><div class="val">' + escapeHtml(rawReason) + '</div></div>' +
+      '<div class="oc-meta-item"><div class="lbl">Order ID</div><div class="val">' + escapeHtml(rawOrder || 'N/A') + '</div></div>' +
+    '</div>' +
+    '<div class="oc-score-col">' +
+      '<div class="oc-score-ring" style="--ring-pct:' + Math.max(0, Math.min(100, ringPct)) + '; --ring-color:' + ringColor + ';">' +
+        '<div class="oc-score-ring-inner"><b>' + score + '</b><span>/ 100</span></div>' +
+      '</div>' +
+      '<div class="oc-score-points">' + LAST_STATE.earned + ' / ' + LAST_STATE.possible + ' pts</div>' +
+    '</div>' +
+  '</div>';
+
+  let flagsHtml = '';
+  sections.forEach(sec=>{
+    sec.deductions.forEach(d=>{
+      flagsHtml += '<div class="oc-flag-item"><span class="flag">' + FLAG + '</span><span><b>' + escapeHtml(d.label) + ' (-' + d.pts + 'pts):</b> ' + escapeHtml(d.text) + '</span></div>';
+    });
+    sec.zeroList.forEach(d=>{
+      flagsHtml += '<div class="oc-flag-item"><span class="flag">' + FLAG + '</span><span><b>' + escapeHtml(d.label) + ' (Auto-Zero):</b> ' + escapeHtml(d.text) + '</span></div>';
+    });
+  });
+  let feedbackHtml = '';
+  sections.forEach(sec=>{
+    sec.feedbacks.forEach(d=>{
+      feedbackHtml += '<div class="oc-flag-item oc-flag-feedback"><span class="flag">' + WARN + '</span><span><b>' + escapeHtml(d.label) + ':</b> ' + escapeHtml(d.text) + '</span></div>';
+    });
+    sec.zeroFeedback.forEach(d=>{
+      feedbackHtml += '<div class="oc-flag-item oc-flag-feedback"><span class="flag">' + WARN + '</span><span><b>' + escapeHtml(d.label) + ':</b> ' + escapeHtml(d.text) + '</span></div>';
+    });
+  });
+
+  if(flagsHtml || feedbackHtml){
+    html += '<div class="oc-flags-box">' + flagsHtml + feedbackHtml + '</div>';
+  }
+
+  html += '<div class="oc-sections-box">';
+  sections.forEach(sec=>{
+    if(sec.isZeroSection) return;
+    if(sec.possible === 0) return;
+    const pct = Math.round((sec.earned / sec.possible) * 100);
+    html += '<div class="oc-section-row">' +
+      '<div class="oc-section-row-top"><span class="name">' + escapeHtml(sec.title) + '</span><span class="pct">' + pct + '%</span></div>' +
+      '<div class="oc-bar"><div style="width:' + pct + '%"></div></div>' +
+    '</div>';
+  });
+  html += '</div>';
+
+  document.getElementById('outcomeCapture').innerHTML = html;
+}
+async function init(){
+
+  await loadConfig();
+  resetAnswersToDefault();
+  renderScenarioSelect();
+
+  document.getElementById('scenarioSelect').addEventListener('change', (e)=>{
+    applyScenario(e.target.value);
+    renderSections();
+    refreshEval();
+    showToast('Call type: ' + CONFIG.scenarios.items[e.target.value].name);
+  });
+
+  document.querySelectorAll('.tab-btn').forEach(b=> b.addEventListener('click', ()=>switchTab(b.dataset.view)));
+
+  document.getElementById('btnSummaryHelp').addEventListener('click', ()=>{
+    document.getElementById('summaryHelpOverlay').classList.add('show');
+  });
+  document.getElementById('btnCloseSummaryHelp').addEventListener('click', ()=>{
+    document.getElementById('summaryHelpOverlay').classList.remove('show');
+  });
+  document.getElementById('summaryHelpOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'summaryHelpOverlay') e.currentTarget.classList.remove('show');
+  });
+
+  document.getElementById('themeSwitch').addEventListener('click', ()=>{
+    const html = document.documentElement;
+    const next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    document.getElementById('iconMoon').classList.toggle('on', next==='dark');
+    document.getElementById('iconSun').classList.toggle('on', next==='light');
+  });
+
+  ['fAgent','fEvaluator','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', refreshEval);
+  });
+
+  document.getElementById('btnCopy').addEventListener('click', ()=>{
+    const ta = document.getElementById('output');
+    ta.select();
+    navigator.clipboard.writeText(ta.value).then(()=> showToast('Summary copied')).catch(()=> document.execCommand('copy'));
+  });
+
+  document.getElementById('btnClear').addEventListener('click', ()=>{
+    resetAnswersToDefault();
+    ['fAgent','fEvaluator','fCaller','fTicket','fOrder','fReason'].forEach(id=> document.getElementById(id).value = '');
+    refreshEval();
+    showToast('Reset — everything marked as Met again');
+  });
+
+  document.getElementById('btnOutcomeReport').addEventListener('click', ()=>{
+    buildOutcomeHTML();
+    document.getElementById('outcomeOverlay').classList.add('show');
+  });
+  document.getElementById('btnCloseOutcome').addEventListener('click', ()=>{
+    document.getElementById('outcomeOverlay').classList.remove('show');
+  });
+  document.getElementById('outcomeOverlay').addEventListener('click', (e)=>{
+    if(e.target.id === 'outcomeOverlay') e.currentTarget.classList.remove('show');
+  });
+  async function renderOutcomeCanvas(){
+    if(typeof html2canvas === 'undefined'){
+      await loadScriptOnce('https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js');
+    }
+    const target = document.getElementById('outcomeCapture');
+    return html2canvas(target, { backgroundColor: '#ffffff', scale: 2, useCORS: true });
+  }
+
+  document.getElementById('btnCopyOutcomeImage').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnCopyOutcomeImage');
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Copying...';
+    try{
+      const canvas = await renderOutcomeCanvas();
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+      if(!blob) throw new Error('No blob produced');
+      await navigator.clipboard.write([ new ClipboardItem({ 'image/png': blob }) ]);
+      showToast('Image copied — paste it (Ctrl/Cmd+V) directly into your email');
+    }catch(err){
+      console.error(err);
+      showToast('Could not copy the image — try Download instead');
+    }
+    btn.disabled = false;
+    btn.innerHTML = original;
+  });
+
+  document.getElementById('btnDownloadOutcome').addEventListener('click', async ()=>{
+    const btn = document.getElementById('btnDownloadOutcome');
+    const original = btn.innerHTML;
+    btn.disabled = true;
+    btn.textContent = 'Preparing...';
+    try{
+      const canvas = await renderOutcomeCanvas();
+      const link = document.createElement('a');
+      const agentSlug = (document.getElementById('fAgent').value.trim() || 'agent').replace(/\s+/g, '_');
+      link.download = 'QA_Outcome_' + agentSlug + '.png';
+      link.href = canvas.toDataURL('image/png');
+      link.click();
+      showToast('Image downloaded');
+    }catch(err){
+      console.error(err);
+      showToast('Could not generate the image — check your internet connection and try again');
+    }
+    btn.disabled = false;
+    btn.innerHTML = original;
+  });
+
+  document.getElementById('btnSaveCfg').addEventListener('click', async ()=>{
+    CONFIG.summaryTemplate = document.getElementById('cfgSummaryTemplate').value;
+    CONFIG.itemTemplate = document.getElementById('cfgItemTemplate').value;
+    const ok = await saveConfig();
+    showToast(ok ? 'Configuration saved' : 'Saved locally (storage unavailable)');
+    renderSections(); refreshEval();
+  });
+
+  document.getElementById('btnSaveScenarios').addEventListener('click', async ()=>{
+    const ok = await saveConfig();
+    showToast(ok ? 'Scenarios saved' : 'Saved locally (storage unavailable)');
+  });
+
+  function addNameToList(){
+    const input = document.getElementById('newNameInput');
+    const v = input.value.trim();
+    if(!v) return;
+    if(CONFIG.names.includes(v)){
+      showToast(v + ' is already in the list');
+    }else{
+      CONFIG.names.push(v);
+      renderConfigNames();
+      showToast(v + ' added');
+    }
+    input.value = '';
+  }
+  document.getElementById('newNameInput').addEventListener('keydown', (e)=>{
+    if(e.key==='Enter') addNameToList();
+  });
+  document.getElementById('btnAddName').addEventListener('click', addNameToList);
+
+  function addScenario(){
+    const input = document.getElementById('newScenarioInput');
+    const name = input.value.trim();
+    if(!name) return;
+    const id = slugify(name);
+    const allTrue = {};
+    Object.keys(CONFIG.items).forEach(itemId=>{ if(!CONFIG.items[itemId].zeroType) allTrue[itemId] = true; });
+    CONFIG.scenarios.items[id] = { name, applicability: allTrue };
+    CONFIG.scenarios.order.push(id);
+    editingScenarioId = id;
+    input.value = '';
+    refreshScenarioUI();
+    showToast('Scenario "' + name + '" created');
+  }
+  document.getElementById('newScenarioInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') addScenario(); });
+  document.getElementById('btnAddScenario').addEventListener('click', addScenario);
+
+  document.getElementById('btnScenarioSetActive').addEventListener('click', ()=>{
+    if(editingScenarioId === CONFIG.activeScenarioId) return;
+    applyScenario(editingScenarioId);
+    renderSections();
+    refreshEval();
+    refreshScenarioUI();
+    showToast('Active call type: ' + CONFIG.scenarios.items[editingScenarioId].name);
+  });
+
+  document.getElementById('btnScenarioRename').addEventListener('click', ()=>{
+    const name = document.getElementById('scenarioRenameInput').value.trim();
+    if(!name) return;
+    CONFIG.scenarios.items[editingScenarioId].name = name;
+    refreshScenarioUI();
+    showToast('Scenario renamed');
+  });
+
+  document.getElementById('btnScenarioDuplicate').addEventListener('click', ()=>{
+    const src = CONFIG.scenarios.items[editingScenarioId];
+    const name = src.name + ' copy';
+    const id = slugify(name);
+    CONFIG.scenarios.items[id] = { name, applicability: Object.assign({}, src.applicability) };
+    CONFIG.scenarios.order.push(id);
+    editingScenarioId = id;
+    refreshScenarioUI();
+    showToast('Scenario duplicated');
+  });
+
+  document.getElementById('btnScenarioDelete').addEventListener('click', ()=>{
+    if(CONFIG.scenarios.order.length <= 1){ showToast('At least one scenario must remain'); return; }
+    const id = editingScenarioId;
+    CONFIG.scenarios.order = CONFIG.scenarios.order.filter(x=>x!==id);
+    delete CONFIG.scenarios.items[id];
+    if(CONFIG.activeScenarioId === id){
+      applyScenario(CONFIG.scenarios.order[0]);
+      renderSections();
+      refreshEval();
+    }
+    editingScenarioId = CONFIG.scenarios.order[0];
+    refreshScenarioUI();
+    showToast('Scenario deleted');
+  });
+
+  document.getElementById('rubricSearch').addEventListener('input', applyRubricSearch);
+  document.getElementById('rubricSearchClear').addEventListener('click', ()=>{
+    document.getElementById('rubricSearch').value = '';
+    applyRubricSearch();
+    document.getElementById('rubricSearch').focus();
+  });
+
+  const newRubricSectionSel = document.getElementById('newRubricSection');
+  newRubricSectionSel.innerHTML = SECTIONS.map(sec=>`<option value="${sec.key}">${sec.title}</option>`).join('');
+
+  function syncNewRubricFormToCategory(){
+    const isZero = newRubricSectionSel.value === 'zero';
+    document.getElementById('newRubricPts').closest('.new-rubric-field').style.display = isZero ? 'none' : '';
+    document.getElementById('newRubricYes').closest('.new-rubric-field').style.display = isZero ? 'none' : '';
+    document.getElementById('newRubricNoLabel').textContent = isZero ? 'Reason (violation description)' : 'Not met (no) text';
+  }
+  newRubricSectionSel.addEventListener('change', syncNewRubricFormToCategory);
+  syncNewRubricFormToCategory();
+
+  document.getElementById('btnAddRubric').addEventListener('click', ()=>{
+    const sectionKey = newRubricSectionSel.value;
+    const isZero = sectionKey === 'zero';
+    const label = document.getElementById('newRubricLabel').value.trim();
+    const yesText = document.getElementById('newRubricYes').value.trim();
+    const noText = document.getElementById('newRubricNo').value.trim();
+    const ptsRaw = document.getElementById('newRubricPts').value;
+
+    if(!label){ showToast('Enter a rubric name'); return; }
+    if(!isZero && !yesText){ showToast('Enter the Met (yes) text'); return; }
+    if(!noText){ showToast(isZero ? 'Enter the reason text' : 'Enter the Not met (no) text'); return; }
+
+    const pts = isZero ? 0 : Math.max(0, parseInt(ptsRaw, 10) || 0);
+    const id = 'custom_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+
+    CONFIG.items[id] = isZero
+      ? { label, pts: 0, reason: noText, zeroType: true }
+      : { label, pts, yes: yesText, no: noText, zeroType: false };
+    CONFIG.order[sectionKey].push(id);
+
+    if(!isZero){
+      CONFIG.scenarios.order.forEach(sid=>{ CONFIG.scenarios.items[sid].applicability[id] = true; });
+      ANSWERS[id] = 'yes';
+    }
+
+    document.getElementById('newRubricLabel').value = '';
+    document.getElementById('newRubricPts').value = '';
+    document.getElementById('newRubricYes').value = '';
+    document.getElementById('newRubricNo').value = '';
+
+    renderConfigSections();
+    refreshScenarioUI();
+    showToast('"' + label + '" added to ' + SECTIONS.find(s=>s.key===sectionKey).title);
+  });
+
+  setupAutocomplete();
+  renderSections();
+  refreshEval();
+}
+
+/* ============================================================
+   AUTH (Supabase)
+   ============================================================ */
+const SUPABASE_URL = 'https://aqlyhkmsudebzikgthlz.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_uSOpkaG2F8Q86sPrMKGL-w_17-QCWlT';
+let supabaseClient = null;
+try{
+  supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+}catch(e){
+  console.error('Supabase client failed to load', e);
+}
+
+let CURRENT_USER = null; // { id, email, role, display_name }
+let appStarted = false;
+
+function setAppVisible(visible){
+  const topbar = document.querySelector('.topbar');
+  const wrap = document.querySelector('.wrap');
+  if(visible){
+    topbar.style.display = '';
+    wrap.style.display = '';
+    document.getElementById('loginOverlay').classList.add('hidden');
+  }else{
+    topbar.style.display = 'none';
+    wrap.style.display = 'none';
+    document.getElementById('loginOverlay').classList.remove('hidden');
+  }
+}
+
+function applyRoleToUI(){
+  const isAdmin = CURRENT_USER && CURRENT_USER.role === 'admin';
+  const cfgTab = document.getElementById('tabConfigBtn');
+  if(cfgTab) cfgTab.style.display = isAdmin ? '' : 'none';
+
+  document.getElementById('userBadgeName').textContent = CURRENT_USER.display_name || CURRENT_USER.email;
+  document.getElementById('userBadgeRole').textContent = CURRENT_USER.role;
+  document.getElementById('userBadge').style.display = 'flex';
+}
+
+async function loadProfileAndStart(user){
+  let profile = null;
+  try{
+    const { data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).single();
+    if(!error) profile = data;
+  }catch(e){ console.error('Could not load profile', e); }
+
+  CURRENT_USER = {
+    id: user.id,
+    email: user.email,
+    role: profile ? profile.role : 'evaluator',
+    display_name: profile ? profile.display_name : user.email,
+  };
+
+  applyRoleToUI();
+  setAppVisible(true);
+
+  if(!appStarted){
+    appStarted = true;
+    init();
+  }
+}
+
+function showLoginError(msg){
+  const el = document.getElementById('loginError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideLoginError(){
+  document.getElementById('loginError').classList.remove('show');
+}
+
+document.getElementById('loginLogo').innerHTML = document.querySelector('.brand-mark-wrap').innerHTML;
+
+document.getElementById('loginForm').addEventListener('submit', async (e)=>{
+  e.preventDefault();
+  hideLoginError();
+  if(!supabaseClient){ showLoginError('Could not load the authentication service. Check your connection and reload the page.'); return; }
+  const btn = document.getElementById('btnLogin');
+  const email = document.getElementById('loginEmail').value.trim();
+  const password = document.getElementById('loginPassword').value;
+  btn.disabled = true;
+  btn.textContent = 'Signing in...';
+  try{
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(error){ showLoginError(error.message || 'Could not sign in.'); return; }
+    await loadProfileAndStart(data.user);
+  }catch(err){
+    console.error(err);
+    showLoginError('Could not reach the server. Check your connection and try again.');
+  }finally{
+    btn.disabled = false;
+    btn.textContent = 'Sign in';
+  }
+});
+
+document.getElementById('btnLogout').addEventListener('click', async ()=>{
+  if(supabaseClient) await supabaseClient.auth.signOut();
+  window.location.reload();
+});
+
+async function bootAuth(){
+  setAppVisible(false);
+  if(!supabaseClient){
+    showLoginError('Could not load the authentication service. Check your connection and reload the page.');
+    return;
+  }
+  const { data: { session } } = await supabaseClient.auth.getSession();
+  if(session && session.user){
+    await loadProfileAndStart(session.user);
+  }
+}
+
+bootAuth();
+</script>
+</body>
+</html>
