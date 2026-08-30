@@ -295,6 +295,7 @@
   .collapse-toggle .chev{ width:13px; height:13px; transition:transform .18s ease; }
   .collapse-toggle.collapsed .chev{ transform:rotate(-90deg); }
   textarea#output.summary-collapsed{ display:none; }
+  .collapsible-hidden{ display:none; }
   .score-big{ display:flex; align-items:baseline; gap:6px; }
   .score-big b{ font-size:34px; line-height:1; }
   .score-big span{ font-size:13px; color:var(--text-dim); }
@@ -345,6 +346,70 @@
   .agents-range-inputs input{ min-width:130px; }
   .agents-range-inputs span{ color:var(--text-faint); font-size:12px; }
   .agents-scope-note{ font-size:12px; color:var(--text-dim); font-style:italic; margin-bottom:18px; }
+
+  /* ---------- Range picker (custom calendar popover) ---------- */
+  .agents-filter-range{ position:relative; }
+  .range-picker-btn{
+    display:flex; align-items:center; gap:8px; padding:9px 12px; border-radius:var(--radius-sm);
+    border:1px solid var(--border); background:var(--bg-elev); color:var(--text); font-size:13px;
+    cursor:pointer; min-width:190px; justify-content:space-between;
+  }
+  .range-picker-btn:hover{ border-color:var(--accent-dim); }
+  .range-picker-btn svg{ width:15px; height:15px; color:var(--text-dim); flex-shrink:0; }
+  .range-picker-popover{
+    position:absolute; top:calc(100% + 8px); left:0; z-index:60; width:270px;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:14px;
+  }
+  .range-picker-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+  .range-picker-header span{ font-size:13px; font-weight:700; }
+  .range-picker-header button{
+    display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px;
+    border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); cursor:pointer;
+  }
+  .range-picker-header button svg{ width:13px; height:13px; }
+  .range-picker-header button:hover{ color:var(--text); }
+  .range-picker-dow{ display:grid; grid-template-columns:repeat(7,1fr); text-align:center; font-size:10px; color:var(--text-faint); font-weight:700; margin-bottom:4px; }
+  .range-picker-grid{ display:grid; grid-template-columns:repeat(7,1fr); gap:2px; }
+  .rp-day{
+    aspect-ratio:1; display:flex; align-items:center; justify-content:center; font-size:12px; border-radius:6px;
+    cursor:pointer; color:var(--text); background:transparent; border:none;
+  }
+  .rp-day:hover{ background:var(--bg-elev-2); }
+  .rp-day.rp-empty{ cursor:default; }
+  .rp-day.rp-empty:hover{ background:transparent; }
+  .rp-day.rp-today{ font-weight:800; color:var(--accent); }
+  .rp-day.rp-selected{ background:var(--accent); color:#00110f; font-weight:800; }
+  .rp-day.rp-in-range{ background:var(--accent-soft); border-radius:0; }
+  .range-picker-actions{ display:flex; justify-content:space-between; gap:8px; margin-top:12px; }
+  .range-picker-actions .btn{ flex:1; padding:7px; font-size:12px; }
+
+  /* ---------- Agent evaluation list (edit/delete) ---------- */
+  .eval-list{ display:flex; flex-direction:column; gap:6px; }
+  .eval-item{
+    display:flex; align-items:center; gap:10px; background:var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:8px 10px; font-size:12px;
+  }
+  .eval-item .date{ color:var(--text-dim); flex-shrink:0; width:78px; }
+  .eval-item .ticket{ color:var(--text); flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .eval-item .score{ font-weight:800; flex-shrink:0; width:44px; text-align:right; }
+  .eval-item .eval-actions{ display:flex; gap:4px; flex-shrink:0; }
+  .eval-item .eval-actions button{
+    display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px;
+    border:1px solid var(--border); background:var(--bg-elev); color:var(--text-dim); cursor:pointer;
+  }
+  .eval-item .eval-actions button:hover{ color:var(--text); border-color:var(--accent-dim); }
+  .eval-item .eval-actions button.danger:hover{ color:var(--no); border-color:var(--no); }
+  .eval-item .eval-actions svg{ width:13px; height:13px; }
+
+  .edit-eval-field{ margin-bottom:12px; }
+  .edit-eval-field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; margin-bottom:5px; }
+  .edit-eval-field input{
+    width:100%; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:13px; outline:none; box-sizing:border-box;
+  }
+  .edit-eval-field input:focus{ border-color:var(--accent); }
+  .edit-eval-field-row{ display:grid; grid-template-columns:1fr 1fr 1fr; gap:10px; }
 
   .agent-stat-card{
     background:var(--bg-elev); border:1px solid var(--accent-dim); border-radius:var(--radius);
@@ -725,14 +790,34 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <div class="agents-filter-field">
         <label for="agentsMonth">Month</label>
-        <input type="month" id="agentsMonth">
+        <select id="agentsMonth"></select>
       </div>
       <div class="agents-filter-field agents-filter-range">
         <label>Custom range</label>
-        <div class="agents-range-inputs">
-          <input type="date" id="agentsFrom">
-          <span>to</span>
-          <input type="date" id="agentsTo">
+        <button type="button" class="range-picker-btn" id="btnOpenRangePicker">
+          <span id="rangePickerLabel">Select dates</span>
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 10h18M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <input type="hidden" id="agentsFrom">
+        <input type="hidden" id="agentsTo">
+        <div class="range-picker-popover" id="rangePickerPopover" style="display:none;">
+          <div class="range-picker-header">
+            <button type="button" id="rpPrevMonth" title="Previous month">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <span id="rpMonthLabel"></span>
+            <button type="button" id="rpNextMonth" title="Next month">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+          </div>
+          <div class="range-picker-dow">
+            <span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span>
+          </div>
+          <div class="range-picker-grid" id="rpGrid"></div>
+          <div class="range-picker-actions">
+            <button type="button" class="btn btn-ghost" id="rpClear">Clear</button>
+            <button type="button" class="btn btn-primary" id="rpApply">Apply</button>
+          </div>
         </div>
       </div>
       <button class="btn btn-ghost" id="btnAgentsClearFilter" style="flex:none;">Clear filter</button>
@@ -755,25 +840,52 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <div class="agent-fail-title">Rubrics this agent fails most</div>
       <div id="agentFailList" class="fail-list"></div>
+      <div class="agent-fail-title" style="margin-top:16px;">Evaluations</div>
+      <div id="agentEvalList" class="eval-list"></div>
     </div>
 
-    <div class="team-grid">
-      <div class="team-card">
-        <h3>Team weighted average</h3>
-        <div class="team-avg-big" id="teamAvgBig">—</div>
-        <div class="team-avg-sub" id="teamAvgSub"></div>
-      </div>
-      <div class="team-card">
-        <h3>Average by section</h3>
-        <div id="teamSections" class="team-sections"></div>
-      </div>
+    <div class="panel-head-row">
+      <h4 style="margin:0;">Team data</h4>
+      <button class="collapse-toggle" id="btnToggleTeam" title="Show or hide the team overview">
+        <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
     </div>
+    <div id="teamDataWrap">
+      <div class="team-grid">
+        <div class="team-card">
+          <h3>Team weighted average</h3>
+          <div class="team-avg-big" id="teamAvgBig">—</div>
+          <div class="team-avg-sub" id="teamAvgSub"></div>
+        </div>
+        <div class="team-card">
+          <h3>Average by section</h3>
+          <div id="teamSections" class="team-sections"></div>
+        </div>
+      </div>
 
-    <div class="team-card">
-      <h3>Monthly ranking</h3>
-      <div id="rankingTable"></div>
+      <div class="team-card">
+        <h3>Monthly ranking</h3>
+        <div id="rankingTable"></div>
+      </div>
     </div>
   </div>
+
+  <div class="modal-overlay" id="editEvalOverlay">
+    <div class="modal-box">
+      <button class="modal-close" id="btnCloseEditEval">&times;</button>
+      <h3>Edit evaluation</h3>
+      <div class="edit-eval-field"><label>Call date</label><input type="date" id="editEvalDate"></div>
+      <div class="edit-eval-field"><label>Ticket ID</label><input type="text" id="editEvalTicket"></div>
+      <div class="edit-eval-field"><label>Call reason</label><input type="text" id="editEvalReason"></div>
+      <div class="edit-eval-field-row">
+        <div class="edit-eval-field"><label>Score</label><input type="number" id="editEvalScore"></div>
+        <div class="edit-eval-field"><label>Points earned</label><input type="number" id="editEvalEarned"></div>
+        <div class="edit-eval-field"><label>Points possible</label><input type="number" id="editEvalPossible"></div>
+      </div>
+      <button class="btn btn-primary" id="btnSaveEditEval" style="width:100%; margin-top:8px;">Save changes</button>
+    </div>
+  </div>
+
 
   <!-- =============== CONFIGURATION VIEW =============== -->
   <div id="view-config">
@@ -2422,7 +2534,8 @@ function setAppVisible(visible){
 }
 
 function applyRoleToUI(){
-  const isAdmin = CURRENT_USER && CURRENT_USER.role === 'admin';
+  const role = (CURRENT_USER && CURRENT_USER.role) ? String(CURRENT_USER.role).trim().toLowerCase() : '';
+  const isAdmin = role === 'admin';
   const cfgTab = document.getElementById('tabConfigBtn');
   if(cfgTab) cfgTab.style.display = isAdmin ? '' : 'none';
 
@@ -2435,8 +2548,9 @@ async function loadProfileAndStart(user){
   let profile = null;
   try{
     const { data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).single();
-    if(!error) profile = data;
-  }catch(e){ console.error('Could not load profile', e); }
+    if(error) console.error('Profile lookup returned an error (role will default to evaluator):', error);
+    else profile = data;
+  }catch(e){ console.error('Could not load profile (role will default to evaluator):', e); }
 
   CURRENT_USER = {
     id: user.id,
@@ -2444,6 +2558,7 @@ async function loadProfileAndStart(user){
     role: profile ? profile.role : 'evaluator',
     display_name: profile ? profile.display_name : user.email,
   };
+  console.log('Logged in as', CURRENT_USER.email, '— role:', CURRENT_USER.role);
 
   applyRoleToUI();
   setAppVisible(true);
@@ -2773,6 +2888,7 @@ async function refreshAgentsView(){
       const scopedIds = scopedAgentEvals.map(e=> e.id);
       const deductions = await fetchDeductionsFor(scopedIds);
       renderFailList(document.getElementById('agentFailList'), deductions);
+      renderEvalList(scopedAgentEvals);
     }else{
       document.getElementById('agentCard').style.display = 'none';
     }
@@ -2782,26 +2898,228 @@ async function refreshAgentsView(){
   }
 }
 
+/* ---------- Month select (list, not native picker) ---------- */
+function populateMonthSelect(){
+  const sel = document.getElementById('agentsMonth');
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const now = new Date();
+  const thisYear = now.getFullYear();
+  let opts = '<option value="">All months</option>';
+  for(let y = thisYear; y >= thisYear - 1; y--){
+    for(let m = 12; m >= 1; m--){
+      if(y === thisYear && m > now.getMonth() + 1) continue; // skip future months of the current year
+      const val = y + '-' + String(m).padStart(2, '0');
+      opts += '<option value="' + val + '">' + monthNames[m - 1] + ' ' + y + '</option>';
+    }
+  }
+  sel.innerHTML = opts;
+}
+populateMonthSelect();
+
 document.getElementById('agentsSelect').addEventListener('change', refreshAgentsView);
 document.getElementById('agentsMonth').addEventListener('change', ()=>{
   document.getElementById('agentsFrom').value = '';
   document.getElementById('agentsTo').value = '';
-  refreshAgentsView();
-});
-document.getElementById('agentsFrom').addEventListener('change', ()=>{
-  document.getElementById('agentsMonth').value = '';
-  refreshAgentsView();
-});
-document.getElementById('agentsTo').addEventListener('change', ()=>{
-  document.getElementById('agentsMonth').value = '';
+  document.getElementById('rangePickerLabel').textContent = 'Select dates';
   refreshAgentsView();
 });
 document.getElementById('btnAgentsClearFilter').addEventListener('click', ()=>{
   document.getElementById('agentsMonth').value = '';
   document.getElementById('agentsFrom').value = '';
   document.getElementById('agentsTo').value = '';
+  document.getElementById('rangePickerLabel').textContent = 'Select dates';
   document.getElementById('agentsSelect').value = '';
   refreshAgentsView();
+});
+
+/* ---------- Custom range picker (small hotel-booking-style calendar) ---------- */
+const RP_TODAY = new Date();
+let rpViewYear = RP_TODAY.getFullYear();
+let rpViewMonth = RP_TODAY.getMonth(); // 0-11
+let rpStart = null; // 'YYYY-MM-DD'
+let rpEnd = null;
+
+function rpFmt(y, m, d){ return y + '-' + String(m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0'); }
+
+function renderRangePicker(){
+  const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  document.getElementById('rpMonthLabel').textContent = monthNames[rpViewMonth] + ' ' + rpViewYear;
+
+  const grid = document.getElementById('rpGrid');
+  grid.innerHTML = '';
+  const firstDow = new Date(rpViewYear, rpViewMonth, 1).getDay();
+  const daysInMonth = new Date(rpViewYear, rpViewMonth + 1, 0).getDate();
+  const todayStr = rpFmt(RP_TODAY.getFullYear(), RP_TODAY.getMonth(), RP_TODAY.getDate());
+
+  for(let i = 0; i < firstDow; i++){
+    const empty = document.createElement('div');
+    empty.className = 'rp-day rp-empty';
+    grid.appendChild(empty);
+  }
+  for(let d = 1; d <= daysInMonth; d++){
+    const dateStr = rpFmt(rpViewYear, rpViewMonth, d);
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'rp-day';
+    btn.textContent = d;
+    if(dateStr === todayStr) btn.classList.add('rp-today');
+    if(dateStr === rpStart || dateStr === rpEnd) btn.classList.add('rp-selected');
+    else if(rpStart && rpEnd && dateStr > rpStart && dateStr < rpEnd) btn.classList.add('rp-in-range');
+    btn.addEventListener('click', (e)=>{
+      e.stopPropagation();
+      if(!rpStart || (rpStart && rpEnd)){
+        rpStart = dateStr; rpEnd = null;
+      }else if(dateStr < rpStart){
+        rpStart = dateStr;
+      }else{
+        rpEnd = dateStr;
+      }
+      renderRangePicker();
+    });
+    grid.appendChild(btn);
+  }
+}
+
+document.getElementById('btnOpenRangePicker').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const pop = document.getElementById('rangePickerPopover');
+  const opening = pop.style.display === 'none';
+  pop.style.display = opening ? 'block' : 'none';
+  if(opening) renderRangePicker();
+});
+document.addEventListener('click', (e)=>{
+  const pop = document.getElementById('rangePickerPopover');
+  if(pop.style.display !== 'none' && !pop.contains(e.target) && e.target.id !== 'btnOpenRangePicker'){
+    pop.style.display = 'none';
+  }
+});
+document.getElementById('rpPrevMonth').addEventListener('click', ()=>{
+  rpViewMonth--; if(rpViewMonth < 0){ rpViewMonth = 11; rpViewYear--; }
+  renderRangePicker();
+});
+document.getElementById('rpNextMonth').addEventListener('click', ()=>{
+  rpViewMonth++; if(rpViewMonth > 11){ rpViewMonth = 0; rpViewYear++; }
+  renderRangePicker();
+});
+document.getElementById('rpClear').addEventListener('click', ()=>{
+  rpStart = null; rpEnd = null;
+  document.getElementById('agentsFrom').value = '';
+  document.getElementById('agentsTo').value = '';
+  document.getElementById('rangePickerLabel').textContent = 'Select dates';
+  document.getElementById('rangePickerPopover').style.display = 'none';
+  refreshAgentsView();
+});
+document.getElementById('rpApply').addEventListener('click', ()=>{
+  if(rpStart){
+    document.getElementById('agentsFrom').value = rpStart;
+    document.getElementById('agentsTo').value = rpEnd || rpStart;
+    document.getElementById('agentsMonth').value = '';
+    document.getElementById('rangePickerLabel').textContent = rpStart + (rpEnd && rpEnd !== rpStart ? ' → ' + rpEnd : '');
+  }
+  document.getElementById('rangePickerPopover').style.display = 'none';
+  refreshAgentsView();
+});
+
+/* ---------- Team data collapse ---------- */
+document.getElementById('btnToggleTeam').addEventListener('click', ()=>{
+  document.getElementById('teamDataWrap').classList.toggle('collapsible-hidden');
+  document.getElementById('btnToggleTeam').classList.toggle('collapsed');
+});
+
+/* ---------- Agent evaluations list: edit / delete (admin only for actions) ---------- */
+let EDITING_EVAL_ID = null;
+
+function renderEvalList(evals){
+  const container = document.getElementById('agentEvalList');
+  if(!evals.length){
+    container.innerHTML = '<div class="fail-empty">No evaluations in this scope.</div>';
+    return;
+  }
+  const isAdmin = CURRENT_USER && String(CURRENT_USER.role).trim().toLowerCase() === 'admin';
+  const sorted = evals.slice().sort((a, b)=> (b.call_date || '').localeCompare(a.call_date || ''));
+  container.innerHTML = sorted.map(e=>{
+    const actions = isAdmin
+      ? '<div class="eval-actions">' +
+        '<button class="edit-eval-btn" data-id="' + e.id + '" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '<button class="delete-eval-btn danger" data-id="' + e.id + '" title="Delete"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>' +
+        '</div>'
+      : '';
+    return '<div class="eval-item">' +
+      '<span class="date">' + (e.call_date || 'N/A') + '</span>' +
+      '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
+      '<span class="score">' + Math.round(e.score) + '%</span>' +
+      actions +
+      '</div>';
+  }).join('');
+
+  if(isAdmin){
+    container.querySelectorAll('.delete-eval-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=> deleteEvaluation(btn.dataset.id));
+    });
+    container.querySelectorAll('.edit-eval-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=>{
+        const ev = evals.find(e=> e.id === btn.dataset.id);
+        if(ev) openEditEvalModal(ev);
+      });
+    });
+  }
+}
+
+async function deleteEvaluation(evalId){
+  if(!confirm('Delete this evaluation? This cannot be undone.')) return;
+  try{
+    const { error } = await supabaseClient.from('evaluations').delete().eq('id', evalId);
+    if(error) throw error;
+    showToast('Evaluation deleted');
+    refreshAgentsView();
+  }catch(err){
+    console.error('Delete failed', err);
+    showToast('Could not delete: ' + (err.message || 'unknown error'));
+  }
+}
+
+function openEditEvalModal(ev){
+  EDITING_EVAL_ID = ev.id;
+  document.getElementById('editEvalDate').value = ev.call_date || '';
+  document.getElementById('editEvalTicket').value = ev.ticket_id || '';
+  document.getElementById('editEvalReason').value = ev.call_reason || '';
+  document.getElementById('editEvalScore').value = ev.score;
+  document.getElementById('editEvalEarned').value = ev.points_earned;
+  document.getElementById('editEvalPossible').value = ev.points_possible;
+  document.getElementById('editEvalOverlay').classList.add('show');
+}
+document.getElementById('btnCloseEditEval').addEventListener('click', ()=>{
+  document.getElementById('editEvalOverlay').classList.remove('show');
+});
+document.getElementById('editEvalOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'editEvalOverlay') e.currentTarget.classList.remove('show');
+});
+document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
+  if(!EDITING_EVAL_ID) return;
+  const btn = document.getElementById('btnSaveEditEval');
+  const original = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Saving...';
+  try{
+    const { error } = await supabaseClient.from('evaluations').update({
+      call_date: document.getElementById('editEvalDate').value || null,
+      ticket_id: document.getElementById('editEvalTicket').value.trim() || null,
+      call_reason: document.getElementById('editEvalReason').value.trim() || null,
+      score: Number(document.getElementById('editEvalScore').value),
+      points_earned: Number(document.getElementById('editEvalEarned').value),
+      points_possible: Number(document.getElementById('editEvalPossible').value),
+    }).eq('id', EDITING_EVAL_ID);
+    if(error) throw error;
+    showToast('Evaluation updated');
+    document.getElementById('editEvalOverlay').classList.remove('show');
+    refreshAgentsView();
+  }catch(err){
+    console.error('Update failed', err);
+    showToast('Could not save: ' + (err.message || 'unknown error'));
+  }finally{
+    btn.disabled = false;
+    btn.textContent = original;
+  }
 });
 
 async function bootAuth(){
