@@ -198,7 +198,16 @@
   .search-scenario-row .scenario-row{ flex:0 0 auto; margin-bottom:0; }
   .scenario-row{ display:flex; align-items:center; gap:10px; }
 
-  .ongoing-drafts-bar{ margin-bottom:12px; }
+  .ongoing-drafts-bar{ margin-bottom:12px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+  .ongoing-drafts-bar > .ongoing-drafts-panel{ flex-basis:100%; }
+  .btn-clear-all{
+    margin-left:auto; display:flex; align-items:center; gap:6px; padding:8px 14px; border-radius:999px;
+    border:1px solid var(--no); background:var(--no-soft); color:var(--no); font-size:12.5px; font-weight:800; cursor:pointer;
+  }
+  .btn-clear-all svg{ width:14px; height:14px; }
+  .btn-clear-all:hover{ background:var(--no); color:#fff; }
+  .btn-clear-all.confirming{ background:var(--no); color:#fff; animation:clearPulse 1s ease-in-out infinite; }
+  @keyframes clearPulse{ 50%{ box-shadow:0 0 0 4px var(--no-soft); } }
   .ongoing-drafts-toggle{
     display:flex; align-items:center; gap:8px; padding:8px 14px; border-radius:999px;
     border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim);
@@ -287,7 +296,7 @@
     font-size:10px; color:var(--text-dim); font-weight:700; flex-shrink:0; white-space:nowrap; margin-left:6px;
   }
   .item-card .pts.zero{ color:var(--no); }
-  .ic-controls{ display:flex; gap:5px; flex-shrink:0; margin-left:auto; }
+  .ic-controls{ display:flex; gap:4px; flex-shrink:0; margin-left:auto; }
   .pill{
     border:2px solid var(--text-dim); background:transparent; color:var(--text-dim);
     width:25px; height:25px; border-radius:6px; cursor:pointer;
@@ -644,10 +653,34 @@
   .cfg-alt-add:hover:not(:disabled){ border-style:solid; }
   .cfg-alt-add:disabled{ opacity:.4; cursor:not-allowed; }
   .txt-pick{
-    flex-shrink:0; height:25px; min-width:30px; padding:0 6px; border-radius:6px; border:1px dashed currentColor;
-    background:transparent; font-size:10.5px; font-weight:800; cursor:pointer;
+    flex-shrink:0; height:25px; min-width:24px; padding:0 4px; border-radius:6px; border:1px dashed currentColor;
+    background:transparent; font-size:10px; font-weight:800; cursor:pointer; letter-spacing:-.2px;
   }
   .txt-pick.y{ color:var(--yes); } .txt-pick.n{ color:var(--no); }
+  .txt-pick.y.on{ background:var(--yes); border-style:solid; border-color:var(--yes); color:#00140a; }
+  .txt-pick-remove{ background:none; border:1px dashed var(--no); color:var(--no); border-radius:var(--radius-sm); padding:7px; font-size:12px; font-weight:700; cursor:pointer; }
+  .txt-pick-remove:hover{ background:var(--no-soft); }
+  .txt-pick-hint{ font-size:11px; color:var(--text-dim); padding:0 4px 4px; }
+  .extras-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 0 6px; }
+  .extras-head h4{ margin:0; }
+  .extras-count{ font-size:11px; font-weight:800; color:var(--text-dim); }
+  .extras-count.full{ color:var(--yes); }
+  .extras-empty{ font-size:11.5px; color:var(--text-faint); margin-bottom:4px; }
+  .chip-list{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
+  .x-chip{
+    display:inline-flex; align-items:center; gap:6px; max-width:100%; padding:4px 6px 4px 10px; border-radius:999px;
+    font-size:11.5px; font-weight:700; border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text);
+  }
+  .x-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .x-chip.acc{ border-color:var(--yes); background:var(--yes-soft); }
+  .x-chip.focus{ border-color:var(--accent-dim); background:var(--accent-soft); }
+  .x-chip button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
+  .x-chip button:hover{ color:var(--no); }
+  .focus-select{
+    width:100%; margin-top:4px; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:12.5px; color-scheme: light dark;
+  }
+  .extras-divider{ height:1px; background:var(--border); margin:12px 0; }
   .txt-pick-popover{
     position:fixed; z-index:200; background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
     box-shadow:var(--shadow); padding:8px; display:flex; flex-direction:column; gap:4px; max-height:60vh; overflow:auto;
@@ -974,6 +1007,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <span class="ongoing-drafts-count" id="ongoingDraftsCount">0</span>
             <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
+          <button type="button" class="btn-clear-all" id="btnClear" title="Clear the whole evaluation">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <span>Clear all</span>
+          </button>
           <div class="ongoing-drafts-panel collapsible-hidden" id="ongoingDraftsPanel">
             <div id="ongoingDraftsList" class="eval-list"></div>
           </div>
@@ -1027,6 +1064,14 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <div class="stat-row"><span>Evaluated</span><b id="statCount">0 / 70</b></div>
           </div>
         </div>
+        <div class="panel" id="extrasPanel">
+          <div class="extras-head"><h4>Accomplishments</h4><span class="extras-count" id="accCount">0 / 3</span></div>
+          <div id="accList" class="chip-list"></div>
+          <div class="extras-divider"></div>
+          <div class="extras-head"><h4>Focus points</h4><span class="extras-count" id="focusCount"></span></div>
+          <div id="focusList" class="chip-list"></div>
+          <select id="focusSelect" class="focus-select"></select>
+        </div>
         <div class="panel">
           <div class="panel-head-row" id="summaryHeadRow" style="cursor:pointer;">
             <h4>Evaluation summary</h4>
@@ -1043,10 +1088,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <button class="btn btn-primary" id="btnCopy">
               <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
               Copy summary
-            </button>
-            <button class="btn btn-ghost" id="btnClear">
-              <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-              Clear all
             </button>
           </div>
           <button class="btn btn-primary" id="btnOutcomeReport" style="width:100%; margin-top:8px;">
@@ -1152,6 +1193,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <div class="agent-fail-title">Rubrics this agent fails most</div>
       <div id="agentFailList" class="fail-list"></div>
+      <div class="agent-fail-title" style="margin-top:16px;">Focus points</div>
+      <div id="agentFocusList" class="fail-list"></div>
       <div class="agent-fail-title" style="margin-top:16px;">Evaluations</div>
       <div id="agentEvalList" class="eval-list"></div>
     </div>
@@ -1342,11 +1385,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <tr><td><code>{{agent}}</code> <code>{{evaluator}}</code> <code>{{caller}}</code> <code>{{ticket}}</code> <code>{{order}}</code> <code>{{reason}}</code></td><td>Just that one field's value, on its own</td></tr>
       <tr><td><code>{{deductions}}</code></td><td>A "Deductions" heading plus every rubric marked ✕, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
       <tr><td><code>{{feedback}}</code></td><td>A "Feedback" heading plus every rubric flagged ⚠, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
-      <tr><td><code>{{accomplishments}}</code></td><td>An "Accomplishments" heading plus every rubric marked ✓, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
+      <tr><td><code>{{accomplishments}}</code></td><td>An "Accomplishments" heading plus the met rubrics picked as accomplishments (up to 3), grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
+      <tr><td><code>{{focus}}</code></td><td>A "Focus points" heading plus the focus points picked for the evaluation. If the template doesn't use it, they go right after the accomplishments.</td></tr>
       <tr><td><code>{{score}}</code> <code>{{earned}}</code> <code>{{possible}}</code></td><td>The score out of 100, and the raw points earned / possible</td></tr>
       <tr><td><code>{{zeroline}}</code></td><td>The automatic-zero warning line, only when triggered</td></tr>
     </table>
-    <p>In the <b>item line format</b> box: <code>{{icon}}</code> is ✓ / ✕ / ⚠, <code>{{label}}</code> is the short rubric name, <code>{{text}}</code> is its met/not‑met/reason text, and <code>{{pts}}</code> already includes its own suffix — "(Npts)" for accomplishments and feedback, "(-Npts)" for deductions, or "(Auto‑Zero)" for zero call drivers.</p>
+    <p>In the <b>item line format</b> box: <code>{{icon}}</code> is ✓ / ✕ / ⚠, <code>{{label}}</code> is the short rubric name, <code>{{text}}</code> is its met/not‑met/reason text, and <code>{{pts}}</code> already includes its own suffix — "(-Npts)" for deductions or "(Auto‑Zero)" for zero call drivers, and nothing for accomplishments and feedback.</p>
   </div>
 </div>
 
@@ -1715,6 +1759,28 @@ let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zer
 // 0 being the main text and 1-3 the extra options from Configuration.
 let CHOICES = {};
 
+// Accomplishments are picked by hand (up to MAX_ACCOMPLISHMENTS) from the
+// rubrics marked as met; focus points come from a fixed list.
+const MAX_ACCOMPLISHMENTS = 3;
+let ACCOMPLISHMENTS = [];
+let FOCUS_POINTS = [];
+const FOCUS_POINT_OPTIONS = [
+  'additional assistance', 'Answering time', 'dead air', 'disconnected the call', 'greeting', 'hold management',
+  'left the line opened', 'mute usage', 'Parting phrase', 'Phone number', 'Recording disclaimer', 'Transfer protocol',
+  'Exception protocol', 'HIPPA violation', 'incorrect validation protocol', 'Lack of validation', 'active listening',
+  'Proving questions', 'Understanding the concern', 'Apologies', 'Communication clarity', 'Courteous Language',
+  'Email written errors', 'Empathy', 'Filler words\\sounds', 'Improper comments', 'Interruptions', 'Jargon', 'Pace',
+  'Professional language', 'tone of voice', 'Transition Statement', 'Unnecessary Validation Complexity',
+  'Lack of professionalism', 'Use of customer name', 'English proficiency', 'Additional Education\\Guidance',
+  'Addressing all issues', 'Completing All Steps', 'Information Provided', 'Voicemail', 'Follow-up Management',
+  'Workarounds', 'Asset', 'Attachment Naming', 'Contact name', 'Documentation clarity',
+  'Documentation under account\\ticket', 'Inaccurate Notes', 'Lack of details', 'Lack of documentation',
+  'Lack of evidence', 'Missing ticket comments', 'Not Linking the tickets', 'Order id', 'Product details', 'Subject',
+  'Template', 'Ticket classification', 'Ticket Closure', 'Ticket owner', 'Ticket status', 'Timely documentation',
+  'TICKET FILDS', 'KB Attachments', 'SERVICE COMPLAINT TICKET', 'RESOLUTION',
+  'SYMPTOM CODES MATCH THE CURRENT SCENARIO', 'ATTACHMENTS', 'Proper escalation',
+];
+
 function textOptions(cfg, kind){
   const base = cfg.zeroType ? 'reason' : (kind === 'yes' ? 'yes' : 'no');
   return [cfg[base]].concat(cfg[ALT_FIELD[base]] || []).filter(t=> typeof t === 'string' && t.trim());
@@ -1732,20 +1798,48 @@ function closeTextPicker(){
   if(pop) pop.remove();
 }
 
-function openTextPicker(btn){
-  closeTextPicker();
-  const id = btn.dataset.id, cfg = CONFIG.items[id], val = ANSWERS[id];
-  if(!cfg || !val) return;
-  const kind = val === 'yes' ? 'yes' : 'no';
-  const opts = textOptions(cfg, kind);
-  const current = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
-  const pop = document.createElement('div');
-  pop.id = 'txtPickPopover';
-  pop.className = 'txt-pick-popover';
-  pop.innerHTML = '<div class="txt-pick-title ' + (kind === 'yes' ? 'y' : 'n') + '">' + escapeHtml(cfg.label) + ' · ' +
-    (kind === 'yes' ? 'met' : 'not met') + ' text</div>' +
-    opts.map((t, i)=> '<button type="button" class="txt-pick-opt' + (i === current ? ' active' : '') + '" data-idx="' + i + '">' +
-      '<span class="num">' + (i + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('');
+// Accomplishments and focus points panel next to the summary.
+function renderExtras(){
+  const accList = document.getElementById('accList');
+  if(!accList || !CONFIG) return;
+  const n = ACCOMPLISHMENTS.length;
+  const accCount = document.getElementById('accCount');
+  accCount.textContent = n + ' / ' + MAX_ACCOMPLISHMENTS;
+  accCount.classList.toggle('full', n >= MAX_ACCOMPLISHMENTS);
+  accList.innerHTML = n
+    ? ACCOMPLISHMENTS.map(id=> '<span class="x-chip acc" title="' + escapeHtml(chosenText(id, CONFIG.items[id], 'yes')) + '"><span>\u2705 ' +
+        escapeHtml(CONFIG.items[id].label) + '</span><button type="button" data-acc="' + escapeHtml(id) + '" title="Remove">\u00d7</button></span>').join('')
+    : '<div class="extras-empty">None yet. Use the green 1/N button on a met rubric to add one.</div>';
+  const focusList = document.getElementById('focusList');
+  document.getElementById('focusCount').textContent = FOCUS_POINTS.length ? String(FOCUS_POINTS.length) : '';
+  focusList.innerHTML = FOCUS_POINTS.length
+    ? FOCUS_POINTS.map((f, i)=> '<span class="x-chip focus"><span>\uD83C\uDFAF ' + escapeHtml(f) +
+        '</span><button type="button" data-focus="' + i + '" title="Remove">\u00d7</button></span>').join('')
+    : '<div class="extras-empty">None yet.</div>';
+  const sel = document.getElementById('focusSelect');
+  sel.innerHTML = '<option value="">+ Add a focus point…</option>' +
+    FOCUS_POINT_OPTIONS.filter(f=> !FOCUS_POINTS.includes(f)).map(f=> '<option>' + escapeHtml(f) + '</option>').join('');
+}
+
+document.getElementById('accList').addEventListener('click', (e)=>{
+  const b = e.target.closest('button[data-acc]');
+  if(!b) return;
+  removeAccomplishment(b.dataset.acc);
+  refreshEval();
+});
+document.getElementById('focusList').addEventListener('click', (e)=>{
+  const b = e.target.closest('button[data-focus]');
+  if(!b) return;
+  FOCUS_POINTS.splice(Number(b.dataset.focus), 1);
+  refreshEval();
+});
+document.getElementById('focusSelect').addEventListener('change', (e)=>{
+  const v = e.target.value;
+  if(v && !FOCUS_POINTS.includes(v)) FOCUS_POINTS.push(v);
+  refreshEval();
+});
+
+function placePopover(pop, btn){
   document.body.appendChild(pop);
   const r = btn.getBoundingClientRect();
   const w = Math.min(380, window.innerWidth - 24);
@@ -1753,12 +1847,58 @@ function openTextPicker(btn){
   pop.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.right - w)) + 'px';
   const below = r.bottom + 6 + pop.offsetHeight < window.innerHeight;
   pop.style.top = (below ? r.bottom + 6 : Math.max(12, r.top - 6 - pop.offsetHeight)) + 'px';
+}
+
+function setAccomplishment(id, idx){
+  CHOICES[id] = Object.assign({}, CHOICES[id], { yes: idx });
+  if(!ACCOMPLISHMENTS.includes(id)) ACCOMPLISHMENTS.push(id);
+}
+
+function removeAccomplishment(id){
+  ACCOMPLISHMENTS = ACCOMPLISHMENTS.filter(x=> x !== id);
+}
+
+// Met rubric: the button adds it to the accomplishments (asking which text when
+// there are several). Not met / feedback: it picks which text goes in the summary.
+function openTextPicker(btn){
+  closeTextPicker();
+  const id = btn.dataset.id, cfg = CONFIG.items[id], val = ANSWERS[id];
+  if(!cfg || !val) return;
+  const kind = val === 'yes' ? 'yes' : 'no';
+  const opts = textOptions(cfg, kind);
+  const current = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
+  if(kind === 'yes'){
+    const added = ACCOMPLISHMENTS.includes(id);
+    if(!added && ACCOMPLISHMENTS.length >= MAX_ACCOMPLISHMENTS){
+      showToast('You can add up to ' + MAX_ACCOMPLISHMENTS + ' accomplishments. Remove one first.');
+      return;
+    }
+    if(opts.length <= 1){
+      if(added) removeAccomplishment(id); else setAccomplishment(id, 0);
+      refreshEval();
+      return;
+    }
+  }
+  const pop = document.createElement('div');
+  pop.id = 'txtPickPopover';
+  pop.className = 'txt-pick-popover';
+  const added = kind === 'yes' && ACCOMPLISHMENTS.includes(id);
+  pop.innerHTML = '<div class="txt-pick-title ' + (kind === 'yes' ? 'y' : 'n') + '">' + escapeHtml(cfg.label) + ' · ' +
+    (kind === 'yes' ? 'add as accomplishment' : 'not met text') + '</div>' +
+    (kind === 'yes' && !added ? '<div class="txt-pick-hint">Choose the text to add to the accomplishments.</div>' : '') +
+    opts.map((t, i)=> '<button type="button" class="txt-pick-opt' + ((kind === 'no' || added) && i === current ? ' active' : '') + '" data-idx="' + i + '">' +
+      '<span class="num">' + (i + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('') +
+    (added ? '<button type="button" class="txt-pick-remove">Remove from accomplishments</button>' : '');
+  placePopover(pop, btn);
   pop.querySelectorAll('.txt-pick-opt').forEach(o=> o.addEventListener('click', (e)=>{
     e.stopPropagation();
-    CHOICES[id] = Object.assign({}, CHOICES[id], { [kind]: Number(o.dataset.idx) });
+    if(kind === 'yes') setAccomplishment(id, Number(o.dataset.idx));
+    else CHOICES[id] = Object.assign({}, CHOICES[id], { no: Number(o.dataset.idx) });
     closeTextPicker();
     refreshEval();
   }));
+  const rm = pop.querySelector('.txt-pick-remove');
+  if(rm) rm.addEventListener('click', (e)=>{ e.stopPropagation(); removeAccomplishment(id); closeTextPicker(); refreshEval(); });
 }
 document.addEventListener('click', (e)=>{ if(!e.target.closest('#txtPickPopover')) closeTextPicker(); });
 window.addEventListener('scroll', closeTextPicker, true);
@@ -2136,6 +2276,8 @@ function renderSections(){
 
 function refreshEval(){
  try{
+  ACCOMPLISHMENTS = ACCOMPLISHMENTS.filter(id=> ANSWERS[id] === 'yes' && CONFIG.items[id]).slice(0, MAX_ACCOMPLISHMENTS);
+  renderExtras();
   SECTIONS.forEach(sec=>{
     let answered = 0;
     CONFIG.order[sec.key].forEach(id=>{ if(ANSWERS[id]) answered++; });
@@ -2154,12 +2296,15 @@ function refreshEval(){
     if(pick){
       const kind = val === 'yes' ? 'yes' : 'no';
       const opts = val ? textOptions(cfg, kind) : [];
-      const usable = opts.length > 1 && (cfg.zeroType ? (val === 'no' || val === 'feedback') : true);
+      const isAcc = kind === 'yes' && !cfg.zeroType && opts.length > 0;
+      const usable = isAcc || (opts.length > 1 && (cfg.zeroType ? (val === 'no' || val === 'feedback') : true));
       pick.style.display = usable ? '' : 'none';
       if(usable){
+        const added = isAcc && ACCOMPLISHMENTS.includes(id);
         const i = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
-        pick.textContent = (i + 1) + '/' + opts.length;
-        pick.className = 'txt-pick ' + (kind === 'yes' ? 'y' : 'n');
+        pick.textContent = (added ? '\u2713 ' : '') + (i + 1) + '/' + opts.length;
+        pick.className = 'txt-pick ' + (kind === 'yes' ? 'y' : 'n') + (added ? ' on' : '');
+        pick.title = isAcc ? (added ? 'In the accomplishments. Click to change or remove.' : 'Add to the accomplishments (max ' + MAX_ACCOMPLISHMENTS + ')') : 'Choose which text goes in the summary';
       }
     }
     if(cfg.zeroType) return;
@@ -2204,10 +2349,21 @@ function refreshEval(){
  }catch(e){ console.error('refreshEval failed', e); }
 }
 
+// Only lost points are shown; met rubrics and feedback carry no points.
 function ptsSuffix(cfg, kind){
-  if(cfg.zeroType) return ' (Auto-Zero)';
-  if(kind === 'no') return ' (-' + cfg.pts + 'pts)';
-  return ' (' + cfg.pts + 'pts)';
+  if(kind !== 'no') return '';
+  return cfg.zeroType ? ' (Auto-Zero)' : ' (-' + cfg.pts + 'pts)';
+}
+
+// Bold letters that survive copy and paste as plain text.
+function boldText(str){
+  return Array.from(String(str)).map(ch=>{
+    const c = ch.codePointAt(0);
+    if(c >= 65 && c <= 90) return String.fromCodePoint(0x1D400 + c - 65);
+    if(c >= 97 && c <= 122) return String.fromCodePoint(0x1D41A + c - 97);
+    if(c >= 48 && c <= 57) return String.fromCodePoint(0x1D7CE + c - 48);
+    return ch;
+  }).join('');
 }
 function noText(cfg){
   return cfg.zeroType ? cfg.reason : cfg.no;
@@ -2261,12 +2417,15 @@ function buildOutput(score, earned, possible, zeroTriggered){
 
   function namedBlock(title, blocks){
     if(!blocks.length) return '';
-    return '____________________________\n**' + title + '**\n\n' + blocks.join('\n\n') + '\n';
+    return '____________________________\n' + boldText(title) + '\n\n' + blocks.join('\n\n') + '\n';
   }
 
   const deductions = namedBlock('Deductions', deductionBlocks);
   const feedback = namedBlock('Feedback', feedbackBlocks);
-  const accomplishments = namedBlock('Accomplishments', accompBlocks);
+  let accomplishments = namedBlock('Accomplishments', accompBlocks);
+  const focus = FOCUS_POINTS.length ? namedBlock('Focus points', [FOCUS_POINTS.map(f=> '\uD83C\uDFAF ' + f).join('\n')]) : '';
+  // Templates saved before focus points existed get them after the accomplishments.
+  if(!CONFIG.summaryTemplate.includes('{{focus}}')) accomplishments += focus;
 
   const zeroline = zeroTriggered ? 'AUTOMATIC ZERO — zero call driver triggered.' : '';
 
@@ -2282,6 +2441,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
     .replace(/{{earned}}/g, earned)
     .replace(/{{possible}}/g, possible)
     .replace(/{{accomplishments}}/g, accomplishments)
+    .replace(/{{focus}}/g, focus)
     .replace(/{{deductions}}/g, deductions)
     .replace(/{{feedback}}/g, feedback)
     .replace(/{{zeroline}}/g, zeroline);
@@ -2763,7 +2923,10 @@ function computeSectionBreakdown(){
         else if(val === 'feedback') zeroFeedback.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
         return;
       }
-      if(val === 'yes'){ earned += cfg.pts; possible += cfg.pts; accomplishments.push({ label: cfg.label, text: chosenText(id, cfg, 'yes'), pts: cfg.pts }); }
+      if(val === 'yes'){
+        earned += cfg.pts; possible += cfg.pts;
+        if(ACCOMPLISHMENTS.includes(id)) accomplishments.push({ label: cfg.label, text: chosenText(id, cfg, 'yes'), pts: cfg.pts });
+      }
       else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
       else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
     });
@@ -2935,10 +3098,25 @@ async function init(){
     navigator.clipboard.writeText(ta.value).then(()=> showToast('Summary copied')).catch(()=> document.execCommand('copy'));
   });
 
-  document.getElementById('btnClear').addEventListener('click', ()=>{
+  // Asks in the button itself: the first click arms it, a second click clears.
+  let clearArmTimer = null;
+  const clearBtn = document.getElementById('btnClear');
+  const disarmClear = ()=>{
+    clearTimeout(clearArmTimer);
+    clearBtn.classList.remove('confirming');
+    clearBtn.querySelector('span').textContent = EDITING_EXISTING ? 'Cancel editing' : 'Clear all';
+  };
+  clearBtn.addEventListener('click', ()=>{
+    if(!clearBtn.classList.contains('confirming')){
+      clearBtn.classList.add('confirming');
+      clearBtn.querySelector('span').textContent = 'Are you sure? Click again';
+      clearArmTimer = setTimeout(disarmClear, 4000);
+      return;
+    }
+    disarmClear();
     if(EDITING_EXISTING){
-      if(!confirm('Stop editing? Changes you made here will not be saved.')) return;
       stopEditingEvaluation();
+      disarmClear();
       showToast('Editing cancelled');
       return;
     }
@@ -3349,6 +3527,8 @@ function buildEvaluationDetails(){
     scenarioId, scenarioName: scenario ? scenario.name : null,
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
+    accomplishments: ACCOMPLISHMENTS.slice(),
+    focusPoints: FOCUS_POINTS.slice(),
     summary: document.getElementById('output').value,
     summaryManual: SUMMARY_MANUAL,
     items,
@@ -4102,6 +4282,14 @@ async function openViewEvalModal(evalId, fromProfile){
       '<div class="ve-head"><div class="ve-score ' + scoreClass(score) + '">' + score + '%<small>' + row.points_earned + ' / ' + row.points_possible + ' pts</small></div>' +
       (row.zero_triggered ? '<div class="ve-zero">Automatic zero</div>' : '') + '</div>' +
       '<div class="ve-meta">' + meta.map(([k, v])=> '<div><label>' + k + '</label>' + escapeHtml(String(v)) + '</div>').join('') + '</div>' +
+      (d && Array.isArray(d.focusPoints) && d.focusPoints.length
+        ? '<div class="ve-subtitle">Focus points</div><div class="chip-list">' + d.focusPoints.map(f=> '<span class="x-chip focus"><span>\uD83C\uDFAF ' + escapeHtml(f) + '</span></span>').join('') + '</div>' : '') +
+      (d && Array.isArray(d.accomplishments) && d.accomplishments.length && Array.isArray(d.items)
+        ? '<div class="ve-subtitle">Accomplishments</div><div class="chip-list">' + d.accomplishments.map(id=>{
+            const it = d.items.find(x=> x.id === id);
+            return it ? '<span class="x-chip acc"><span>\u2705 ' + escapeHtml(it.label) + '</span></span>' : '';
+          }).join('') + '</div>' : '') +
+      '<div class="ve-subtitle">Rubrics</div>' +
       sectionsHtml +
       (d && d.summary ? '<div class="ve-subtitle">Summary</div><pre class="ve-summary">' + escapeHtml(d.summary) + '</pre>' : '');
     const canEdit = canEditEval(row);
@@ -4142,6 +4330,8 @@ function startEditingEvaluation(row){
   }
   ANSWERS = Object.assign({}, d.answers);
   CHOICES = d.choices && typeof d.choices === 'object' ? JSON.parse(JSON.stringify(d.choices)) : {};
+  ACCOMPLISHMENTS = Array.isArray(d.accomplishments) ? d.accomplishments.slice() : [];
+  FOCUS_POINTS = Array.isArray(d.focusPoints) ? d.focusPoints.slice() : [];
   SUMMARY_MANUAL = !!(d.summaryManual && typeof d.summary === 'string');
   AUTO_SUMMARY_AT_EDIT = '';
   if(SUMMARY_MANUAL) document.getElementById('output').value = d.summary;
@@ -4161,6 +4351,8 @@ function startEditingEvaluation(row){
 function syncSaveButtonLabel(){
   const btn = document.getElementById('btnSaveEvaluation');
   btn.lastChild.textContent = EDITING_EXISTING ? ' Save changes' : ' Save evaluation';
+  const clear = document.getElementById('btnClear');
+  if(!clear.classList.contains('confirming')) clear.querySelector('span').textContent = EDITING_EXISTING ? 'Cancel editing' : 'Clear all';
 }
 
 function stopEditingEvaluation(){
@@ -4185,6 +4377,8 @@ function resetEvaluationForm(){
   setSummaryManual(false);
   LAST_SAVED_SIGNATURE = null;
   CHOICES = {};
+  ACCOMPLISHMENTS = [];
+  FOCUS_POINTS = [];
   renderSections();
   refreshEval();
   scheduleBannerSoon(0);
@@ -4504,6 +4698,7 @@ async function refreshAgentsView(){
       const scopedIds = scopedAgentEvals.map(e=> e.id);
       const deductions = await fetchDeductionsFor(scopedIds);
       renderFailList(document.getElementById('agentFailList'), deductions);
+      await renderAgentFocusPoints(scopedIds);
       renderEvalList(scopedAgentEvals);
     }else{
       document.getElementById('agentCard').style.display = 'none';
@@ -4645,6 +4840,20 @@ document.getElementById('teamHeadRow').addEventListener('click', ()=>{
 /* ---------- Agent evaluations list: edit / delete (admin only for actions) ---------- */
 let EDITING_EVAL_ID = null;
 let EDITING_EVAL_ROW = null;
+
+// Focus points across this agent's evaluations in the current scope, most frequent first.
+async function renderAgentFocusPoints(evalIds){
+  const box = document.getElementById('agentFocusList');
+  if(!EVAL_LINK_AVAILABLE || !evalIds.length){ box.innerHTML = '<div class="fail-empty">No focus points in this scope.</div>'; return; }
+  const { data, error } = await supabaseClient.from('evaluations').select('id, details').in('id', evalIds);
+  if(error){ console.error('Could not load focus points', error); box.innerHTML = '<div class="fail-empty">Could not load focus points.</div>'; return; }
+  const counts = {};
+  (data || []).forEach(r=> ((r.details && r.details.focusPoints) || []).forEach(f=>{ counts[f] = (counts[f] || 0) + 1; }));
+  const sorted = Object.entries(counts).sort((a, b)=> b[1] - a[1]);
+  box.innerHTML = sorted.length
+    ? sorted.map(([f, n])=> '<div class="fail-item"><span class="name">\uD83C\uDFAF ' + escapeHtml(f) + '</span><span class="count">' + n + '\u00d7</span></div>').join('')
+    : '<div class="fail-empty">No focus points in this scope.</div>';
+}
 
 function renderEvalList(evals){
   const container = document.getElementById('agentEvalList');
@@ -4862,6 +5071,8 @@ function captureDraftSnapshot(){
     scenarioId: CONFIG ? CONFIG.activeScenarioId : null,
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
+    accomplishments: ACCOMPLISHMENTS.slice(),
+    focusPoints: FOCUS_POINTS.slice(),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -4920,6 +5131,8 @@ function applyDraftSnapshot(snap){
   }
   ANSWERS = Object.assign({}, snap.answers || {});
   CHOICES = (snap.choices && typeof snap.choices === 'object') ? JSON.parse(JSON.stringify(snap.choices)) : {};
+  ACCOMPLISHMENTS = Array.isArray(snap.accomplishments) ? snap.accomplishments.slice() : [];
+  FOCUS_POINTS = Array.isArray(snap.focusPoints) ? snap.focusPoints.slice() : [];
   SECTIONS.forEach(sec=> sortByApplicability(sec.key));
   renderSections();
   refreshEval();
