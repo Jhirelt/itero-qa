@@ -55,3 +55,40 @@ create policy "Admin can update app_config" on public.app_config
   for update to authenticated
   using ((select public.is_admin()))
   with check ((select public.is_admin()));
+
+-- 3) Evaluation assignments: any QA profile can assign one of an agent's
+--    monthly evaluation slots (1-4, or more) to themselves or to another
+--    profile, as a call or a ticket evaluation.
+create table if not exists public.evaluation_assignments (
+  id uuid primary key default gen_random_uuid(),
+  agent_id uuid not null references public.agents(id) on delete cascade,
+  month date not null check (extract(day from month) = 1),
+  slot integer not null check (slot between 1 and 20),
+  assignee_id uuid not null references public.profiles(id) on delete cascade,
+  kind text not null check (kind in ('call', 'ticket')),
+  assigned_by uuid not null default auth.uid() references public.profiles(id),
+  created_at timestamptz not null default now(),
+  unique (agent_id, month, slot)
+);
+
+create index if not exists evaluation_assignments_month_idx on public.evaluation_assignments (month);
+create index if not exists evaluation_assignments_assignee_idx on public.evaluation_assignments (assignee_id);
+create index if not exists evaluation_assignments_assigned_by_idx on public.evaluation_assignments (assigned_by);
+
+alter table public.evaluation_assignments enable row level security;
+
+create policy "Authenticated can read evaluation_assignments" on public.evaluation_assignments
+  for select to authenticated
+  using (true);
+
+create policy "Authenticated can create own evaluation_assignments" on public.evaluation_assignments
+  for insert to authenticated
+  with check (assigned_by = (select auth.uid()));
+
+create policy "Assigner, assignee or admin can remove evaluation_assignments" on public.evaluation_assignments
+  for delete to authenticated
+  using (
+    assigned_by = (select auth.uid())
+    or assignee_id = (select auth.uid())
+    or (select public.is_admin())
+  );
