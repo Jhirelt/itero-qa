@@ -689,6 +689,128 @@
   }
   .save-toast.show{ opacity:1; transform:translateY(0); }
 
+  /* ---------- Validation ---------- */
+  .field input.invalid, .agent-input-big.invalid, .edit-eval-field input.invalid{ border-color:var(--no) !important; box-shadow:0 0 0 3px var(--no-soft); }
+  .field-error{ display:none; font-size:11px; color:var(--no); margin-top:4px; font-weight:600; }
+  .field-error.show{ display:block; }
+  .call-date-row{ display:flex; align-items:center; gap:8px; margin-top:12px; }
+  .call-date-row label{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:700; }
+  .call-date-row input{
+    flex-grow:1; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:12.5px; outline:none; color-scheme: light dark;
+  }
+
+  /* ---------- Manual summary notice ---------- */
+  .summary-manual-note{
+    display:none; align-items:center; gap:8px; margin:0 0 8px; padding:8px 10px;
+    background:var(--warn-soft); border:1px solid var(--warn); border-radius:var(--radius-sm);
+    font-size:11.5px; color:var(--text);
+  }
+  .summary-manual-note.show{ display:flex; }
+  .summary-manual-note span{ flex-grow:1; }
+  .summary-manual-note button{
+    flex:none; background:transparent; border:1px solid var(--warn); color:var(--text);
+    border-radius:var(--radius-sm); padding:4px 10px; font-size:11.5px; font-weight:700; cursor:pointer;
+  }
+  .summary-manual-note button:hover{ background:var(--warn); color:#1a1200; }
+
+  /* ---------- Monthly scores grid (Agents tab) ---------- */
+  .monthly-card{ margin-bottom:18px; }
+  .monthly-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
+  .monthly-head h3{ margin:0; }
+  .monthly-head .monthly-sub{ font-size:11.5px; color:var(--text-faint); }
+  .monthly-scroll{ overflow-x:auto; border:1px solid var(--border); border-radius:var(--radius-sm); }
+  .monthly-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:640px; }
+  .monthly-table th, .monthly-table td{ border:1px solid var(--border); padding:8px 10px; text-align:center; white-space:nowrap; }
+  .monthly-table thead th{
+    position:sticky; top:0; background:var(--bg-elev-2); font-size:10.5px; text-transform:uppercase;
+    letter-spacing:.5px; color:var(--text-dim); font-weight:700;
+  }
+  .monthly-table tr > :first-child{ text-align:left; position:sticky; left:0; background:var(--bg-elev); z-index:1; }
+  .monthly-table thead tr > :first-child{ background:var(--bg-elev-2); z-index:2; }
+  .monthly-table tr:first-child th{ border-top:none; }
+  .monthly-table tr > :first-child{ border-left:none; }
+  .monthly-table tr > :last-child{ border-right:none; }
+  .monthly-table tbody tr:last-child td{ border-bottom:none; }
+  .monthly-table .agent-link{
+    background:none; border:none; padding:0; color:var(--accent); font-weight:700; font-size:12.5px;
+    cursor:pointer; text-align:left;
+  }
+  .monthly-table .agent-link:hover{ text-decoration:underline; }
+  .monthly-table tbody tr{ cursor:pointer; }
+  .monthly-table tbody tr:hover td{ background:var(--accent-soft); }
+  .monthly-table tbody tr.selected td{ background:var(--accent-soft); }
+  .monthly-table .cell-score{ font-weight:800; }
+  .monthly-table .cell-good{ color:var(--yes); }
+  .monthly-table .cell-mid{ color:var(--warn); }
+  .monthly-table .cell-bad{ color:var(--no); }
+  .monthly-table .cell-empty{ color:var(--text-faint); }
+  .monthly-table .cell-zero::after{ content:" ⚠"; font-size:10px; }
+  .monthly-table .cell-progress{ color:var(--text-dim); font-weight:700; }
+  .monthly-table .cell-progress.complete{ color:var(--yes); }
+  .monthly-table .cell-avg{ font-weight:800; background:var(--bg-elev-2); }
+  .monthly-table tfoot td{ font-weight:800; background:var(--bg-elev-2); border-bottom:none; }
+
+  /* ---------- Assignments ---------- */
+  .monthly-table .assign-btn{
+    background:none; border:1px dashed var(--border); color:var(--text-dim); border-radius:var(--radius-sm);
+    padding:3px 8px; font-size:11px; font-weight:700; cursor:pointer;
+  }
+  .monthly-table .assign-btn:hover{ border-color:var(--accent); color:var(--accent); }
+  .monthly-table .cell-assigned{ font-size:11.5px; color:var(--text-dim); }
+  .monthly-table .cell-assigned.mine{ color:var(--text); background:var(--accent-soft); }
+  .assign-chip{ display:inline-flex; align-items:center; gap:6px; }
+  .assign-chip .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; }
+  .kind-call{ background:var(--accent-soft); color:var(--accent); }
+  .kind-ticket{ background:var(--warn-soft); color:var(--warn); }
+  .monthly-table .assign-remove{
+    background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:14px; line-height:1; margin-left:4px; padding:0 2px;
+  }
+  .monthly-table .assign-remove:hover{ color:var(--no); }
+  .bulk-start-btn{ flex:none; padding:6px 12px; font-size:12px; margin-left:auto; }
+  .bulk-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; padding:10px 12px;
+    border:1px solid var(--accent-dim); background:var(--accent-soft); border-radius:var(--radius-sm);
+  }
+  .bulk-step{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; }
+  .bulk-step .assign-choice{ flex:none; padding:6px 14px; font-size:12.5px; }
+  .bulk-label{ font-size:12px; font-weight:700; color:var(--text); display:inline-flex; align-items:center; gap:6px; }
+  .bulk-label .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; }
+  .bulk-count{ font-size:12px; font-weight:800; color:var(--accent); margin-left:auto; }
+  .bulk-small{ flex:none; padding:6px 12px; font-size:12px; }
+  .bulk-bar .bulk-select{ width:auto; max-width:220px; margin-top:0; padding:6px 8px; font-size:12.5px; }
+  .monthly-table.bulk-mode .assign-btn{ display:none; }
+  .monthly-table .bulk-cell{ cursor:pointer; }
+  .monthly-table .bulk-box{
+    display:inline-block; width:16px; height:16px; border:1.5px solid var(--text-faint); border-radius:4px; vertical-align:middle;
+  }
+  .monthly-table .bulk-cell:hover .bulk-box{ border-color:var(--accent); }
+  .monthly-table .bulk-cell.picked{ background:var(--accent-soft); }
+  .monthly-table .bulk-cell.picked .bulk-box{ background:var(--accent); border-color:var(--accent); }
+  .monthly-table .bulk-cell.picked .bulk-box::after{ content:"✓"; color:#00110f; font-size:11px; font-weight:900; display:block; line-height:14px; text-align:center; }
+  .assign-box{ max-width:380px; }
+  .assign-agent{ font-size:12.5px; color:var(--text-dim); margin-bottom:14px; }
+  .assign-step{ margin-bottom:14px; transition:opacity .15s; }
+  .assign-step.disabled{ opacity:.4; pointer-events:none; }
+  .assign-step-title{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; margin-bottom:8px; }
+  .assign-choice-row{ display:flex; gap:8px; }
+  .assign-choice{
+    flex:1; padding:10px 12px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:13px; font-weight:700; cursor:pointer;
+  }
+  .assign-choice span{ font-weight:400; color:var(--text-dim); }
+  .assign-choice:hover, .assign-choice.active{ border-color:var(--accent); background:var(--accent-soft); }
+  .assign-choice:disabled{ opacity:.5; cursor:not-allowed; }
+  .assign-choice.kind-call, .assign-choice.kind-ticket{ background:var(--bg-elev-2); }
+  .assign-choice.kind-call{ color:var(--accent); }
+  .assign-choice.kind-ticket{ color:var(--warn); }
+  .assign-choice.kind-call:hover{ background:var(--accent-soft); }
+  .assign-choice.kind-ticket:hover{ background:var(--warn-soft); border-color:var(--warn); }
+  .assign-select{
+    width:100%; margin-top:8px; padding:9px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font-size:13px;
+  }
+
   @media (max-width: 980px){
     .field, .field.field-wide, .field.field-med, .field.field-narrow{ width:calc(50% - 6px); }
     .main-grid{ grid-template-columns: 1fr; }
@@ -783,6 +905,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <input id="fAgent" autocomplete="off" placeholder="Agent's name" class="agent-input-big">
             <div class="autocomplete-list" id="agentList"></div>
           </div>
+          <div class="field-error" id="errAgent"></div>
+          <div class="call-date-row">
+            <label for="fCallDate">Call date</label>
+            <input type="date" id="fCallDate">
+          </div>
+          <div class="field-error" id="errCallDate"></div>
         </div>
         <div class="panel">
           <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
@@ -799,6 +927,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <button class="collapse-toggle collapsed" id="btnToggleSummary" title="Show or hide the summary text">
               <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
+          </div>
+          <div class="summary-manual-note" id="summaryManualNote">
+            <span>You edited this summary by hand, so rubric changes won't overwrite it.</span>
+            <button type="button" id="btnRegenerateSummary">Regenerate</button>
           </div>
           <textarea id="output" placeholder="Summary" class="summary-collapsed"></textarea>
           <div class="btn-row">
@@ -873,6 +1005,31 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
     <div class="agents-scope-note" id="agentsScopeNote">Showing all-time data across every agent.</div>
 
+    <div class="team-card monthly-card">
+      <div class="monthly-head">
+        <h3 id="monthlyTitle">Monthly scores</h3>
+        <span class="monthly-sub" id="monthlySub"></span>
+        <button type="button" class="btn btn-ghost bulk-start-btn" id="btnBulkAssign" style="display:none;">Assign several</button>
+      </div>
+      <div class="bulk-bar" id="bulkBar" style="display:none;">
+        <div class="bulk-step" id="bulkStepKind">
+          <span class="bulk-label">1. Call or ticket?</span>
+          <button type="button" class="assign-choice kind-call" data-bulk-kind="call">Call</button>
+          <button type="button" class="assign-choice kind-ticket" data-bulk-kind="ticket">Ticket</button>
+        </div>
+        <div class="bulk-step" id="bulkStepPick" style="display:none;">
+          <span class="bulk-label"><span class="kind" id="bulkKindTag"></span> 2. Select the evaluations in the table</span>
+          <button type="button" class="btn btn-ghost bulk-small" id="btnBulkSelectAll">Select all empty</button>
+          <span class="bulk-count" id="bulkCount">0 selected</span>
+          <label class="bulk-label" for="bulkAssignee">Assign to</label>
+          <select id="bulkAssignee" class="assign-select bulk-select"></select>
+          <button type="button" class="btn btn-primary bulk-small" id="btnBulkConfirm" disabled>Assign</button>
+        </div>
+        <button type="button" class="btn btn-ghost bulk-small" id="btnBulkCancel">Cancel</button>
+      </div>
+      <div id="monthlyTable"></div>
+    </div>
+
     <div id="agentCard" class="agent-stat-card" style="display:none;">
       <h3 id="agentCardName">Agent</h3>
       <div class="agent-stat-row">
@@ -923,7 +1080,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     <div class="modal-box">
       <button class="modal-close" id="btnCloseEditEval">&times;</button>
       <h3>Edit evaluation</h3>
-      <div class="edit-eval-field"><label>Call date</label><input type="date" id="editEvalDate"></div>
+      <div class="edit-eval-field"><label>Call date</label><input type="date" id="editEvalDate" required></div>
       <div class="edit-eval-field"><label>Ticket ID</label><input type="text" id="editEvalTicket"></div>
       <div class="edit-eval-field"><label>Call reason</label><input type="text" id="editEvalReason"></div>
       <div class="edit-eval-score-preview">Current score: <b id="editEvalScorePreview">—</b></div>
@@ -933,6 +1090,31 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
   </div>
 
+
+  <div class="modal-overlay" id="assignOverlay">
+    <div class="modal-box assign-box">
+      <button class="modal-close" id="btnCloseAssign">&times;</button>
+      <h3>Assign an evaluation</h3>
+      <div class="assign-agent" id="assignAgentName"></div>
+      <div class="assign-step">
+        <div class="assign-step-title">1. Who will evaluate?</div>
+        <div class="assign-choice-row" id="assignWhoRow">
+          <button type="button" class="assign-choice" data-who="me">Me <span id="assignMeName"></span></button>
+          <button type="button" class="assign-choice" data-who="other" id="btnAssignOther">Someone else</button>
+        </div>
+        <div id="assignOtherWrap" style="display:none;">
+          <select id="assignOtherSelect" class="assign-select"></select>
+        </div>
+      </div>
+      <div class="assign-step disabled" id="assignKindStep">
+        <div class="assign-step-title">2. Call or ticket?</div>
+        <div class="assign-choice-row">
+          <button type="button" class="assign-choice kind-call" data-kind="call">Call</button>
+          <button type="button" class="assign-choice kind-ticket" data-kind="ticket">Ticket</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- =============== CONFIGURATION VIEW =============== -->
   <div id="view-config">
@@ -1407,6 +1589,55 @@ let CONFIG = null;
 let ANSWERS = {};
 let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zeroReasons: [] };
 
+// Once the evaluator types in the summary box, rubric/scenario changes must
+// not overwrite their text. LAST_AUTO_SUMMARY is what the template would
+// produce right now; AUTO_SUMMARY_AT_EDIT is what it produced when they
+// started editing, so we can tell them the rubrics changed since.
+let SUMMARY_MANUAL = false;
+let LAST_AUTO_SUMMARY = '';
+let AUTO_SUMMARY_AT_EDIT = '';
+let LAST_SAVED_SIGNATURE = null;
+
+function setSummaryManual(manual){
+  SUMMARY_MANUAL = !!manual;
+  if(SUMMARY_MANUAL && !AUTO_SUMMARY_AT_EDIT) AUTO_SUMMARY_AT_EDIT = LAST_AUTO_SUMMARY;
+  if(!SUMMARY_MANUAL) AUTO_SUMMARY_AT_EDIT = '';
+  updateSummaryManualNote();
+}
+
+function updateSummaryManualNote(){
+  const note = document.getElementById('summaryManualNote');
+  if(!note) return;
+  note.classList.toggle('show', SUMMARY_MANUAL);
+  const stale = SUMMARY_MANUAL && AUTO_SUMMARY_AT_EDIT && AUTO_SUMMARY_AT_EDIT !== LAST_AUTO_SUMMARY;
+  note.querySelector('span').textContent = stale
+    ? 'Rubrics changed since you edited the summary. Your text was kept; Regenerate to rebuild it (this replaces your edits).'
+    : 'You edited this summary by hand, so rubric changes won\'t overwrite it.';
+}
+
+function todayLocal(){
+  const d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+}
+
+function isAdminUser(){
+  return !!(CURRENT_USER && String(CURRENT_USER.role || '').trim().toLowerCase() === 'admin');
+}
+
+function findAgentByName(name){
+  const key = String(name || '').trim().toLowerCase();
+  if(!key) return null;
+  const list = (AGENTS_LIST_CACHE && AGENTS_LIST_CACHE.length) ? AGENTS_LIST_CACHE : CONFIG.names.map(n=> ({ id: null, name: n }));
+  return list.find(a=> a.name.toLowerCase() === key) || null;
+}
+
+function setFieldError(inputId, errorId, msg){
+  const input = document.getElementById(inputId);
+  if(input) input.classList.toggle('invalid', !!msg);
+  const err = errorId ? document.getElementById(errorId) : null;
+  if(err){ err.textContent = msg || ''; err.classList.toggle('show', !!msg); }
+}
+
 // Seed scenarios built from the same defaults the tool shipped with —
 // fully editable afterwards from Configuration > Call Type Scenarios.
 function buildSeedScenarios(){
@@ -1562,6 +1793,7 @@ async function loadConfig(){
 
 async function saveConfig(){
   if(!supabaseClient) return false;
+  if(!isAdminUser()) return false;
   try{
     const { names, ...toSave } = CONFIG; // names live in the agents table, not here
     const { error } = await supabaseClient.from('app_config').upsert({
@@ -1571,8 +1803,31 @@ async function saveConfig(){
       updated_at: new Date().toISOString(),
     });
     if(error) throw error;
+    CONFIG_SAVED_SNAPSHOT = configSnapshot();
     return true;
   }catch(e){ console.error('Could not save shared configuration', e); return false; }
+}
+
+// Only the parts an admin edits on purpose; call-type switching and the
+// automatic re-sorting of rubric order are not "unsaved changes".
+let CONFIG_SAVED_SNAPSHOT = null;
+function isViewVisible(id){
+  const el = document.getElementById(id);
+  return !!el && getComputedStyle(el).display !== 'none';
+}
+function configSnapshot(){
+  if(!CONFIG) return null;
+  return JSON.stringify({ items: CONFIG.items, scenarios: CONFIG.scenarios, summaryTemplate: CONFIG.summaryTemplate, itemTemplate: CONFIG.itemTemplate });
+}
+function configIsDirty(){
+  if(!CONFIG_SAVED_SNAPSHOT) return false;
+  const tpl = document.getElementById('cfgSummaryTemplate');
+  const itemTpl = document.getElementById('cfgItemTemplate');
+  if(isViewVisible('view-config')){
+    if(tpl && tpl.value !== CONFIG.summaryTemplate) return true;
+    if(itemTpl && itemTpl.value !== CONFIG.itemTemplate) return true;
+  }
+  return configSnapshot() !== CONFIG_SAVED_SNAPSHOT;
 }
 
 function showToast(msg){
@@ -1654,7 +1909,7 @@ function renderSections(){
               </button>`;
         if(cfg.zeroType){
           row.innerHTML = `
-            <span class="lbl">${cfg.label}</span>
+            <span class="lbl">${escapeHtml(cfg.label)}</span>
             <span class="pts zero">auto-0</span>
             <div class="ic-controls">
               <button class="pill no" data-id="${id}" data-val="no" title="Triggered">
@@ -1665,7 +1920,7 @@ function renderSections(){
           `;
         }else{
           row.innerHTML = `
-            <span class="lbl">${cfg.label}</span>
+            <span class="lbl">${escapeHtml(cfg.label)}</span>
             <span class="pts">${cfg.pts}pt</span>
             <div class="ic-controls">
               <button class="pill yes" data-id="${id}" data-val="yes" title="Met">
@@ -1833,7 +2088,9 @@ function buildOutput(score, earned, possible, zeroTriggered){
     .replace(/{{feedback}}/g, feedback)
     .replace(/{{zeroline}}/g, zeroline);
 
-  document.getElementById('output').value = out.trim();
+  LAST_AUTO_SUMMARY = out.trim();
+  if(!SUMMARY_MANUAL) document.getElementById('output').value = LAST_AUTO_SUMMARY;
+  updateSummaryManualNote();
  }catch(e){ console.error('buildOutput failed', e); }
 }
 
@@ -1852,7 +2109,7 @@ function setupAutocomplete(){
         const d = document.createElement('div');
         d.className = 'autocomplete-item' + (i===hiIndex ? ' hi':'');
         d.textContent = name;
-        d.addEventListener('mousedown', (e)=>{ e.preventDefault(); input.value = name; list.classList.remove('open'); refreshEval(); });
+        d.addEventListener('mousedown', (e)=>{ e.preventDefault(); input.value = name; list.classList.remove('open'); setFieldError('fAgent', 'errAgent', ''); refreshEval(); });
         list.appendChild(d);
       });
     }
@@ -1869,10 +2126,21 @@ function setupAutocomplete(){
     const items = Array.from(list.querySelectorAll('.autocomplete-item'));
     if(e.key==='ArrowDown'){ e.preventDefault(); hiIndex = Math.min(items.length-1, hiIndex+1); render(matchesFor(input.value)); }
     else if(e.key==='ArrowUp'){ e.preventDefault(); hiIndex = Math.max(0, hiIndex-1); render(matchesFor(input.value)); }
-    else if(e.key==='Enter'){ if(hiIndex>=0 && items[hiIndex]){ input.value = items[hiIndex].textContent; list.classList.remove('open'); refreshEval(); } }
+    else if(e.key==='Enter'){ if(hiIndex>=0 && items[hiIndex]){ input.value = items[hiIndex].textContent; list.classList.remove('open'); setFieldError('fAgent', 'errAgent', ''); refreshEval(); } }
     else if(e.key==='Escape'){ list.classList.remove('open'); }
   });
   document.addEventListener('click', (e)=>{ if(!list.contains(e.target) && e.target!==input) list.classList.remove('open'); });
+  input.addEventListener('blur', ()=>{
+    const v = input.value.trim();
+    if(!v){ setFieldError('fAgent', 'errAgent', ''); return; }
+    const match = findAgentByName(v);
+    if(match){
+      if(match.name !== v){ input.value = match.name; refreshEval(); }
+      setFieldError('fAgent', 'errAgent', '');
+    }else{
+      setFieldError('fAgent', 'errAgent', '"' + v + '" is not in the agent list.');
+    }
+  });
 }
 
 /* ============================================================
@@ -1902,7 +2170,8 @@ async function syncConfigNamesFromDatabase(){
 }
 
 async function removeAgentFromDatabase(agent){
-  if(!confirm('Remove "' + agent.name + '" from the agent list? Past evaluations for them are kept, but you will not be able to log new ones under this name unless you add them back.')) return;
+  if(!agent.id){ showToast('Not connected to the database.'); return; }
+  if(!confirm('Remove "' + agent.name + '" from the agent list?')) return;
   try{
     const { error } = await supabaseClient.from('agents').delete().eq('id', agent.id);
     if(error) throw error;
@@ -1912,7 +2181,11 @@ async function removeAgentFromDatabase(agent){
     showToast('"' + agent.name + '" removed');
   }catch(err){
     console.error('Could not remove agent', err);
-    showToast('Could not remove: ' + (err.message || 'unknown error'));
+    if(err && err.code === '23503'){
+      showToast('"' + agent.name + '" has saved evaluations, so they can\'t be removed.');
+    }else{
+      showToast('Could not remove: ' + (err.message || 'unknown error'));
+    }
   }
 }
 
@@ -1953,7 +2226,7 @@ function renderScenarioChips(){
     const chip = document.createElement('div');
     chip.className = 'scenario-chip' + (isActive ? ' active' : '') + (isEditing ? ' editing' : '');
     chip.dataset.id = id;
-    chip.innerHTML = (isActive ? '<span class="active-dot" title="Currently active"></span>' : '') + s.name;
+    chip.innerHTML = (isActive ? '<span class="active-dot" title="Currently active"></span>' : '') + escapeHtml(s.name);
     chip.addEventListener('click', ()=>{
       editingScenarioId = id;
       renderScenarioChips();
@@ -1997,7 +2270,7 @@ function renderScenarioApplicability(){
       const on = !!scenario.applicability[id];
       const row = document.createElement('div');
       row.className = 'scenario-applic-item';
-      row.innerHTML = `<span>${label}</span><div class="scenario-applic-switch ${on?'on':''}" data-id="${id}"></div>`;
+      row.innerHTML = `<span>${escapeHtml(label)}</span><div class="scenario-applic-switch ${on?'on':''}" data-id="${id}"></div>`;
       grid.appendChild(row);
     });
     root.appendChild(grid);
@@ -2058,18 +2331,18 @@ function renderConfigSections(){
         <div class="cfg-texts">
           <div style="grid-column:1 / -1;">
             <label class="n">Reason (shown when triggered)</label>
-            <textarea data-id="${id}" data-field="reason">${cfg.reason}</textarea>
+            <textarea data-id="${id}" data-field="reason">${escapeHtml(cfg.reason)}</textarea>
           </div>
         </div>
       ` : `
         <div class="cfg-texts">
           <div>
             <label class="y">Met (yes) text</label>
-            <textarea data-id="${id}" data-field="yes">${cfg.yes}</textarea>
+            <textarea data-id="${id}" data-field="yes">${escapeHtml(cfg.yes)}</textarea>
           </div>
           <div>
             <label class="n">Not met (no) text</label>
-            <textarea data-id="${id}" data-field="no">${cfg.no}</textarea>
+            <textarea data-id="${id}" data-field="no">${escapeHtml(cfg.no)}</textarea>
           </div>
         </div>
       `;
@@ -2080,7 +2353,7 @@ function renderConfigSections(){
             <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/><circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/><circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/></svg>
           </span>
           <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
-          <input class="cfg-label" data-id="${id}" value="${cfg.label.replace(/"/g,'&quot;')}">
+          <input class="cfg-label" data-id="${id}" value="${escapeHtml(cfg.label)}">
         </div>
         ${textsHtml}
       `;
@@ -2166,6 +2439,8 @@ function setupDragAndDrop(root){
    INIT
    ============================================================ */
 function switchTab(view){
+  const leavingConfig = view !== 'config' && isViewVisible('view-config');
+  if(leavingConfig && configIsDirty()) showToast('You have unsaved configuration changes. Go back to Configuration and save them.');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   const views = { eval: document.getElementById('view-eval'), agents: document.getElementById('view-agents'), config: document.getElementById('view-config') };
   const showEl = views[view];
@@ -2207,7 +2482,7 @@ function renderScenarioSelect(){
   const sel = document.getElementById('scenarioSelect');
   sel.innerHTML = CONFIG.scenarios.order.map(id=>{
     const s = CONFIG.scenarios.items[id];
-    return `<option value="${id}" ${id===CONFIG.activeScenarioId?'selected':''}>${s.name}</option>`;
+    return `<option value="${id}" ${id===CONFIG.activeScenarioId?'selected':''}>${escapeHtml(s.name)}</option>`;
   }).join('');
 }
 
@@ -2340,8 +2615,11 @@ async function init(){
   }catch(e){
     console.error('Startup data load failed — continuing with local defaults so the app stays usable', e);
   }
+  CONFIG_SAVED_SNAPSHOT = configSnapshot();
   resetAnswersToDefault();
   renderScenarioSelect();
+  document.getElementById('fCallDate').value = todayLocal();
+  document.getElementById('fCallDate').max = todayLocal();
 
   try{
     const rawDraft = localStorage.getItem(LS_CURRENT_DRAFT_KEY);
@@ -2382,7 +2660,30 @@ async function init(){
   });
 
   ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
-    document.getElementById(id).addEventListener('input', refreshEval);
+    document.getElementById(id).addEventListener('input', ()=>{
+      document.getElementById(id).classList.remove('invalid');
+      refreshEval();
+    });
+  });
+  document.getElementById('fCallDate').addEventListener('change', ()=>{
+    setFieldError('fCallDate', 'errCallDate', '');
+    saveCurrentDraftToLocal();
+  });
+
+  document.getElementById('output').addEventListener('input', ()=>{
+    const ta = document.getElementById('output');
+    setSummaryManual(ta.value.trim() !== LAST_AUTO_SUMMARY);
+    saveCurrentDraftToLocal();
+  });
+  document.getElementById('btnRegenerateSummary').addEventListener('click', ()=>{
+    if(!confirm('Replace your edited summary with a new one built from the rubrics? Your manual changes will be lost.')) return;
+    setSummaryManual(false);
+    refreshEval();
+    showToast('Summary regenerated');
+  });
+
+  window.addEventListener('beforeunload', (e)=>{
+    if(isAdminUser() && configIsDirty()){ e.preventDefault(); e.returnValue = ''; }
   });
 
   document.getElementById('btnCopy').addEventListener('click', ()=>{
@@ -2396,7 +2697,16 @@ async function init(){
     archiveCurrentDraftIfMeaningful();
     clearCurrentDraftFromLocal();
     resetAnswersToDefault();
-    ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=> document.getElementById(id).value = '');
+    ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
+      document.getElementById(id).value = '';
+      document.getElementById(id).classList.remove('invalid');
+    });
+    document.getElementById('fCallDate').value = todayLocal();
+    setFieldError('fAgent', 'errAgent', '');
+    setFieldError('fCallDate', 'errCallDate', '');
+    setSummaryManual(false);
+    LAST_SAVED_SIGNATURE = null;
+    renderSections();
     refreshEval();
     renderOngoingList();
     showToast(hadContent ? 'Reset — previous evaluation saved under Ongoing evaluations' : 'Reset — everything marked as Met again');
@@ -2462,13 +2772,13 @@ async function init(){
     CONFIG.summaryTemplate = document.getElementById('cfgSummaryTemplate').value;
     CONFIG.itemTemplate = document.getElementById('cfgItemTemplate').value;
     const ok = await saveConfig();
-    showToast(ok ? 'Configuration saved' : 'Saved locally (storage unavailable)');
+    showToast(ok ? 'Configuration saved' : 'Could not save the configuration. Check your connection and that you are signed in as an admin.');
     renderSections(); refreshEval();
   });
 
   document.getElementById('btnSaveScenarios').addEventListener('click', async ()=>{
     const ok = await saveConfig();
-    showToast(ok ? 'Scenarios saved' : 'Saved locally (storage unavailable)');
+    showToast(ok ? 'Scenarios saved' : 'Could not save the scenarios. Check your connection and that you are signed in as an admin.');
   });
 
   async function addNameToList(){
@@ -2504,10 +2814,16 @@ async function init(){
   });
   document.getElementById('btnAddName').addEventListener('click', addNameToList);
 
+  function scenarioNameTaken(name, exceptId){
+    const key = name.trim().toLowerCase();
+    return CONFIG.scenarios.order.some(id=> id !== exceptId && CONFIG.scenarios.items[id].name.trim().toLowerCase() === key);
+  }
+
   function addScenario(){
     const input = document.getElementById('newScenarioInput');
     const name = input.value.trim();
-    if(!name) return;
+    if(!name){ showToast('Enter a scenario name'); return; }
+    if(scenarioNameTaken(name)){ showToast('A scenario called "' + name + '" already exists'); return; }
     const id = slugify(name);
     const allTrue = {};
     Object.keys(CONFIG.items).forEach(itemId=>{ if(!CONFIG.items[itemId].zeroType) allTrue[itemId] = true; });
@@ -2532,7 +2848,8 @@ async function init(){
 
   document.getElementById('btnScenarioRename').addEventListener('click', ()=>{
     const name = document.getElementById('scenarioRenameInput').value.trim();
-    if(!name) return;
+    if(!name){ showToast('Enter a scenario name'); return; }
+    if(scenarioNameTaken(name, editingScenarioId)){ showToast('A scenario called "' + name + '" already exists'); return; }
     CONFIG.scenarios.items[editingScenarioId].name = name;
     refreshScenarioUI();
     showToast('Scenario renamed');
@@ -2594,8 +2911,16 @@ async function init(){
     if(!label){ showToast('Enter a rubric name'); return; }
     if(!isZero && !yesText){ showToast('Enter the Met (yes) text'); return; }
     if(!noText){ showToast(isZero ? 'Enter the reason text' : 'Enter the Not met (no) text'); return; }
+    const ptsNum = Number(ptsRaw);
+    if(!isZero && (!ptsRaw || !Number.isInteger(ptsNum) || ptsNum < 1 || ptsNum > 100)){
+      showToast('Points must be a whole number from 1 to 100'); return;
+    }
+    const labelKey = label.toLowerCase();
+    if(CONFIG.order[sectionKey].some(existing=> CONFIG.items[existing] && CONFIG.items[existing].label.trim().toLowerCase() === labelKey)){
+      showToast('"' + label + '" already exists in this category'); return;
+    }
 
-    const pts = isZero ? 0 : Math.max(0, parseInt(ptsRaw, 10) || 0);
+    const pts = isZero ? 0 : ptsNum;
     const id = 'custom_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
     CONFIG.items[id] = isZero
@@ -2615,7 +2940,7 @@ async function init(){
 
     renderConfigSections();
     refreshScenarioUI();
-    showToast('"' + label + '" added to ' + SECTIONS.find(s=>s.key===sectionKey).title);
+    showToast('"' + label + '" added to ' + SECTIONS.find(s=>s.key===sectionKey).title + '. Click Save changes to keep it.');
   });
 
   setupAutocomplete();
@@ -2658,6 +2983,9 @@ function applyRoleToUI(){
   const isAdmin = role === 'admin';
   const summaryBlock = document.getElementById('cfgSummaryBlock');
   if(summaryBlock) summaryBlock.style.display = isAdmin ? '' : 'none';
+  // Configuration changes the rubric for everyone, so only admins see it.
+  document.getElementById('tabConfigBtn').style.display = isAdmin ? '' : 'none';
+  if(!isAdmin && isViewVisible('view-config')) switchTab('eval');
 
   document.getElementById('userBadgeName').textContent = CURRENT_USER.display_name || CURRENT_USER.email;
   document.getElementById('userBadgeRole').textContent = CURRENT_USER.role;
@@ -2678,7 +3006,6 @@ async function loadProfileAndStart(user){
     role: profile ? profile.role : 'evaluator',
     display_name: profile ? profile.display_name : user.email,
   };
-  console.log('Logged in as', CURRENT_USER.email, '— role:', CURRENT_USER.role);
 
   applyRoleToUI();
   setAppVisible(true);
@@ -2727,79 +3054,141 @@ document.getElementById('btnLogout').addEventListener('click', async ()=>{
   window.location.reload();
 });
 
+function validateEvaluationForm(){
+  const problems = [];
+  const agentName = document.getElementById('fAgent').value.trim();
+  const agent = findAgentByName(agentName);
+  if(!agentName){
+    setFieldError('fAgent', 'errAgent', 'Enter the agent name.');
+    problems.push('agent name');
+  }else if(!agent){
+    setFieldError('fAgent', 'errAgent', '"' + agentName + '" is not in the agent list. Ask an admin to add them.');
+    problems.push('a known agent');
+  }else{
+    setFieldError('fAgent', 'errAgent', '');
+  }
+
+  const callDate = document.getElementById('fCallDate').value;
+  if(!callDate){
+    setFieldError('fCallDate', 'errCallDate', 'Pick the date of the call.');
+    problems.push('call date');
+  }else if(callDate > todayLocal()){
+    setFieldError('fCallDate', 'errCallDate', 'The call date can\'t be in the future.');
+    problems.push('a valid call date');
+  }else{
+    setFieldError('fCallDate', 'errCallDate', '');
+  }
+
+  [['fTicket', 'ticket ID'], ['fReason', 'call reason']].forEach(([id, label])=>{
+    const empty = !document.getElementById(id).value.trim();
+    document.getElementById(id).classList.toggle('invalid', empty);
+    if(empty) problems.push(label);
+  });
+
+  return { ok: problems.length === 0, problems, agent, callDate };
+}
+
+function buildEvaluationPayload(agent, callDate){
+  const sections = computeSectionBreakdown();
+  const sectionRows = sections
+    .filter(sec => !sec.isZeroSection && sec.possible > 0)
+    .map(sec => ({
+      section_key: sec.key,
+      section_title: sec.title,
+      points_earned: sec.earned,
+      points_possible: sec.possible,
+    }));
+  const deductionRows = [];
+  sections.forEach(sec=>{
+    sec.deductions.forEach(d=> deductionRows.push({ section_key: sec.key, rubric_label: d.label, points_lost: d.pts }));
+    sec.zeroList.forEach(d=> deductionRows.push({ section_key: sec.key, rubric_label: d.label, points_lost: 0 }));
+  });
+  return {
+    evaluation: {
+      agent_id: agent.id,
+      evaluator_name: (CURRENT_USER && CURRENT_USER.display_name) || null,
+      call_date: callDate,
+      ticket_id: document.getElementById('fTicket').value.trim() || null,
+      call_reason: document.getElementById('fReason').value.trim() || null,
+      score: LAST_STATE.score,
+      points_earned: LAST_STATE.earned,
+      points_possible: LAST_STATE.possible,
+      zero_triggered: LAST_STATE.zeroTriggered,
+    },
+    sections: sectionRows,
+    deductions: deductionRows,
+  };
+}
+
+// Preferred path: one database function inserts the evaluation, its sections
+// and its deductions in a single transaction, so a failure never leaves a
+// half-saved evaluation behind.
+async function insertEvaluationAtomic(payload){
+  const { data, error } = await supabaseClient.rpc('save_evaluation', { payload });
+  if(error) throw error;
+  return data;
+}
+
+// Fallback for databases where save_evaluation has not been created yet.
+async function insertEvaluationSequential(payload){
+  const { data: evalRow, error: evalErr } = await supabaseClient
+    .from('evaluations').insert(payload.evaluation).select('id').single();
+  if(evalErr) throw evalErr;
+  const evaluationId = evalRow.id;
+  try{
+    if(payload.sections.length){
+      const { error } = await supabaseClient.from('evaluation_sections')
+        .insert(payload.sections.map(r=> ({ ...r, evaluation_id: evaluationId })));
+      if(error) throw error;
+    }
+    if(payload.deductions.length){
+      const { error } = await supabaseClient.from('evaluation_deductions')
+        .insert(payload.deductions.map(r=> ({ ...r, evaluation_id: evaluationId })));
+      if(error) throw error;
+    }
+  }catch(err){
+    // Try to undo the partial save (allowed for admins), and say so if we can't.
+    const { error: undoErr } = await supabaseClient.from('evaluations').delete().eq('id', evaluationId);
+    if(undoErr) err.message = (err.message || 'unknown error') + ' (the score was saved without its details; ask an admin to delete it)';
+    throw err;
+  }
+  return evaluationId;
+}
+
 async function saveEvaluationToDatabase(){
   const btn = document.getElementById('btnSaveEvaluation');
   const original = btn.innerHTML;
 
   if(!supabaseClient){ showToast('Not connected to the database — check your connection.'); return; }
+  if(btn.disabled) return;
 
-  const agentName = document.getElementById('fAgent').value.trim();
-  if(!agentName){ showToast('Enter the agent name before saving.'); return; }
+  await ensureAgentsListLoaded();
+  const check = validateEvaluationForm();
+  if(!check.ok){
+    showToast('Before saving, fill in: ' + check.problems.join(', '));
+    return;
+  }
 
-  const evaluatorName = CURRENT_USER ? CURRENT_USER.display_name : '';
-  const ticketId = document.getElementById('fTicket').value.trim();
-  const callReason = document.getElementById('fReason').value.trim();
+  const payload = buildEvaluationPayload(check.agent, check.callDate);
+  const signature = JSON.stringify([payload.evaluation.agent_id, payload.evaluation.call_date, payload.evaluation.ticket_id, ANSWERS]);
+  if(signature === LAST_SAVED_SIGNATURE &&
+     !confirm('This evaluation was already saved. Save it again as a second record?')) return;
 
   btn.disabled = true;
   btn.textContent = 'Saving...';
 
   try{
-    const { data: agentRow, error: agentErr } = await supabaseClient
-      .from('agents').select('id').ilike('name', agentName).maybeSingle();
-    if(agentErr) throw agentErr;
-    if(!agentRow){
-      showToast('"' + agentName + '" is not in the agent list yet — ask the admin to add them.');
-      return;
+    try{
+      await insertEvaluationAtomic(payload);
+    }catch(rpcErr){
+      if(rpcErr && (rpcErr.code === 'PGRST202' || rpcErr.code === '42883')){
+        await insertEvaluationSequential(payload);
+      }else{
+        throw rpcErr;
+      }
     }
-
-    const { data: evalRow, error: evalErr } = await supabaseClient
-      .from('evaluations')
-      .insert({
-        agent_id: agentRow.id,
-        evaluator_name: evaluatorName || null,
-        call_date: new Date().toISOString().slice(0, 10),
-        ticket_id: ticketId || null,
-        call_reason: callReason || null,
-        score: LAST_STATE.score,
-        points_earned: LAST_STATE.earned,
-        points_possible: LAST_STATE.possible,
-        zero_triggered: LAST_STATE.zeroTriggered,
-      })
-      .select('id').single();
-    if(evalErr) throw evalErr;
-    const evaluationId = evalRow.id;
-
-    const sections = computeSectionBreakdown();
-
-    const sectionRows = sections
-      .filter(sec => !sec.isZeroSection && sec.possible > 0)
-      .map(sec => ({
-        evaluation_id: evaluationId,
-        section_key: sec.key,
-        section_title: sec.title,
-        points_earned: sec.earned,
-        points_possible: sec.possible,
-      }));
-    if(sectionRows.length){
-      const { error: secErr } = await supabaseClient.from('evaluation_sections').insert(sectionRows);
-      if(secErr) throw secErr;
-    }
-
-    const deductionRows = [];
-    sections.forEach(sec=>{
-      sec.deductions.forEach(d=> deductionRows.push({
-        evaluation_id: evaluationId, section_key: sec.key, rubric_label: d.label, points_lost: d.pts,
-      }));
-      sec.zeroList.forEach(d=> deductionRows.push({
-        evaluation_id: evaluationId, section_key: sec.key, rubric_label: d.label, points_lost: 0,
-      }));
-    });
-    if(deductionRows.length){
-      const { error: dedErr } = await supabaseClient.from('evaluation_deductions').insert(deductionRows);
-      if(dedErr) throw dedErr;
-    }
-
-    showToast('Evaluation saved to the database');
+    LAST_SAVED_SIGNATURE = signature;
+    showToast('Evaluation saved for ' + check.agent.name);
     clearCurrentDraftFromLocal();
   }catch(err){
     console.error('Save evaluation failed', err);
@@ -2883,7 +3272,7 @@ document.getElementById('btnSendEmail').addEventListener('click', async ()=>{
   }
 
   const subject = 'QA Evaluation';
-  const body = buildEmailBody();
+  const body = SUMMARY_MANUAL ? document.getElementById('output').value : buildEmailBody();
   window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 
   btn.disabled = false;
@@ -2939,7 +3328,7 @@ function getAgentsDateRange(){
 
 async function fetchEvaluations(opts){
   opts = opts || {};
-  let q = supabaseClient.from('evaluations').select('id, agent_id, score, points_earned, points_possible, call_date, zero_triggered, agents(name)');
+  let q = supabaseClient.from('evaluations').select('id, agent_id, score, points_earned, points_possible, call_date, ticket_id, call_reason, evaluator_name, created_at, zero_triggered, agents(name)');
   if(opts.agentId) q = q.eq('agent_id', opts.agentId);
   if(opts.startDate) q = q.gte('call_date', opts.startDate);
   if(opts.endDate) q = q.lte('call_date', opts.endDate);
@@ -3050,6 +3439,402 @@ function renderRanking(evals){
   root.innerHTML = html;
 }
 
+/* ---------- Monthly scores grid ---------- */
+const MONTHLY_EVAL_TARGET = 4;
+const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+function scoreClass(score){
+  return score >= 85 ? 'cell-good' : score >= 60 ? 'cell-mid' : 'cell-bad';
+}
+
+// The grid always shows one period: the month or custom range picked above,
+// or the current month when no filter is set.
+function monthlyGridScope(){
+  const { startDate, endDate } = getAgentsDateRange();
+  const month = document.getElementById('agentsMonth').value;
+  if(startDate || endDate){
+    const label = month
+      ? MONTH_NAMES[Number(month.split('-')[1]) - 1] + ' ' + month.split('-')[0]
+      : (startDate || '…') + ' → ' + (endDate || '…');
+    return { startDate, endDate, label, isFilter: true, month: month ? month + '-01' : null };
+  }
+  const now = new Date();
+  const y = now.getFullYear(), m = now.getMonth() + 1;
+  const mm = String(m).padStart(2, '0');
+  return {
+    startDate: y + '-' + mm + '-01',
+    endDate: y + '-' + mm + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0'),
+    label: MONTH_NAMES[m - 1] + ' ' + y,
+    isFilter: false,
+    month: y + '-' + mm + '-01',
+  };
+}
+
+function openAgentFromGrid(agentId){
+  const sel = document.getElementById('agentsSelect');
+  sel.value = agentId;
+  refreshAgentsView().then(()=>{
+    const card = document.getElementById('agentCard');
+    if(card.style.display !== 'none') card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  });
+}
+
+/* ---------- Evaluation assignments ---------- */
+// Profiles (QA users) can assign an agent's monthly evaluations to themselves
+// or to another profile, as a call or a ticket. An assignment counts as done
+// once that profile saves an evaluation for the agent in the same month.
+let PROFILES_CACHE = null;
+let ASSIGNMENTS_AVAILABLE = true;
+
+async function ensureProfilesLoaded(){
+  if(PROFILES_CACHE) return PROFILES_CACHE;
+  const { data, error } = await supabaseClient.from('profiles').select('id, display_name, role').order('display_name');
+  if(error){ console.error('Could not load profiles', error); return []; }
+  PROFILES_CACHE = data || [];
+  return PROFILES_CACHE;
+}
+
+async function fetchAssignments(month){
+  if(!ASSIGNMENTS_AVAILABLE || !month) return [];
+  const { data, error } = await supabaseClient.from('evaluation_assignments')
+    .select('id, agent_id, month, slot, assignee_id, kind, assigned_by, created_at').eq('month', month);
+  if(error){
+    // Table not created yet: keep the grid working without assignments.
+    if(error.code === '42P01' || error.code === 'PGRST205'){ ASSIGNMENTS_AVAILABLE = false; return []; }
+    throw error;
+  }
+  return data || [];
+}
+
+function profileName(id){
+  const p = (PROFILES_CACHE || []).find(x=> x.id === id);
+  return p ? (p.display_name || 'QA') : 'QA';
+}
+
+function canRemoveAssignment(a){
+  return !!CURRENT_USER && (a.assigned_by === CURRENT_USER.id || a.assignee_id === CURRENT_USER.id || isAdminUser());
+}
+
+// Lay out one agent's month: saved evaluations first (each one closes the
+// oldest open assignment of the profile who wrote it), then open assignments.
+function buildAgentSlots(evals, assignments){
+  const open = assignments.slice().sort((a, b)=> a.slot - b.slot);
+  const slots = evals.map(e=>{
+    const i = open.findIndex(a=> profileName(a.assignee_id) === (e.evaluator_name || ''));
+    const done = i > -1 ? open.splice(i, 1)[0] : null;
+    return { type: 'eval', eval: e, assignment: done };
+  });
+  open.forEach(a=> slots.push({ type: 'assignment', assignment: a }));
+  return slots;
+}
+
+const ASSIGN_STATE = { agentId: null, month: null, assigneeId: null };
+
+function openAssignModal(agentId, month){
+  const agent = (AGENTS_LIST_CACHE || []).find(a=> a.id === agentId);
+  ASSIGN_STATE.agentId = agentId;
+  ASSIGN_STATE.month = month;
+  ASSIGN_STATE.assigneeId = null;
+  document.getElementById('assignAgentName').textContent = (agent ? agent.name : 'Agent') + ' · ' +
+    MONTH_NAMES[Number(month.slice(5, 7)) - 1] + ' ' + month.slice(0, 4);
+  document.getElementById('assignMeName').textContent = CURRENT_USER.display_name || 'Me';
+  const others = (PROFILES_CACHE || []).filter(p=> p.id !== CURRENT_USER.id);
+  const sel = document.getElementById('assignOtherSelect');
+  sel.innerHTML = others.map(p=> '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.display_name || 'QA') + '</option>').join('');
+  document.getElementById('btnAssignOther').disabled = !others.length;
+  document.getElementById('btnAssignOther').title = others.length ? '' : 'There are no other QA profiles yet';
+  document.querySelectorAll('#assignWhoRow .assign-choice').forEach(b=> b.classList.remove('active'));
+  document.getElementById('assignOtherWrap').style.display = 'none';
+  document.getElementById('assignKindStep').classList.add('disabled');
+  document.getElementById('assignOverlay').classList.add('show');
+}
+
+function closeAssignModal(){
+  document.getElementById('assignOverlay').classList.remove('show');
+}
+
+function chooseAssignee(who){
+  document.querySelectorAll('#assignWhoRow .assign-choice').forEach(b=> b.classList.toggle('active', b.dataset.who === who));
+  const otherWrap = document.getElementById('assignOtherWrap');
+  otherWrap.style.display = who === 'other' ? '' : 'none';
+  ASSIGN_STATE.assigneeId = who === 'me' ? CURRENT_USER.id : document.getElementById('assignOtherSelect').value;
+  document.getElementById('assignKindStep').classList.toggle('disabled', !ASSIGN_STATE.assigneeId);
+}
+
+async function createAssignment(kind){
+  if(!ASSIGN_STATE.assigneeId){ showToast('First choose who will do the evaluation'); return; }
+  const { agentId, month, assigneeId } = ASSIGN_STATE;
+  const buttons = document.querySelectorAll('#assignKindStep button');
+  buttons.forEach(b=> b.disabled = true);
+  try{
+    // Next free number for this agent and month; the unique key stops two
+    // people from taking the same one at once.
+    const { data: existing, error: exErr } = await supabaseClient.from('evaluation_assignments')
+      .select('slot').eq('agent_id', agentId).eq('month', month);
+    if(exErr) throw exErr;
+    const slot = (existing || []).reduce((m, r)=> Math.max(m, r.slot), 0) + 1;
+    const { error } = await supabaseClient.from('evaluation_assignments').insert({
+      agent_id: agentId, month, slot, assignee_id: assigneeId, kind, assigned_by: CURRENT_USER.id,
+    });
+    if(error) throw error;
+    closeAssignModal();
+    showToast((kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' +
+      (assigneeId === CURRENT_USER.id ? 'you' : profileName(assigneeId)));
+    refreshAgentsView();
+  }catch(err){
+    console.error('Could not assign evaluation', err);
+    showToast(err && err.code === '23505' ? 'Someone just assigned that one. Try again.' : 'Could not assign: ' + (err.message || 'unknown error'));
+  }finally{
+    buttons.forEach(b=> b.disabled = false);
+  }
+}
+
+async function removeAssignment(a){
+  if(!confirm('Remove this assignment for ' + profileName(a.assignee_id) + '?')) return;
+  const { error } = await supabaseClient.from('evaluation_assignments').delete().eq('id', a.id);
+  if(error){ console.error('Could not remove assignment', error); showToast('Could not remove: ' + (error.message || 'unknown error')); return; }
+  showToast('Assignment removed');
+  refreshAgentsView();
+}
+
+// Bulk assignment: pick call/ticket first, then tick any number of empty
+// slots in the grid, then choose who gets them.
+const BULK = { active: false, kind: null, picked: new Set() };
+let LAST_GRID = null;
+
+function bulkPickedCount(){ return BULK.picked.size; }
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  bar.style.display = BULK.active ? 'flex' : 'none';
+  document.getElementById('bulkStepKind').style.display = BULK.active && !BULK.kind ? 'flex' : 'none';
+  document.getElementById('bulkStepPick').style.display = BULK.active && BULK.kind ? 'flex' : 'none';
+  if(BULK.kind){
+    const tag = document.getElementById('bulkKindTag');
+    tag.textContent = BULK.kind === 'call' ? 'Call' : 'Ticket';
+    tag.className = 'kind kind-' + BULK.kind;
+  }
+  const n = bulkPickedCount();
+  document.getElementById('bulkCount').textContent = n + ' selected';
+  document.getElementById('btnBulkConfirm').disabled = n === 0;
+  document.getElementById('btnBulkConfirm').textContent = n ? 'Assign ' + n : 'Assign';
+}
+
+function startBulk(){
+  BULK.active = true; BULK.kind = null; BULK.picked.clear();
+  const sel = document.getElementById('bulkAssignee');
+  sel.innerHTML = '<option value="' + escapeHtml(CURRENT_USER.id) + '">Me (' + escapeHtml(CURRENT_USER.display_name || 'me') + ')</option>' +
+    (PROFILES_CACHE || []).filter(p=> p.id !== CURRENT_USER.id)
+      .map(p=> '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.display_name || 'QA') + '</option>').join('');
+  updateBulkBar();
+  rerenderGrid();
+}
+
+function stopBulk(){
+  BULK.active = false; BULK.kind = null; BULK.picked.clear();
+  updateBulkBar();
+  rerenderGrid();
+}
+
+function rerenderGrid(){
+  if(LAST_GRID) renderMonthlyGrid(LAST_GRID.evals, LAST_GRID.scope, LAST_GRID.assignments);
+}
+
+async function confirmBulkAssign(){
+  if(!LAST_GRID || !BULK.kind || !BULK.picked.size) return;
+  const month = LAST_GRID.scope.month;
+  const assigneeId = document.getElementById('bulkAssignee').value;
+  const perAgent = {};
+  BULK.picked.forEach(key=>{ const agentId = key.split('|')[0]; perAgent[agentId] = (perAgent[agentId] || 0) + 1; });
+  const btn = document.getElementById('btnBulkConfirm');
+  btn.disabled = true;
+  try{
+    const { data: existing, error: exErr } = await supabaseClient.from('evaluation_assignments')
+      .select('agent_id, slot').eq('month', month);
+    if(exErr) throw exErr;
+    const rows = [];
+    Object.keys(perAgent).forEach(agentId=>{
+      let next = (existing || []).filter(r=> r.agent_id === agentId).reduce((m, r)=> Math.max(m, r.slot), 0);
+      for(let i = 0; i < perAgent[agentId]; i++){
+        rows.push({ agent_id: agentId, month, slot: ++next, assignee_id: assigneeId, kind: BULK.kind, assigned_by: CURRENT_USER.id });
+      }
+    });
+    const { error } = await supabaseClient.from('evaluation_assignments').insert(rows);
+    if(error) throw error;
+    const who = assigneeId === CURRENT_USER.id ? 'you' : profileName(assigneeId);
+    showToast(rows.length + ' ' + (BULK.kind === 'call' ? 'call' : 'ticket') + ' evaluation' + (rows.length === 1 ? '' : 's') + ' assigned to ' + who);
+    BULK.active = false; BULK.kind = null; BULK.picked.clear();
+    updateBulkBar();
+    refreshAgentsView();
+  }catch(err){
+    console.error('Bulk assign failed', err);
+    showToast(err && err.code === '23505' ? 'Someone assigned some of these at the same time. Nothing was assigned; check the table and try again.' : 'Could not assign: ' + (err.message || 'unknown error'));
+    refreshAgentsView();
+  }finally{
+    btn.disabled = BULK.picked.size === 0;
+  }
+}
+
+document.getElementById('btnBulkAssign').addEventListener('click', ()=> BULK.active ? stopBulk() : startBulk());
+document.getElementById('btnBulkCancel').addEventListener('click', stopBulk);
+document.querySelectorAll('[data-bulk-kind]').forEach(b=> b.addEventListener('click', ()=>{
+  BULK.kind = b.dataset.bulkKind;
+  updateBulkBar();
+  rerenderGrid();
+}));
+document.getElementById('btnBulkSelectAll').addEventListener('click', ()=>{
+  const cells = Array.from(document.querySelectorAll('.monthly-table .bulk-cell'));
+  const allPicked = cells.length && cells.every(c=> BULK.picked.has(c.dataset.bulkKey));
+  cells.forEach(c=>{
+    if(allPicked) BULK.picked.delete(c.dataset.bulkKey); else BULK.picked.add(c.dataset.bulkKey);
+    c.classList.toggle('picked', !allPicked);
+  });
+  updateBulkBar();
+});
+document.getElementById('btnBulkConfirm').addEventListener('click', confirmBulkAssign);
+
+function renderMonthlyGrid(evals, scope, assignments){
+  assignments = assignments || [];
+  LAST_GRID = { evals, scope, assignments };
+  document.getElementById('monthlyTitle').textContent = 'Monthly scores · ' + scope.label;
+  const root = document.getElementById('monthlyTable');
+  const canAssign = ASSIGNMENTS_AVAILABLE && !!scope.month && !!CURRENT_USER;
+  document.getElementById('btnBulkAssign').style.display = canAssign ? '' : 'none';
+  document.getElementById('btnBulkAssign').textContent = BULK.active ? 'Close bulk assign' : 'Assign several';
+  if(!canAssign && BULK.active){ BULK.active = false; BULK.kind = null; BULK.picked.clear(); updateBulkBar(); }
+  const picking = BULK.active && !!BULK.kind;
+  const renderedBulkKeys = new Set();
+
+  const agents = (AGENTS_LIST_CACHE || []).slice();
+  const byAgent = {};
+  evals.forEach(e=>{
+    (byAgent[e.agent_id] = byAgent[e.agent_id] || []).push(e);
+    if(!agents.some(a=> a.id === e.agent_id)) agents.push({ id: e.agent_id, name: e.agents ? e.agents.name : 'Unknown' });
+  });
+  agents.sort((a, b)=> a.name.localeCompare(b.name));
+  Object.values(byAgent).forEach(list=> list.sort((a, b)=>
+    (a.call_date || '').localeCompare(b.call_date || '') || (a.created_at || '').localeCompare(b.created_at || '')));
+
+  if(!agents.length){
+    root.innerHTML = '<div class="agents-empty">No agents in the list yet.</div>';
+    document.getElementById('monthlySub').textContent = '';
+    return;
+  }
+
+  const slotsByAgent = {};
+  agents.forEach(a=>{
+    slotsByAgent[a.id] = buildAgentSlots(byAgent[a.id] || [], assignments.filter(x=> x.agent_id === a.id));
+  });
+
+  const maxSlots = Math.max(0, ...Object.values(slotsByAgent).map(l=> l.length));
+  const cols = Math.max(MONTHLY_EVAL_TARGET, maxSlots);
+  const complete = agents.filter(a=> (byAgent[a.id] || []).length >= MONTHLY_EVAL_TARGET).length;
+  const myOpen = CURRENT_USER ? Object.values(slotsByAgent).flat()
+    .filter(sl=> sl.type === 'assignment' && sl.assignment.assignee_id === CURRENT_USER.id).length : 0;
+  document.getElementById('monthlySub').textContent =
+    complete + ' of ' + agents.length + ' agents have their ' + MONTHLY_EVAL_TARGET + ' evaluations' +
+    (canAssign ? ' · you have ' + myOpen + ' open assignment' + (myOpen === 1 ? '' : 's') : '') +
+    ' · click an agent to open their details';
+
+  const selectedId = document.getElementById('agentsSelect').value;
+  let html = '<div class="monthly-scroll"><table class="monthly-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
+  for(let i = 1; i <= cols; i++) html += '<th>Eval ' + i + '</th>';
+  html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
+
+  const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
+  agents.forEach(agent=>{
+    const list = byAgent[agent.id] || [];
+    const slots = slotsByAgent[agent.id];
+    html += '<tr data-agent="' + escapeHtml(agent.id) + '"' + (agent.id === selectedId ? ' class="selected"' : '') + '>' +
+      '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + escapeHtml(agent.name) + '</button></td>';
+    for(let i = 0; i < cols; i++){
+      const sl = slots[i];
+      if(sl && sl.type === 'eval'){
+        const e = sl.eval;
+        const score = Math.round(Number(e.score));
+        const tip = (e.call_date || '') + (e.ticket_id ? ' · Ticket ' + e.ticket_id : '') + (e.evaluator_name ? ' · by ' + e.evaluator_name : '') +
+          (sl.assignment ? ' · assigned ' + sl.assignment.kind : '') + (e.zero_triggered ? ' · automatic zero' : '');
+        html += '<td class="cell-score ' + scoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%</td>';
+        colTotals[i].earned += Number(e.points_earned || 0);
+        colTotals[i].possible += Number(e.points_possible || 0);
+        colTotals[i].n++;
+      }else if(sl && sl.type === 'assignment'){
+        const a = sl.assignment;
+        const mine = CURRENT_USER && a.assignee_id === CURRENT_USER.id;
+        const who = mine ? 'You' : profileName(a.assignee_id);
+        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + profileName(a.assignee_id) + ' by ' + profileName(a.assigned_by);
+        html += '<td class="cell-assigned' + (mine ? ' mine' : '') + '" title="' + escapeHtml(tip) + '">' +
+          '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
+          (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
+          '</td>';
+      }else if(canAssign && picking && i < MONTHLY_EVAL_TARGET){
+        const key = agent.id + '|' + i;
+        renderedBulkKeys.add(key);
+        html += '<td class="cell-empty bulk-cell' + (BULK.picked.has(key) ? ' picked' : '') + '" data-bulk-key="' + escapeHtml(key) + '" title="Select to assign"><span class="bulk-box"></span></td>';
+      }else if(canAssign && i < MONTHLY_EVAL_TARGET){
+        html += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '">+ Assign</button></td>';
+      }else{
+        html += '<td class="cell-empty">—</td>';
+      }
+    }
+    const done = Math.min(list.length, MONTHLY_EVAL_TARGET);
+    html += '<td class="cell-progress' + (list.length >= MONTHLY_EVAL_TARGET ? ' complete' : '') + '">' + done + ' / ' + MONTHLY_EVAL_TARGET + '</td>';
+    if(list.length){
+      const avg = weightedAvg(list);
+      html += '<td class="cell-avg ' + scoreClass(avg) + '">' + fmtPct(avg) + '</td>';
+    }else{
+      html += '<td class="cell-avg cell-empty">—</td>';
+    }
+    html += '</tr>';
+  });
+  html += '</tbody><tfoot><tr><td>Team</td>';
+  colTotals.forEach(t=>{
+    html += t.n ? '<td class="' + scoreClass(t.possible ? t.earned / t.possible * 100 : 0) + '">' + fmtPct(t.possible ? t.earned / t.possible * 100 : 0) + '</td>' : '<td class="cell-empty">—</td>';
+  });
+  html += '<td>' + evals.length + '</td>';
+  html += evals.length ? '<td class="' + scoreClass(weightedAvg(evals)) + '">' + fmtPct(weightedAvg(evals)) + '</td>' : '<td class="cell-empty">—</td>';
+  html += '</tr></tfoot></table></div>';
+  root.innerHTML = html;
+  // Drop selections whose cell is no longer an empty slot (data refreshed).
+  Array.from(BULK.picked).forEach(k=>{ if(!renderedBulkKeys.has(k)) BULK.picked.delete(k); });
+  if(BULK.active) updateBulkBar();
+
+  root.querySelectorAll('tbody tr').forEach(tr=>{
+    tr.addEventListener('click', (ev)=>{
+      const bulkCell = ev.target.closest('.bulk-cell');
+      if(bulkCell){
+        const key = bulkCell.dataset.bulkKey;
+        if(BULK.picked.has(key)) BULK.picked.delete(key); else BULK.picked.add(key);
+        bulkCell.classList.toggle('picked', BULK.picked.has(key));
+        updateBulkBar();
+        return;
+      }
+      if(BULK.active) return;
+      const assignBtn = ev.target.closest('.assign-btn');
+      if(assignBtn){ openAssignModal(assignBtn.dataset.assignAgent, scope.month); return; }
+      const removeBtn = ev.target.closest('.assign-remove');
+      if(removeBtn){
+        const a = assignments.find(x=> x.id === removeBtn.dataset.assignment);
+        if(a) removeAssignment(a);
+        return;
+      }
+      if(ev.target.closest('.cell-assigned')) return;
+      const cell = ev.target.closest('td[data-eval]');
+      if(cell && isAdminUser()){
+        const e = evals.find(x=> x.id === cell.dataset.eval);
+        if(e){ openEditEvalModal(e); return; }
+      }
+      openAgentFromGrid(tr.dataset.agent);
+    });
+  });
+}
+
+document.getElementById('btnCloseAssign').addEventListener('click', closeAssignModal);
+document.getElementById('assignOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'assignOverlay') closeAssignModal(); });
+document.querySelectorAll('#assignWhoRow .assign-choice').forEach(b=> b.addEventListener('click', ()=> chooseAssignee(b.dataset.who)));
+document.getElementById('assignOtherSelect').addEventListener('change', ()=> chooseAssignee('other'));
+document.querySelectorAll('#assignKindStep button').forEach(b=> b.addEventListener('click', ()=> createAssignment(b.dataset.kind)));
+
 async function refreshAgentsView(){
   if(!supabaseClient){
     document.getElementById('agentsScopeNote').textContent = 'Not connected to the database.';
@@ -3069,6 +3854,11 @@ async function refreshAgentsView(){
 
   try{
     const teamEvals = await fetchEvaluations({ startDate, endDate });
+    const gridScope = monthlyGridScope();
+    const gridEvals = gridScope.isFilter ? teamEvals : await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate });
+    await ensureProfilesLoaded();
+    const gridAssignments = await fetchAssignments(gridScope.month);
+    renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
     await renderTeamOverview(teamEvals);
     renderRanking(teamEvals);
 
@@ -3291,6 +4081,8 @@ async function openEditEvalModal(ev){
   EDITING_EVAL_ID = ev.id;
   EDITING_EVAL_ROW = ev;
   document.getElementById('editEvalDate').value = ev.call_date || '';
+  document.getElementById('editEvalDate').max = todayLocal();
+  document.getElementById('editEvalDate').classList.remove('invalid');
   document.getElementById('editEvalTicket').value = ev.ticket_id || '';
   document.getElementById('editEvalReason').value = ev.call_reason || '';
   document.getElementById('editEvalOverlay').classList.add('show');
@@ -3392,13 +4184,20 @@ document.getElementById('editEvalOverlay').addEventListener('click', (e)=>{
 });
 document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
   if(!EDITING_EVAL_ID) return;
+  const dateInput = document.getElementById('editEvalDate');
+  if(!dateInput.value || dateInput.value > todayLocal()){
+    dateInput.classList.add('invalid');
+    showToast(dateInput.value ? 'The call date can\'t be in the future.' : 'The call date is required.');
+    return;
+  }
+  dateInput.classList.remove('invalid');
   const btn = document.getElementById('btnSaveEditEval');
   const original = btn.textContent;
   btn.disabled = true;
   btn.textContent = 'Saving...';
   try{
     const { error } = await supabaseClient.from('evaluations').update({
-      call_date: document.getElementById('editEvalDate').value || null,
+      call_date: dateInput.value,
       ticket_id: document.getElementById('editEvalTicket').value.trim() || null,
       call_reason: document.getElementById('editEvalReason').value.trim() || null,
     }).eq('id', EDITING_EVAL_ID);
@@ -3429,6 +4228,10 @@ function captureDraftSnapshot(){
     ticketId: document.getElementById('fTicket').value.trim(),
     orderId: document.getElementById('fOrder').value.trim(),
     callReason: document.getElementById('fReason').value.trim(),
+    callDate: document.getElementById('fCallDate').value,
+    summaryManual: SUMMARY_MANUAL,
+    summaryText: SUMMARY_MANUAL ? document.getElementById('output').value : null,
+    summaryAutoAtEdit: SUMMARY_MANUAL ? AUTO_SUMMARY_AT_EDIT : null,
     scenarioId: CONFIG ? CONFIG.activeScenarioId : null,
     answers: Object.assign({}, ANSWERS),
     updatedAt: new Date().toISOString(),
@@ -3476,6 +4279,11 @@ function applyDraftSnapshot(snap){
   document.getElementById('fTicket').value = snap.ticketId || '';
   document.getElementById('fOrder').value = snap.orderId || '';
   document.getElementById('fReason').value = snap.callReason || '';
+  document.getElementById('fCallDate').value = snap.callDate || todayLocal();
+  SUMMARY_MANUAL = !!(snap.summaryManual && typeof snap.summaryText === 'string');
+  AUTO_SUMMARY_AT_EDIT = SUMMARY_MANUAL ? (snap.summaryAutoAtEdit || '') : '';
+  if(SUMMARY_MANUAL) document.getElementById('output').value = snap.summaryText;
+  LAST_SAVED_SIGNATURE = null;
   if(snap.scenarioId && CONFIG.scenarios.items[snap.scenarioId]){
     CONFIG.activeScenarioId = snap.scenarioId;
     document.getElementById('scenarioSelect').value = snap.scenarioId;
@@ -3520,12 +4328,11 @@ function renderOngoingList(){
 }
 
 function resumeOngoingDraft(idx){
-  const list = loadOngoingDrafts();
-  const snap = list[idx];
+  const snap = loadOngoingDrafts()[idx];
   if(!snap) return;
   archiveCurrentDraftIfMeaningful();
-  list.splice(idx, 1);
-  saveOngoingDrafts(list);
+  // Re-read after archiving so the evaluation that was open is kept.
+  saveOngoingDrafts(loadOngoingDrafts().filter(d=> d.id !== snap.id));
   applyDraftSnapshot(snap);
   saveCurrentDraftToLocal();
   renderOngoingList();
