@@ -781,7 +781,7 @@
   .monthly-table .cell-mid{ color:var(--warn); }
   .monthly-table .cell-bad{ color:var(--no); }
   .monthly-table .cell-empty{ color:var(--text-faint); }
-  .monthly-table .cell-zero::after{ content:" ⚠"; font-size:10px; }
+  .monthly-table .cell-zero::before{ content:"⚠ "; font-size:10px; }
   .monthly-table .cell-progress{ color:var(--text-dim); font-weight:700; }
   .monthly-table .cell-progress.complete{ color:var(--yes); }
   .monthly-table .cell-avg{ font-weight:800; background:var(--bg-elev-2); }
@@ -847,6 +847,68 @@
     background:var(--bg-elev-2); color:var(--text); font-size:13px;
   }
 
+  /* ---------- Schedule banner (Evaluation tab) ---------- */
+  .sched-banner{
+    display:none; margin-top:12px; padding:10px 12px; border-radius:var(--radius-sm); font-size:12px; line-height:1.5;
+    border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text);
+  }
+  .sched-banner.show{ display:block; }
+  .sched-banner b{ font-weight:800; }
+  .sched-banner .sched-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; font-weight:800; color:var(--text-dim); margin-bottom:4px; }
+  .sched-banner.mine{ border-color:var(--yes); background:var(--yes-soft); }
+  .sched-banner.mine .sched-title{ color:var(--yes); }
+  .sched-banner.other{ border-color:var(--warn); background:var(--warn-soft); }
+  .sched-banner.other .sched-title{ color:var(--warn); }
+  .sched-banner.none .sched-title{ color:var(--text-dim); }
+  .sched-banner .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; margin-left:4px; }
+  .sched-banner .btn{ width:100%; margin-top:8px; padding:8px 10px; font-size:12.5px; }
+  .sched-lock-note{
+    display:none; margin-bottom:12px; padding:10px 12px; border-radius:var(--radius-sm); font-size:12.5px;
+    border:1px solid var(--warn); background:var(--warn-soft); color:var(--text);
+  }
+  .sched-lock-note.show{ display:block; }
+  #sections.locked{ opacity:.4; pointer-events:none; filter:grayscale(.4); }
+  .editing-banner{
+    display:none; align-items:center; gap:10px; margin-bottom:14px; padding:10px 14px; border-radius:var(--radius-sm);
+    border:1px solid var(--accent-dim); background:var(--accent-soft); font-size:12.5px; color:var(--text);
+  }
+  .editing-banner.show{ display:flex; }
+  .editing-banner span{ flex-grow:1; }
+  .editing-banner .btn{ flex:none; padding:6px 12px; font-size:12px; }
+  .agent-input-big[readonly]{ color:var(--text-dim); cursor:not-allowed; }
+  .monthly-table .cell-by{ display:block; font-size:9.5px; font-weight:600; color:var(--text-faint); margin-top:1px; }
+  .monthly-table td.cell-score{ cursor:zoom-in; }
+
+  /* ---------- Full evaluation view ---------- */
+  .view-eval-box{ max-width:760px; max-height:88vh; }
+  .ve-head{ display:flex; align-items:center; gap:16px; margin:6px 0 14px; }
+  .ve-score{ font-size:34px; font-weight:900; line-height:1; }
+  .ve-score.cell-good{ color:var(--yes); } .ve-score.cell-mid{ color:var(--warn); } .ve-score.cell-bad{ color:var(--no); }
+  .ve-score small{ font-size:12px; font-weight:600; color:var(--text-dim); margin-left:4px; }
+  .ve-zero{ color:var(--no); font-size:12px; font-weight:800; }
+  .ve-meta{ display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:8px 14px; margin-bottom:16px; }
+  .ve-meta div{ font-size:12.5px; color:var(--text); overflow-wrap:anywhere; }
+  .ve-meta label{ display:block; font-size:10px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-faint); font-weight:700; }
+  .ve-section{ border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:10px; overflow:hidden; }
+  .ve-section h4{ margin:0; padding:8px 12px; font-size:12.5px; background:var(--bg-elev-2); display:flex; justify-content:space-between; gap:8px; }
+  .ve-section h4 span{ color:var(--text-dim); font-weight:700; }
+  .ve-row{ display:flex; gap:8px; padding:7px 12px; border-top:1px solid var(--border); font-size:12.5px; line-height:1.45; }
+  .ve-row .ic{ flex:none; width:18px; }
+  .ve-row .lbl{ font-weight:700; }
+  .ve-row .pts{ color:var(--text-dim); font-weight:600; }
+  .ve-row .txt{ display:block; color:var(--text-dim); margin-top:2px; }
+  .ve-row.res-no .lbl{ color:var(--no); }
+  .ve-row.res-feedback .lbl{ color:var(--warn); }
+  .ve-summary{ white-space:pre-wrap; font-family:inherit; font-size:12px; line-height:1.5; background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; margin:0; max-height:260px; overflow:auto; }
+  .ve-subtitle{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:800; margin:16px 0 8px; }
+  .ve-actions{ display:flex; gap:8px; margin-top:16px; }
+  .ve-actions .btn{ flex:1; }
+  .ve-actions .btn-danger{ background:var(--no-soft); color:var(--no); border:1px solid var(--no); }
+  .ve-actions .btn-danger:hover{ background:var(--no); color:#fff; }
+  .eval-item .by{ color:var(--text-faint); font-size:11px; flex-shrink:0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .eval-item.clickable{ cursor:pointer; }
+  .eval-item.clickable:hover{ border-color:var(--accent-dim); }
+
   @media (max-width: 980px){
     .field, .field.field-wide, .field.field-med, .field.field-narrow{ width:calc(50% - 6px); }
     .main-grid{ grid-template-columns: 1fr; }
@@ -892,6 +954,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <!-- =============== EVALUATION VIEW =============== -->
   <div id="view-eval">
 
+    <div class="editing-banner" id="editingBanner">
+      <svg viewBox="0 0 24 24" fill="none" width="18" height="18"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span id="editingBannerText">Editing a saved evaluation</span>
+      <button type="button" class="btn btn-ghost" id="btnCancelEditing">Cancel editing</button>
+    </div>
+
     <div class="zero-flag" id="zeroFlag">
       <svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4.5M12 16.5h.01M10.3 3.9 2.7 17.3a1.8 1.8 0 0 0 1.56 2.7h15.48a1.8 1.8 0 0 0 1.56-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
       <span>Zero call driver triggered — this evaluation is an automatic zero.</span>
@@ -932,6 +1000,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             </div>
           </div>
         </div>
+        <div class="sched-lock-note" id="schedLockNote"></div>
         <div id="sections"></div>
       </div>
 
@@ -947,6 +1016,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <input type="date" id="fCallDate">
           </div>
           <div class="field-error" id="errCallDate"></div>
+          <div class="sched-banner" id="schedBanner"></div>
         </div>
         <div class="panel">
           <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
@@ -1126,6 +1196,18 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
   </div>
 
+
+  <div class="modal-overlay" id="viewEvalOverlay">
+    <div class="modal-box view-eval-box">
+      <button class="modal-close" id="btnCloseViewEval">&times;</button>
+      <h3 id="viewEvalTitle">Evaluation</h3>
+      <div id="viewEvalBody"></div>
+      <div class="ve-actions" id="viewEvalActions">
+        <button type="button" class="btn btn-primary" id="btnViewEvalEdit">Edit evaluation</button>
+        <button type="button" class="btn btn-danger" id="btnViewEvalDelete">Delete</button>
+      </div>
+    </div>
+  </div>
 
   <div class="modal-overlay" id="assignOverlay">
     <div class="modal-box assign-box">
@@ -2225,7 +2307,7 @@ function setupAutocomplete(){
         const d = document.createElement('div');
         d.className = 'autocomplete-item' + (i===hiIndex ? ' hi':'');
         d.textContent = name;
-        d.addEventListener('mousedown', (e)=>{ e.preventDefault(); input.value = name; list.classList.remove('open'); setFieldError('fAgent', 'errAgent', ''); refreshEval(); });
+        d.addEventListener('mousedown', (e)=>{ e.preventDefault(); input.value = name; list.classList.remove('open'); setFieldError('fAgent', 'errAgent', ''); refreshEval(); scheduleBannerSoon(0); });
         list.appendChild(d);
       });
     }
@@ -2236,13 +2318,13 @@ function setupAutocomplete(){
     if(!q) return CONFIG.names.slice();
     return CONFIG.names.filter(n=>n.toLowerCase().startsWith(q) || n.toLowerCase().split(' ').some(p=>p.startsWith(q)));
   }
-  input.addEventListener('input', ()=>{ hiIndex=-1; render(matchesFor(input.value)); refreshEval(); });
-  input.addEventListener('focus', ()=> render(matchesFor(input.value)));
+  input.addEventListener('input', ()=>{ hiIndex=-1; render(matchesFor(input.value)); refreshEval(); scheduleBannerSoon(); });
+  input.addEventListener('focus', ()=>{ if(!input.readOnly) render(matchesFor(input.value)); });
   input.addEventListener('keydown', (e)=>{
     const items = Array.from(list.querySelectorAll('.autocomplete-item'));
     if(e.key==='ArrowDown'){ e.preventDefault(); hiIndex = Math.min(items.length-1, hiIndex+1); render(matchesFor(input.value)); }
     else if(e.key==='ArrowUp'){ e.preventDefault(); hiIndex = Math.max(0, hiIndex-1); render(matchesFor(input.value)); }
-    else if(e.key==='Enter'){ if(hiIndex>=0 && items[hiIndex]){ input.value = items[hiIndex].textContent; list.classList.remove('open'); setFieldError('fAgent', 'errAgent', ''); refreshEval(); } }
+    else if(e.key==='Enter'){ if(hiIndex>=0 && items[hiIndex]){ input.value = items[hiIndex].textContent; list.classList.remove('open'); setFieldError('fAgent', 'errAgent', ''); refreshEval(); scheduleBannerSoon(0); } }
     else if(e.key==='Escape'){ list.classList.remove('open'); }
   });
   document.addEventListener('click', (e)=>{ if(!list.contains(e.target) && e.target!==input) list.classList.remove('open'); });
@@ -2251,7 +2333,7 @@ function setupAutocomplete(){
     if(!v){ setFieldError('fAgent', 'errAgent', ''); return; }
     const match = findAgentByName(v);
     if(match){
-      if(match.name !== v){ input.value = match.name; refreshEval(); }
+      if(match.name !== v){ input.value = match.name; refreshEval(); scheduleBannerSoon(0); }
       setFieldError('fAgent', 'errAgent', '');
     }else{
       setFieldError('fAgent', 'errAgent', '"' + v + '" is not in the agent list.');
@@ -2828,6 +2910,7 @@ async function init(){
   document.getElementById('fCallDate').addEventListener('change', ()=>{
     setFieldError('fCallDate', 'errCallDate', '');
     saveCurrentDraftToLocal();
+    scheduleBannerSoon(0);
   });
 
   document.getElementById('output').addEventListener('input', ()=>{
@@ -2853,22 +2936,16 @@ async function init(){
   });
 
   document.getElementById('btnClear').addEventListener('click', ()=>{
+    if(EDITING_EXISTING){
+      if(!confirm('Stop editing? Changes you made here will not be saved.')) return;
+      stopEditingEvaluation();
+      showToast('Editing cancelled');
+      return;
+    }
     const hadContent = draftHasContent(captureDraftSnapshot());
     archiveCurrentDraftIfMeaningful();
     clearCurrentDraftFromLocal();
-    resetAnswersToDefault();
-    ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
-      document.getElementById(id).value = '';
-      document.getElementById(id).classList.remove('invalid');
-    });
-    document.getElementById('fCallDate').value = todayLocal();
-    setFieldError('fAgent', 'errAgent', '');
-    setFieldError('fCallDate', 'errCallDate', '');
-    setSummaryManual(false);
-    LAST_SAVED_SIGNATURE = null;
-    CHOICES = {};
-    renderSections();
-    refreshEval();
+    resetEvaluationForm();
     renderOngoingList();
     showToast(hadContent ? 'Reset — previous evaluation saved under Ongoing evaluations' : 'Reset — everything marked as Met again');
   });
@@ -3249,7 +3326,36 @@ function validateEvaluationForm(){
   return { ok: problems.length === 0, problems, agent, callDate };
 }
 
-function buildEvaluationPayload(agent, callDate){
+// Everything needed to show the evaluation again or reopen it for editing.
+function buildEvaluationDetails(){
+  const items = [];
+  SECTIONS.forEach(sec=>{
+    CONFIG.order[sec.key].forEach(id=>{
+      const cfg = CONFIG.items[id];
+      const val = ANSWERS[id];
+      if(!cfg || !val) return;
+      items.push({
+        id, section: sec.key, sectionTitle: sec.title, label: cfg.label, pts: cfg.pts, zero: !!cfg.zeroType,
+        result: val, text: chosenText(id, cfg, val === 'yes' ? 'yes' : 'no'),
+      });
+    });
+  });
+  const scenarioId = CONFIG.activeScenarioId || null;
+  const scenario = scenarioId && CONFIG.scenarios.items[scenarioId];
+  return {
+    version: 1,
+    caller: document.getElementById('fCaller').value.trim() || null,
+    orderId: document.getElementById('fOrder').value.trim() || null,
+    scenarioId, scenarioName: scenario ? scenario.name : null,
+    answers: Object.assign({}, ANSWERS),
+    choices: JSON.parse(JSON.stringify(CHOICES)),
+    summary: document.getElementById('output').value,
+    summaryManual: SUMMARY_MANUAL,
+    items,
+  };
+}
+
+function buildEvaluationPayload(agent, callDate, schedule){
   const sections = computeSectionBreakdown();
   const sectionRows = sections
     .filter(sec => !sec.isZeroSection && sec.possible > 0)
@@ -3275,6 +3381,9 @@ function buildEvaluationPayload(agent, callDate){
       points_earned: LAST_STATE.earned,
       points_possible: LAST_STATE.possible,
       zero_triggered: LAST_STATE.zeroTriggered,
+      assignment_id: schedule && schedule.state === 'mine' ? schedule.assignment.id : null,
+      kind: schedule && schedule.state === 'mine' ? schedule.assignment.kind : null,
+      details: buildEvaluationDetails(),
     },
     sections: sectionRows,
     deductions: deductionRows,
@@ -3292,8 +3401,10 @@ async function insertEvaluationAtomic(payload){
 
 // Fallback for databases where save_evaluation has not been created yet.
 async function insertEvaluationSequential(payload){
+  const row = Object.assign({}, payload.evaluation);
+  if(!EVAL_LINK_AVAILABLE){ delete row.assignment_id; delete row.kind; delete row.details; }
   const { data: evalRow, error: evalErr } = await supabaseClient
-    .from('evaluations').insert(payload.evaluation).select('id').single();
+    .from('evaluations').insert(row).select('id').single();
   if(evalErr) throw evalErr;
   const evaluationId = evalRow.id;
   try{
@@ -3330,7 +3441,31 @@ async function saveEvaluationToDatabase(){
     return;
   }
 
-  const payload = buildEvaluationPayload(check.agent, check.callDate);
+  if(EDITING_EXISTING){
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+    try{
+      await saveEditedEvaluation(btn, check);
+    }catch(err){
+      console.error('Update evaluation failed', err);
+      showToast('Could not save the changes: ' + (err.message || 'unknown error'));
+    }finally{
+      btn.disabled = false;
+      btn.innerHTML = original;
+      syncSaveButtonLabel();
+    }
+    return;
+  }
+
+  // Check the schedule again right before saving: someone may have assigned
+  // or taken this evaluation in the meantime.
+  const schedule = await refreshScheduleBanner();
+  if(schedule && schedule.state === 'other'){
+    showToast('This evaluation is assigned to ' + profileName(schedule.assignment.assignee_id) + '. Press "Assign to me" first.');
+    return;
+  }
+
+  const payload = buildEvaluationPayload(check.agent, check.callDate, schedule);
   const signature = JSON.stringify([payload.evaluation.agent_id, payload.evaluation.call_date, payload.evaluation.ticket_id, ANSWERS]);
   if(signature === LAST_SAVED_SIGNATURE &&
      !confirm('This evaluation was already saved. Save it again as a second record?')) return;
@@ -3349,8 +3484,10 @@ async function saveEvaluationToDatabase(){
       }
     }
     LAST_SAVED_SIGNATURE = signature;
-    showToast('Evaluation saved for ' + check.agent.name);
+    showToast('Evaluation saved for ' + check.agent.name +
+      (schedule && schedule.state === 'mine' ? ' (scheduled evaluation ' + schedule.position + ')' : ''));
     clearCurrentDraftFromLocal();
+    refreshScheduleBanner();
   }catch(err){
     console.error('Save evaluation failed', err);
     showToast('Could not save: ' + (err.message || 'unknown error'));
@@ -3487,13 +3624,25 @@ function getAgentsDateRange(){
   return { startDate: null, endDate: null };
 }
 
+const EVAL_COLUMNS = 'id, agent_id, score, points_earned, points_possible, call_date, ticket_id, call_reason, evaluator_name, created_at, zero_triggered, agents(name)';
+const EVAL_LINK_COLUMNS = ', evaluator_id, assignment_id, kind, updated_at';
+let EVAL_LINK_AVAILABLE = true;
+
 async function fetchEvaluations(opts){
   opts = opts || {};
-  let q = supabaseClient.from('evaluations').select('id, agent_id, score, points_earned, points_possible, call_date, ticket_id, call_reason, evaluator_name, created_at, zero_triggered, agents(name)');
-  if(opts.agentId) q = q.eq('agent_id', opts.agentId);
-  if(opts.startDate) q = q.gte('call_date', opts.startDate);
-  if(opts.endDate) q = q.lte('call_date', opts.endDate);
-  const { data, error } = await q;
+  const run = (cols)=>{
+    let q = supabaseClient.from('evaluations').select(cols);
+    if(opts.agentId) q = q.eq('agent_id', opts.agentId);
+    if(opts.startDate) q = q.gte('call_date', opts.startDate);
+    if(opts.endDate) q = q.lte('call_date', opts.endDate);
+    return q;
+  };
+  let { data, error } = await run(EVAL_COLUMNS + (EVAL_LINK_AVAILABLE ? EVAL_LINK_COLUMNS : ''));
+  if(error && EVAL_LINK_AVAILABLE && error.code === '42703'){
+    // Database not updated yet with who-evaluated / assignment columns.
+    EVAL_LINK_AVAILABLE = false;
+    ({ data, error } = await run(EVAL_COLUMNS));
+  }
   if(error) throw error;
   return data || [];
 }
@@ -3676,12 +3825,20 @@ function canRemoveAssignment(a){
   return !!CURRENT_USER && (a.assigned_by === CURRENT_USER.id || a.assignee_id === CURRENT_USER.id || isAdminUser());
 }
 
-// Lay out one agent's month: saved evaluations first (each one closes the
-// oldest open assignment of the profile who wrote it), then open assignments.
+// Lay out one agent's month: saved evaluations first, then open assignments.
+// An evaluation closes the assignment it was saved against; older ones (saved
+// without that link) close the oldest open assignment of whoever wrote them.
 function buildAgentSlots(evals, assignments){
   const open = assignments.slice().sort((a, b)=> a.slot - b.slot);
+  const linked = new Map();
+  evals.forEach(e=>{
+    const i = e.assignment_id ? open.findIndex(a=> a.id === e.assignment_id) : -1;
+    if(i > -1) linked.set(e, open.splice(i, 1)[0]);
+  });
   const slots = evals.map(e=>{
-    const i = open.findIndex(a=> profileName(a.assignee_id) === (e.evaluator_name || ''));
+    if(linked.has(e)) return { type: 'eval', eval: e, assignment: linked.get(e) };
+    const i = e.assignment_id ? -1 : open.findIndex(a=>
+      e.evaluator_id ? a.assignee_id === e.evaluator_id : profileName(a.assignee_id) === (e.evaluator_name || ''));
     const done = i > -1 ? open.splice(i, 1)[0] : null;
     return { type: 'eval', eval: e, assignment: done };
   });
@@ -3757,6 +3914,304 @@ async function removeAssignment(a){
   showToast('Assignment removed');
   refreshAgentsView();
 }
+
+/* ---------- Schedule banner (Evaluation tab) ---------- */
+// Tells the evaluator which of the agent's monthly evaluations this one is and
+// whether it was scheduled: for them, for someone else (they take it over
+// before starting), or not at all (still allowed, saved as done by them).
+let SCHEDULE = null;
+let SCHEDULE_TOKEN = 0;
+let SCHEDULE_TIMER = null;
+
+function scheduleBannerSoon(delay){
+  clearTimeout(SCHEDULE_TIMER);
+  SCHEDULE_TIMER = setTimeout(()=> refreshScheduleBanner(), delay == null ? 350 : delay);
+}
+
+function monthOf(date){ return (date || todayLocal()).slice(0, 7) + '-01'; }
+function monthLastDay(month){
+  const y = Number(month.slice(0, 4)), m = Number(month.slice(5, 7));
+  return month.slice(0, 8) + String(new Date(y, m, 0).getDate()).padStart(2, '0');
+}
+function monthLabel(month){ return MONTH_NAMES[Number(month.slice(5, 7)) - 1] + ' ' + month.slice(0, 4); }
+function kindLabel(kind){ return kind === 'call' ? 'Call' : kind === 'ticket' ? 'Ticket' : ''; }
+
+function sortEvalsChrono(list){
+  return list.slice().sort((a, b)=>
+    (a.call_date || '').localeCompare(b.call_date || '') || (a.created_at || '').localeCompare(b.created_at || ''));
+}
+
+async function loadSchedule(agentId, month){
+  await ensureProfilesLoaded();
+  const [evals, assignments] = await Promise.all([
+    fetchEvaluations({ agentId, startDate: month, endDate: monthLastDay(month) }),
+    fetchAssignments(month),
+  ]);
+  const slots = buildAgentSlots(sortEvalsChrono(evals), assignments.filter(a=> a.agent_id === agentId));
+  const open = slots.filter(sl=> sl.type === 'assignment').map(sl=> sl.assignment);
+  // Prefer one already assigned to me; otherwise the next open one in order.
+  const next = open.find(a=> a.assignee_id === CURRENT_USER.id) || open[0] || null;
+  return {
+    agentId, month, done: evals.length, position: evals.length + 1, assignment: next,
+    state: !next ? 'none' : next.assignee_id === CURRENT_USER.id ? 'mine' : 'other',
+  };
+}
+
+async function refreshScheduleBanner(){
+  clearTimeout(SCHEDULE_TIMER);
+  const token = ++SCHEDULE_TOKEN;
+  if(!supabaseClient || !CURRENT_USER || EDITING_EXISTING){ SCHEDULE = null; renderScheduleBanner(); return null; }
+  await ensureAgentsListLoaded();
+  const agent = findAgentByName(document.getElementById('fAgent').value.trim());
+  if(!agent || !agent.id){
+    if(token === SCHEDULE_TOKEN){ SCHEDULE = null; renderScheduleBanner(); }
+    return null;
+  }
+  let sched = null;
+  try{
+    sched = await loadSchedule(agent.id, monthOf(document.getElementById('fCallDate').value));
+  }catch(err){
+    console.error('Could not load the evaluation schedule', err);
+  }
+  if(token !== SCHEDULE_TOKEN) return sched;  // a newer refresh replaced this one
+  SCHEDULE = sched;
+  renderScheduleBanner();
+  return sched;
+}
+
+function renderScheduleBanner(){
+  const box = document.getElementById('schedBanner');
+  const lock = document.getElementById('schedLockNote');
+  const sections = document.getElementById('sections');
+  const s = SCHEDULE;
+  const locked = !!s && s.state === 'other';
+  sections.classList.toggle('locked', locked);
+  lock.classList.toggle('show', locked);
+  if(!s){ box.className = 'sched-banner'; box.innerHTML = ''; return; }
+
+  const nth = 'Evaluation ' + s.position + ' of ' + MONTHLY_EVAL_TARGET + ' · ' + monthLabel(s.month);
+  const kind = s.assignment ? '<span class="kind kind-' + s.assignment.kind + '">' + kindLabel(s.assignment.kind) + '</span>' : '';
+  let html = '';
+  if(s.state === 'mine'){
+    html = '<div class="sched-title">Scheduled for you' + kind + '</div>' +
+      nth + '. ' + (s.done ? s.done + ' already done this month.' : 'First one of the month.');
+  }else if(s.state === 'other'){
+    const who = escapeHtml(profileName(s.assignment.assignee_id));
+    html = '<div class="sched-title">Assigned to ' + who + kind + '</div>' +
+      nth + ' is scheduled for <b>' + who + '</b>. Assign it to yourself to start; the table will show you as the evaluator.' +
+      '<button type="button" class="btn btn-primary" id="btnTakeAssignment">Assign to me</button>';
+    lock.innerHTML = 'This evaluation is assigned to <b>' + who + '</b>. Press <b>Assign to me</b> on the right to start it.';
+  }else{
+    html = '<div class="sched-title">Not scheduled</div>' +
+      (s.done >= MONTHLY_EVAL_TARGET
+        ? 'This agent already has their ' + MONTHLY_EVAL_TARGET + ' evaluations for ' + monthLabel(s.month) + ' (' + s.done + ' done). You can still add another one.'
+        : nth + ' has not been scheduled. You can still evaluate; it will be saved as done by you.');
+  }
+  box.className = 'sched-banner show ' + s.state;
+  box.innerHTML = html;
+  const take = document.getElementById('btnTakeAssignment');
+  if(take) take.addEventListener('click', takeScheduledAssignment);
+}
+
+async function takeScheduledAssignment(){
+  const s = SCHEDULE;
+  if(!s || !s.assignment) return;
+  const btn = document.getElementById('btnTakeAssignment');
+  if(btn){ btn.disabled = true; btn.textContent = 'Assigning...'; }
+  try{
+    const { error } = await supabaseClient.rpc('take_assignment', { assignment: s.assignment.id });
+    if(error) throw error;
+    showToast('Evaluation ' + s.position + ' is now assigned to you');
+  }catch(err){
+    console.error('Could not take the assignment', err);
+    showToast('Could not assign it to you: ' + (err.message || 'unknown error'));
+  }
+  await refreshScheduleBanner();
+}
+
+/* ---------- Full evaluation view, edit and delete ---------- */
+let EDITING_EXISTING = null;   // { id, agentName, callDate } while a saved evaluation is open in the Evaluation tab
+let VIEW_EVAL = null;          // { row, fromProfile }
+
+function canEditEval(e){
+  return !!CURRENT_USER && (isAdminUser() || (!!e.evaluator_id && e.evaluator_id === CURRENT_USER.id));
+}
+
+function evaluatorLabel(e){
+  const p = e.evaluator_id && (PROFILES_CACHE || []).find(x=> x.id === e.evaluator_id);
+  return p ? (p.display_name || 'QA') : (e.evaluator_name || '—');
+}
+
+const RESULT_ICON = { yes: '✅', no: '🚩', feedback: '⚠️' };
+
+async function openViewEvalModal(evalId, fromProfile){
+  const overlay = document.getElementById('viewEvalOverlay');
+  const body = document.getElementById('viewEvalBody');
+  document.getElementById('viewEvalTitle').textContent = 'Evaluation';
+  document.getElementById('viewEvalActions').style.display = 'none';
+  body.innerHTML = '<div class="fail-empty">Loading...</div>';
+  overlay.classList.add('show');
+  try{
+    await ensureProfilesLoaded();
+    const { data: row, error } = await supabaseClient.from('evaluations').select('*, agents(name)').eq('id', evalId).single();
+    if(error) throw error;
+    VIEW_EVAL = { row, fromProfile: !!fromProfile };
+    const d = row.details || null;
+    let sectionsHtml = '';
+    if(d && Array.isArray(d.items) && d.items.length){
+      const groups = [];
+      d.items.forEach(it=>{
+        let g = groups.find(x=> x.key === it.section);
+        if(!g){ g = { key: it.section, title: it.sectionTitle || it.section, rows: [], earned: 0, possible: 0 }; groups.push(g); }
+        g.rows.push(it);
+        if(!it.zero && it.result === 'yes'){ g.earned += it.pts; g.possible += it.pts; }
+        if(!it.zero && it.result === 'no') g.possible += it.pts;
+      });
+      sectionsHtml = groups.map(g=>
+        '<div class="ve-section"><h4>' + escapeHtml(g.title) + '<span>' + (g.possible ? g.earned + ' / ' + g.possible + ' pts' : '') + '</span></h4>' +
+        g.rows.map(it=>{
+          const pts = it.zero ? (it.result === 'no' ? 'Auto-Zero' : '') : (it.result === 'no' ? '-' + it.pts + 'pts' : it.result === 'yes' ? it.pts + 'pts' : 'feedback');
+          return '<div class="ve-row res-' + it.result + '"><span class="ic">' + (RESULT_ICON[it.result] || '') + '</span><div>' +
+            '<span class="lbl">' + escapeHtml(it.label) + '</span> <span class="pts">' + escapeHtml(pts) + '</span>' +
+            (it.text ? '<span class="txt">' + escapeHtml(it.text) + '</span>' : '') + '</div></div>';
+        }).join('') + '</div>').join('');
+    }else{
+      // Saved before full details were kept: show section scores and deductions.
+      const [secs, deds] = await Promise.all([fetchSectionsFor([row.id]), fetchDeductionsFor([row.id])]);
+      sectionsHtml = secs.map(sec=>{
+        const list = deds.filter(x=> x.section_key === sec.section_key);
+        return '<div class="ve-section"><h4>' + escapeHtml(sec.section_title || sec.section_key) + '<span>' + sec.points_earned + ' / ' + sec.points_possible + ' pts</span></h4>' +
+          (list.length ? list.map(x=> '<div class="ve-row res-no"><span class="ic">' + RESULT_ICON.no + '</span><div><span class="lbl">' + escapeHtml(x.rubric_label) + '</span> <span class="pts">-' + x.points_lost + 'pts</span></div></div>').join('')
+            : '<div class="ve-row"><span class="ic">' + RESULT_ICON.yes + '</span><div>No deductions</div></div>') + '</div>';
+      }).join('');
+      const zeros = deds.filter(x=> x.section_key === 'zero');
+      if(zeros.length) sectionsHtml += '<div class="ve-section"><h4>Zero call drivers</h4>' + zeros.map(x=> '<div class="ve-row res-no"><span class="ic">' + RESULT_ICON.no + '</span><div><span class="lbl">' + escapeHtml(x.rubric_label) + '</span> <span class="pts">Auto-Zero</span></div></div>').join('') + '</div>';
+      if(!sectionsHtml) sectionsHtml = '<div class="fail-empty">This evaluation was saved before full details were kept, and has no section scores.</div>';
+      sectionsHtml = '<p>Saved before full details were kept: only scores and failed rubrics are available.</p>' + sectionsHtml;
+    }
+    const score = Math.round(Number(row.score));
+    const meta = [
+      ['Call date', row.call_date], ['Ticket ID', row.ticket_id], ['Call reason', row.call_reason],
+      ['Caller', d && d.caller], ['Order ID', d && d.orderId], ['Call type', d && d.scenarioName],
+      ['Evaluated by', evaluatorLabel(row)], ['Assignment', row.assignment_id || row.kind ? (kindLabel(row.kind) || 'Yes') : 'Not scheduled'],
+      ['Saved', row.created_at ? new Date(row.created_at).toLocaleString() : ''],
+      ['Last edited', row.updated_at ? new Date(row.updated_at).toLocaleString() : ''],
+    ].filter(([, v])=> v);
+    document.getElementById('viewEvalTitle').textContent = 'Evaluation · ' + (row.agents ? row.agents.name : 'Agent');
+    body.innerHTML =
+      '<div class="ve-head"><div class="ve-score ' + scoreClass(score) + '">' + score + '%<small>' + row.points_earned + ' / ' + row.points_possible + ' pts</small></div>' +
+      (row.zero_triggered ? '<div class="ve-zero">Automatic zero</div>' : '') + '</div>' +
+      '<div class="ve-meta">' + meta.map(([k, v])=> '<div><label>' + k + '</label>' + escapeHtml(String(v)) + '</div>').join('') + '</div>' +
+      sectionsHtml +
+      (d && d.summary ? '<div class="ve-subtitle">Summary</div><pre class="ve-summary">' + escapeHtml(d.summary) + '</pre>' : '');
+    const canEdit = canEditEval(row);
+    document.getElementById('btnViewEvalEdit').style.display = canEdit ? '' : 'none';
+    document.getElementById('btnViewEvalDelete').style.display = canEdit && fromProfile ? '' : 'none';
+    document.getElementById('viewEvalActions').style.display = canEdit ? '' : 'none';
+  }catch(err){
+    console.error('Could not open the evaluation', err);
+    body.innerHTML = '<div class="fail-empty">Could not load: ' + escapeHtml(err.message || 'unknown error') + '</div>';
+  }
+}
+
+function closeViewEvalModal(){
+  document.getElementById('viewEvalOverlay').classList.remove('show');
+}
+
+// Open a saved evaluation in the Evaluation tab with its answers, texts and
+// summary, so it can be changed and saved back over the same record.
+function startEditingEvaluation(row){
+  const d = row.details;
+  if(!d || !d.answers){ closeViewEvalModal(); openEditEvalModal(row); return; }
+  if(!EDITING_EXISTING){ archiveCurrentDraftIfMeaningful(); clearCurrentDraftFromLocal(); }
+  EDITING_EXISTING = { id: row.id, agentName: row.agents ? row.agents.name : '', callDate: row.call_date };
+  const agentName = EDITING_EXISTING.agentName;
+  document.getElementById('fAgent').value = agentName;
+  document.getElementById('fAgent').readOnly = true;
+  document.getElementById('fCaller').value = d.caller || '';
+  document.getElementById('fTicket').value = row.ticket_id || '';
+  document.getElementById('fOrder').value = d.orderId || '';
+  document.getElementById('fReason').value = row.call_reason || '';
+  document.getElementById('fCallDate').value = row.call_date || todayLocal();
+  ['fAgent', 'fCaller', 'fTicket', 'fOrder', 'fReason'].forEach(id=> document.getElementById(id).classList.remove('invalid'));
+  setFieldError('fAgent', 'errAgent', '');
+  setFieldError('fCallDate', 'errCallDate', '');
+  if(d.scenarioId && CONFIG.scenarios.items[d.scenarioId]){
+    CONFIG.activeScenarioId = d.scenarioId;
+    document.getElementById('scenarioSelect').value = d.scenarioId;
+  }
+  ANSWERS = Object.assign({}, d.answers);
+  CHOICES = d.choices && typeof d.choices === 'object' ? JSON.parse(JSON.stringify(d.choices)) : {};
+  SUMMARY_MANUAL = !!(d.summaryManual && typeof d.summary === 'string');
+  AUTO_SUMMARY_AT_EDIT = '';
+  if(SUMMARY_MANUAL) document.getElementById('output').value = d.summary;
+  LAST_SAVED_SIGNATURE = null;
+  document.getElementById('editingBannerText').textContent =
+    'Editing the saved evaluation of ' + agentName + ' (' + (row.call_date || '') + (row.ticket_id ? ' · ' + row.ticket_id : '') + '). Saving updates it; it does not create a new one.';
+  document.getElementById('editingBanner').classList.add('show');
+  syncSaveButtonLabel();
+  SCHEDULE = null;
+  renderScheduleBanner();
+  SECTIONS.forEach(sec=> sortByApplicability(sec.key));
+  closeViewEvalModal();
+  if(isViewVisible('view-eval')){ renderSections(); refreshEval(); } else switchTab('eval');
+  showToast('Editing ' + agentName + '\'s evaluation');
+}
+
+function syncSaveButtonLabel(){
+  const btn = document.getElementById('btnSaveEvaluation');
+  btn.lastChild.textContent = EDITING_EXISTING ? ' Save changes' : ' Save evaluation';
+}
+
+function stopEditingEvaluation(){
+  if(!EDITING_EXISTING) return;
+  EDITING_EXISTING = null;
+  document.getElementById('fAgent').readOnly = false;
+  document.getElementById('editingBanner').classList.remove('show');
+  syncSaveButtonLabel();
+  resetEvaluationForm();
+}
+
+// Back to a blank evaluation (everything marked as Met).
+function resetEvaluationForm(){
+  resetAnswersToDefault();
+  ['fAgent', 'fCaller', 'fTicket', 'fOrder', 'fReason'].forEach(id=>{
+    document.getElementById(id).value = '';
+    document.getElementById(id).classList.remove('invalid');
+  });
+  document.getElementById('fCallDate').value = todayLocal();
+  setFieldError('fAgent', 'errAgent', '');
+  setFieldError('fCallDate', 'errCallDate', '');
+  setSummaryManual(false);
+  LAST_SAVED_SIGNATURE = null;
+  CHOICES = {};
+  renderSections();
+  refreshEval();
+  scheduleBannerSoon(0);
+}
+
+async function saveEditedEvaluation(btn, check){
+  const payload = buildEvaluationPayload(check.agent, check.callDate, null);
+  const { error } = await supabaseClient.rpc('update_evaluation', { eval_id: EDITING_EXISTING.id, payload });
+  if(error) throw error;
+  showToast('Changes saved for ' + check.agent.name);
+  stopEditingEvaluation();
+  clearCurrentDraftFromLocal();
+  switchTab('agents');
+}
+
+document.getElementById('btnCloseViewEval').addEventListener('click', closeViewEvalModal);
+document.getElementById('viewEvalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'viewEvalOverlay') closeViewEvalModal(); });
+document.getElementById('btnViewEvalEdit').addEventListener('click', ()=>{ if(VIEW_EVAL) startEditingEvaluation(VIEW_EVAL.row); });
+document.getElementById('btnViewEvalDelete').addEventListener('click', async ()=>{
+  if(!VIEW_EVAL) return;
+  if(await deleteEvaluation(VIEW_EVAL.row.id)) closeViewEvalModal();
+});
+document.getElementById('btnCancelEditing').addEventListener('click', ()=>{
+  if(!confirm('Stop editing? Changes you made here will not be saved.')) return;
+  stopEditingEvaluation();
+  showToast('Editing cancelled');
+});
 
 // Bulk assignment: pick call/ticket first, then tick any number of empty
 // slots in the grid, then choose who gets them.
@@ -3913,9 +4368,11 @@ function renderMonthlyGrid(evals, scope, assignments){
       if(sl && sl.type === 'eval'){
         const e = sl.eval;
         const score = Math.round(Number(e.score));
-        const tip = (e.call_date || '') + (e.ticket_id ? ' · Ticket ' + e.ticket_id : '') + (e.evaluator_name ? ' · by ' + e.evaluator_name : '') +
-          (sl.assignment ? ' · assigned ' + sl.assignment.kind : '') + (e.zero_triggered ? ' · automatic zero' : '');
-        html += '<td class="cell-score ' + scoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%</td>';
+        const by = evaluatorLabel(e);
+        const tip = (e.call_date || '') + (e.ticket_id ? ' · Ticket ' + e.ticket_id : '') + ' · evaluated by ' + by +
+          (sl.assignment ? ' · assigned ' + sl.assignment.kind : ' · not scheduled') + (e.zero_triggered ? ' · automatic zero' : '') + ' · click to view';
+        html += '<td class="cell-score ' + scoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%' +
+          '<span class="cell-by">' + escapeHtml(by) + '</span></td>';
         colTotals[i].earned += Number(e.points_earned || 0);
         colTotals[i].possible += Number(e.points_possible || 0);
         colTotals[i].n++;
@@ -3981,10 +4438,7 @@ function renderMonthlyGrid(evals, scope, assignments){
       }
       if(ev.target.closest('.cell-assigned')) return;
       const cell = ev.target.closest('td[data-eval]');
-      if(cell && isAdminUser()){
-        const e = evals.find(x=> x.id === cell.dataset.eval);
-        if(e){ openEditEvalModal(e); return; }
-      }
+      if(cell){ openViewEvalModal(cell.dataset.eval, false); return; }
       openAgentFromGrid(tr.dataset.agent);
     });
   });
@@ -4195,46 +4649,55 @@ function renderEvalList(evals){
     container.innerHTML = '<div class="fail-empty">No evaluations in this scope.</div>';
     return;
   }
-  const isAdmin = CURRENT_USER && String(CURRENT_USER.role).trim().toLowerCase() === 'admin';
   const sorted = evals.slice().sort((a, b)=> (b.call_date || '').localeCompare(a.call_date || ''));
   container.innerHTML = sorted.map(e=>{
-    const actions = isAdmin
-      ? '<div class="eval-actions">' +
-        '<button class="edit-eval-btn" data-id="' + e.id + '" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
-        '<button class="delete-eval-btn danger" data-id="' + e.id + '" title="Delete"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>' +
-        '</div>'
-      : '';
-    return '<div class="eval-item">' +
+    const canEdit = canEditEval(e);
+    const actions = '<div class="eval-actions">' +
+      '<button class="view-eval-btn" data-id="' + e.id + '" title="View the full evaluation"><svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button>' +
+      (canEdit
+        ? '<button class="edit-eval-btn" data-id="' + e.id + '" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+          '<button class="delete-eval-btn danger" data-id="' + e.id + '" title="Delete"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>'
+        : '') +
+      '</div>';
+    return '<div class="eval-item clickable" data-id="' + e.id + '">' +
       '<span class="date">' + (e.call_date || 'N/A') + '</span>' +
       '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
+      '<span class="by" title="Evaluated by">' + escapeHtml(evaluatorLabel(e)) + '</span>' +
       '<span class="score">' + Math.round(e.score) + '%</span>' +
       actions +
       '</div>';
   }).join('');
 
-  if(isAdmin){
-    container.querySelectorAll('.delete-eval-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=> deleteEvaluation(btn.dataset.id));
+  container.querySelectorAll('.eval-item').forEach(item=>{
+    item.addEventListener('click', async (ev)=>{
+      const id = item.dataset.id;
+      if(ev.target.closest('.delete-eval-btn')){ await deleteEvaluation(id); return; }
+      if(ev.target.closest('.edit-eval-btn')){
+        // Load the full row (with its saved answers) before editing.
+        const { data, error } = await supabaseClient.from('evaluations').select('*, agents(name)').eq('id', id).single();
+        if(error){ showToast('Could not open it: ' + (error.message || 'unknown error')); return; }
+        startEditingEvaluation(data);
+        return;
+      }
+      openViewEvalModal(id, true);
     });
-    container.querySelectorAll('.edit-eval-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=>{
-        const ev = evals.find(e=> e.id === btn.dataset.id);
-        if(ev) openEditEvalModal(ev);
-      });
-    });
-  }
+  });
 }
 
+// Returns true when the evaluation was deleted.
 async function deleteEvaluation(evalId){
-  if(!confirm('Delete this evaluation? This cannot be undone.')) return;
+  if(!confirm('Delete this evaluation? This cannot be undone.')) return false;
   try{
-    const { error } = await supabaseClient.from('evaluations').delete().eq('id', evalId);
+    const { data, error } = await supabaseClient.from('evaluations').delete().eq('id', evalId).select('id');
     if(error) throw error;
+    if(!data || !data.length){ showToast('Could not delete: you can only delete evaluations you did.'); return false; }
     showToast('Evaluation deleted');
     refreshAgentsView();
+    return true;
   }catch(err){
     console.error('Delete failed', err);
     showToast('Could not delete: ' + (err.message || 'unknown error'));
+    return false;
   }
 }
 
@@ -4405,6 +4868,7 @@ function draftHasContent(snap){
 }
 
 function saveCurrentDraftToLocal(){
+  if(EDITING_EXISTING) return;  // a saved evaluation being edited is not a draft
   try{
     const snap = captureDraftSnapshot();
     if(!draftHasContent(snap)){ localStorage.removeItem(LS_CURRENT_DRAFT_KEY); return; }
@@ -4428,6 +4892,7 @@ function saveOngoingDrafts(list){
 }
 
 function archiveCurrentDraftIfMeaningful(){
+  if(EDITING_EXISTING) return;
   const snap = captureDraftSnapshot();
   if(!draftHasContent(snap)) return;
   const list = loadOngoingDrafts();
@@ -4455,6 +4920,7 @@ function applyDraftSnapshot(snap){
   SECTIONS.forEach(sec=> sortByApplicability(sec.key));
   renderSections();
   refreshEval();
+  scheduleBannerSoon(0);
 }
 
 function renderOngoingList(){
@@ -4493,6 +4959,7 @@ function renderOngoingList(){
 function resumeOngoingDraft(idx){
   const snap = loadOngoingDrafts()[idx];
   if(!snap) return;
+  if(EDITING_EXISTING){ showToast('Finish or cancel the evaluation you are editing first'); return; }
   archiveCurrentDraftIfMeaningful();
   // Re-read after archiving so the evaluation that was open is kept.
   saveOngoingDrafts(loadOngoingDrafts().filter(d=> d.id !== snap.id));
