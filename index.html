@@ -644,7 +644,8 @@
     flex:none; background:none; border:1px solid var(--border); color:var(--text-faint); border-radius:5px;
     width:22px; height:22px; cursor:pointer; font-size:14px; line-height:1; margin-top:4px;
   }
-  .cfg-alt-remove:hover{ color:var(--no); border-color:var(--no); }
+  .cfg-alt-remove:hover:not(:disabled){ color:var(--no); border-color:var(--no); }
+  .cfg-alt-remove:disabled{ opacity:.35; cursor:not-allowed; }
   .cfg-alt-add{
     align-self:flex-start; background:none; border:1px dashed var(--border); border-radius:var(--radius-sm);
     padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;
@@ -683,8 +684,21 @@
     display:inline-block; font-size:9px; font-weight:800; letter-spacing:.3px; padding:1px 5px; border-radius:4px; margin-right:6px;
     border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); vertical-align:1px; white-space:nowrap;
   }
-  .role-purple{ color:#a78bfa !important; }
-  .role-badge.role-purple{ border-color:#a78bfa; background:rgba(167,139,250,0.14); }
+  .role-c{ color:var(--rc) !important; }
+  .role-badge.role-c{ border-color:var(--rc); background:color-mix(in srgb, var(--rc) 14%, transparent); }
+  .role-purple{ --rc:#a78bfa; } .role-blue{ --rc:#60a5fa; } .role-teal{ --rc:#2dd4bf; } .role-green{ --rc:#4ade80; }
+  .role-amber{ --rc:#fbbf24; } .role-orange{ --rc:#fb923c; } .role-red{ --rc:#f87171; } .role-pink{ --rc:#f472b6; }
+  html[data-theme="light"] .role-purple{ --rc:#7c3aed; } html[data-theme="light"] .role-blue{ --rc:#2563eb; }
+  html[data-theme="light"] .role-teal{ --rc:#0d9488; } html[data-theme="light"] .role-green{ --rc:#16a34a; }
+  html[data-theme="light"] .role-amber{ --rc:#b45309; } html[data-theme="light"] .role-orange{ --rc:#c2410c; }
+  html[data-theme="light"] .role-red{ --rc:#dc2626; } html[data-theme="light"] .role-pink{ --rc:#db2777; }
+  .role-swatches{ display:inline-flex; gap:3px; margin-left:4px; }
+  .name-chip .role-swatch, .role-swatch{
+    width:14px; height:14px; border-radius:50%; border:1px solid var(--border); padding:0; cursor:pointer; flex:none;
+    background:var(--rc, transparent); position:relative;
+  }
+  .name-chip .role-swatch.none, .role-swatch.none{ background:linear-gradient(135deg, transparent 45%, var(--text-faint) 45%, var(--text-faint) 55%, transparent 55%); }
+  .name-chip .role-swatch.on, .role-swatch.on{ outline:2px solid var(--text); outline-offset:1px; }
   /* ---------- Agent performance chart ---------- */
   .perf-box{ border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-elev-2); padding:14px 14px 10px; margin-bottom:16px; }
   .perf-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
@@ -717,6 +731,12 @@
     position:absolute; top:7px; width:18px; height:20px; margin-left:-9px; border-radius:5px; background:var(--accent); border:2px solid var(--bg-elev-2);
     cursor:ew-resize; box-shadow:0 1px 4px rgba(0,0,0,.35);
   }
+  /* Handles glide into place; while dragging they follow the pointer exactly. */
+  .range-slider .rs-sel, .range-slider .rs-handle{ transition:left .22s cubic-bezier(.22,.8,.3,1), width .22s cubic-bezier(.22,.8,.3,1), transform .15s ease, box-shadow .15s ease; will-change:left; }
+  .range-slider.dragging .rs-sel, .range-slider.dragging .rs-handle{ transition:transform .15s ease, box-shadow .15s ease; }
+  .range-slider.dragging .rs-sel{ cursor:grabbing; }
+  .range-slider .rs-handle:hover, .range-slider .rs-handle:active{ transform:scale(1.12); box-shadow:0 2px 8px rgba(0,0,0,.4); }
+  #perfChart svg .line, #perfChart svg .pt{ transition:opacity .15s ease; }
   .range-slider .rs-handle:focus-visible{ outline:2px solid var(--text); outline-offset:1px; }
   .rs-labels{ display:flex; justify-content:space-between; gap:10px; font-size:11.5px; color:var(--text-dim); margin:0 2px; }
   .rs-labels b{ color:var(--text); font-weight:800; }
@@ -751,9 +771,9 @@
   .agent-meta-row label{ display:flex; flex-direction:column; gap:4px; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
   .agent-meta-row select{ min-width:180px; padding:7px 9px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; text-transform:none; letter-spacing:0; color-scheme: light dark; }
   .agent-meta-row select:disabled{ opacity:.75; cursor:not-allowed; }
-  .role-chip-toggle{ display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); cursor:pointer; margin-left:4px; }
-  .role-chip-toggle input{ accent-color:#a78bfa; margin:0; }
-  .search-scenario-row .scenario-row{ display:none !important; }
+  body:not(.is-admin) .search-scenario-row .scenario-row,
+  body:not(.is-admin) #btnHoldToggle,
+  body:not(.is-admin) .admin-only{ display:none !important; }
   .x-chip button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
   .x-chip button:hover{ color:var(--no); }
   .focus-select{
@@ -1439,7 +1459,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="cfg-block">
       <h4>Agent roles</h4>
-      <p style="font-size:12px; color:var(--text-dim); margin:0 0 6px;">The order is the hierarchy used to sort agents by role (use ▲ to move one up). Tick "Purple" to show agents with that role in purple.</p>
+      <p style="font-size:12px; color:var(--text-dim); margin:0 0 6px;">The order is the hierarchy used to sort agents by role (use ▲ to move one up). Pick a color to show agents with that role in that color.</p>
       <div class="cfg-names" id="cfgRoles"></div>
       <div class="add-name">
         <input id="newRoleInput" placeholder="Role (e.g. SME)">
@@ -1460,32 +1480,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           Add
         </button>
       </div>
-    </div>
-
-    <div class="cfg-block">
-      <h4>Call type scenarios</h4>
-      <div class="hint">Each scenario defines which rubrics apply by default for that kind of call. Click a scenario below to view and edit it. The highlighted one is what agents currently get on the Evaluation tab.</div>
-      <div class="scenario-chip-row" id="scenarioChips"></div>
-      <div class="add-name" style="margin-bottom:16px;">
-        <input id="newScenarioInput" placeholder="Scenario name">
-        <button id="btnAddScenario" title="Create a new scenario">
-          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
-          Add scenario
-        </button>
-      </div>
-      <div class="scenario-editor-head">
-        <div class="scenario-editing-name" id="scenarioEditingName">Editing: General Call</div>
-        <input id="scenarioRenameInput" placeholder="New name">
-        <button id="btnScenarioRename" class="btn btn-ghost" style="flex:none; padding:8px 12px;">Rename</button>
-        <button id="btnScenarioDuplicate" class="btn btn-ghost" style="flex:none; padding:8px 12px;">Duplicate</button>
-        <button id="btnScenarioSetActive" class="btn btn-primary" style="flex:none; padding:8px 12px;">Set as active</button>
-        <button id="btnScenarioDelete" class="btn btn-ghost" style="flex:none; padding:8px 12px; color:var(--no);">Delete</button>
-      </div>
-      <div id="scenarioApplicability"></div>
-      <button class="btn btn-primary" id="btnSaveScenarios" style="flex:none; margin-top:14px;">
-        <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
-        Save scenarios
-      </button>
     </div>
 
     <div class="cfg-block">
@@ -1521,6 +1515,32 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
 
     <div id="cfgSections"></div>
+
+    <div class="cfg-block admin-only" id="cfgScenariosBlock">
+      <h4>Call type scenarios</h4>
+      <div class="hint">Each scenario defines which rubrics apply by default for that kind of call. Click a scenario below to view and edit it. The highlighted one is what agents currently get on the Evaluation tab.</div>
+      <div class="scenario-chip-row" id="scenarioChips"></div>
+      <div class="add-name" style="margin-bottom:16px;">
+        <input id="newScenarioInput" placeholder="Scenario name">
+        <button id="btnAddScenario" title="Create a new scenario">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add scenario
+        </button>
+      </div>
+      <div class="scenario-editor-head">
+        <div class="scenario-editing-name" id="scenarioEditingName">Editing: General Call</div>
+        <input id="scenarioRenameInput" placeholder="New name">
+        <button id="btnScenarioRename" class="btn btn-ghost" style="flex:none; padding:8px 12px;">Rename</button>
+        <button id="btnScenarioDuplicate" class="btn btn-ghost" style="flex:none; padding:8px 12px;">Duplicate</button>
+        <button id="btnScenarioSetActive" class="btn btn-primary" style="flex:none; padding:8px 12px;">Set as active</button>
+        <button id="btnScenarioDelete" class="btn btn-ghost" style="flex:none; padding:8px 12px; color:var(--no);">Delete</button>
+      </div>
+      <div id="scenarioApplicability"></div>
+      <button class="btn btn-primary" id="btnSaveScenarios" style="flex:none; margin-top:14px;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        Save scenarios
+      </button>
+    </div>
   </div>
 
 </div>
@@ -1877,6 +1897,194 @@ const SECTIONS = [
   ]},
 ];
 
+// Extra text options per rubric, from the QA criteria sheet. Used as the
+// default options 2-4 (zero drivers take the improvement texts).
+const CRITERIA_SEED = 1;
+const CRITERIA_TEXTS = {
+  "1.1": {
+    yes: ["Your complete and welcoming greeting reassured the customer that they had reached the correct support team.", "You opened professionally and invited the customer to explain their need, creating confidence from the first moment.", "Your natural delivery made the customer feel welcomed rather than processed through a scripted interaction."],
+    no: ["The incomplete greeting missed an opportunity to reassure the customer that they had reached the correct support resource.", "You began troubleshooting without a welcoming introduction, which may make the customer feel that their contact is being rushed.", "The greeting sounded unclear and mechanical. A warmer delivery can establish trust before discussing the customer’s concern."] },
+  "1.2": {
+    yes: ["You offered further assistance, giving the customer a final opportunity to address unresolved questions and avoid another contact.", "After resolving the main concern, you checked for additional needs, demonstrating commitment to the customer’s complete experience.", "Your offer ensured that the customer left with all concerns addressed rather than only the original request."],
+    no: ["The call ended without checking for additional needs, potentially leaving the customer with unanswered questions.", "You moved directly into the closing. Offering further support can reduce customer effort and prevent repeat contact.", "The customer was not given a final opportunity to clarify concerns, limiting confidence in the completeness of the support."] },
+  "1.3": {
+    yes: ["You summarized the outcome and closed professionally, leaving the customer confident about what had been accomplished.", "Your courteous closing acknowledged the customer’s time and provided a positive final impression of our support.", "You concluded with clear expectations, ensuring the customer understood the resolution and any remaining next steps."],
+    no: ["The abrupt ending may leave the customer uncertain about whether the interaction and required actions were complete.", "The closing did not reinforce the resolution. Briefly summarizing the outcome can strengthen customer confidence.", "A professional farewell was missing, reducing the opportunity to leave the customer with a positive final impression."] },
+  "1.4": {
+    yes: ["You confirmed the ticket and account information, ensuring the customer received assistance under the correct records.", "Proper validation created a seamless transfer and prevented the customer from repeating information already provided.", "You verified the information before proceeding, protecting customer data and reducing the risk of incorrect actions."],
+    no: ["The account was not validated, increasing the risk of assisting the customer using an incorrect record.", "The transfer ticket was not requested, causing missed context and potentially requiring the customer to repeat troubleshooting.", "Validation was incomplete. Confirming both records protects customer trust and supports an accurate, efficient resolution."] },
+  "2.1": {
+    yes: ["Your courteous language clearly communicated that helping the customer was your priority throughout the interaction.", "You combined professional wording with a supportive tone, helping the customer feel respected and confident in our assistance.", "Your ownership-focused phrases reassured the customer that you would actively guide the concern toward resolution."],
+    no: ["The language felt transactional and did not clearly communicate a willingness to support the customer.", "Some responses sounded abrupt. More courteous wording can help customers feel respected during a challenging situation.", "Information was provided without service-oriented language, limiting the customer’s confidence that their concern was being personally managed."] },
+  "2.2": {
+    yes: ["You avoided assigning blame and redirected the discussion toward actions that would help the customer move forward.", "You used neutral language about internal challenges, protecting the customer’s confidence in our products and support teams.", "You maintained ownership until the next step was established, providing the customer with a productive resolution experience."],
+    no: ["Comments about another team could reduce the customer’s trust in our ability to manage their concern collectively.", "The product was described negatively without offering a constructive path forward, potentially increasing customer frustration.", "Responsibility was redirected to a coworker. Maintain ownership so the customer does not feel passed between teams."] },
+  "2.3": {
+    yes: ["You used the customer’s name early and naturally, creating a more personal and attentive support experience.", "Addressing the customer correctly demonstrated that you were focused on both the individual and their concern.", "Your appropriate use of the customer’s name helped build rapport without making the conversation feel scripted."],
+    no: ["The customer’s name was available but not used, missing an opportunity to personalize the interaction.", "The name was introduced too late to help establish rapport at the beginning of the customer’s journey.", "The customer was addressed incorrectly. Verify the name to protect trust and avoid making the interaction feel impersonal."] },
+  "2.4": {
+    yes: ["You allowed the customer to finish explaining, helping you understand the complete concern before offering a solution.", "When accidental overlap occurred, you apologized and invited the customer to continue, preserving a respectful experience.", "Your patient listening helped the customer feel heard and prevented important troubleshooting details from being missed."],
+    no: ["The customer was interrupted before completing key details, which can make customers feel unheard and lead to assumptions.", "An accidental interruption was not acknowledged. A brief apology can quickly restore a respectful conversational flow.", "Frequent overlap affected the customer’s ability to explain the situation and may have prolonged the resolution process."] },
+  "2.5": {
+    yes: ["Your engaged tone communicated genuine interest in helping the customer and made the support experience feel personal.", "You adapted your delivery to the customer’s situation instead of relying on scripted-sounding responses.", "Your positive energy helped reassure the customer that their concern was receiving active attention."],
+    no: ["The monotone delivery may make customers feel that their concern is routine or unimportant.", "Some responses sounded scripted because they did not reflect the customer’s specific situation or comments.", "Additional energy and vocal variety could help the customer feel that you are genuinely invested in the resolution."] },
+  "2.6": {
+    yes: ["You guided the customer logically from discovery through resolution, making the process easy to follow.", "Your step-by-step explanations helped the customer participate confidently without feeling overwhelmed by information.", "You used clear transitions and understanding checks, ensuring the customer knew what was happening and why."],
+    no: ["Rapid changes between topics made the process difficult for the customer to understand and follow.", "Several instructions were provided simultaneously, increasing customer effort and the possibility of missed steps.", "The customer expressed confusion, but the information was repeated without being simplified or reorganized."] },
+  "2.7": {
+    yes: ["Your deliberate and concise delivery communicated confidence and helped the customer focus on important information.", "You used brief pauses effectively, maintaining professionalism while reviewing the customer’s account and options.", "Your polished communication helped customers trust that the resolution was being handled with clarity and control."],
+    no: ["Frequent filler words weakened the clarity of the explanation and may reduce customer confidence in the guidance.", "During system navigation, verbal fillers replaced meaningful updates about what was being reviewed for the customer.", "Taking intentional pauses would make instructions easier for the customer to understand and follow."] },
+  "2.8": {
+    yes: ["You specifically acknowledged how the issue affected the customer and connected that understanding to meaningful assistance.", "Your personalized empathy helped the customer feel heard rather than receiving a generic service response.", "You validated the customer’s experience and clearly explained how you would help reduce the inconvenience."],
+    no: ["Troubleshooting began without acknowledging how the situation affected the customer’s experience or workflow.", "The empathy statement was generic and did not reflect the specific concern the customer had described.", "You recognized the frustration but did not connect the acknowledgment to a clear commitment to help."] },
+  "2.9": {
+    yes: ["You transformed the customer’s uncertainty into confidence by confirming the resolution and explaining the next steps.", "Your ownership and reassurance helped the customer sound more comfortable and positive before the call ended.", "You highlighted the progress achieved, helping the customer leave with a clear sense of support and resolution."],
+    no: ["The customer remained uncertain because the result and upcoming actions were not reinforced before closing.", "Although information was provided, the interaction did not leave the customer feeling reassured about the outcome.", "More specific expectations and reassurance were needed to reduce the customer’s remaining frustration or concern."] },
+  "2.10": {
+    yes: ["Your sincere apology acknowledged the mistake and its impact, helping restore the customer’s trust in our support.", "You accepted ownership without blaming another team and immediately connected the apology to corrective action.", "Your apology showed that the customer’s inconvenience mattered and that preventing further disruption was a priority."],
+    no: ["A business mistake was identified without a direct apology, leaving the customer’s inconvenience insufficiently acknowledged.", "The apology sounded conditional and did not clearly demonstrate accountability for the impact on the customer.", "Responsibility was redirected after the apology, which may weaken the customer’s confidence in our ownership of the matter."] },
+  "3.1": {
+    yes: ["Your precise symptom codes help future teams understand the customer’s issue quickly and continue support without repeated discovery.", "The selected classifications matched the confirmed failure, supporting an accurate resolution and appropriate replacement for the customer.", "Specific issue and sub-issue codes reduce processing errors that could otherwise delay the customer’s case."],
+    no: ["The broad symptom code may route the customer’s case incorrectly and delay the support they require.", "The classification did not match the replacement reason, increasing the risk of incorrect downstream actions for the customer.", "The primary customer concern was not reflected in the coding, making future support less efficient and consistent."] },
+  "3.2": {
+    yes: ["The complete RMA allowed the customer’s replacement to proceed without preventable clarification or fulfillment delays.", "You verified the part, delivery, and customer information, protecting the customer from an incorrect shipment.", "Your accurate RMA connected the replacement to the confirmed issue and provided the customer with a dependable next step."],
+    no: ["Missing RMA information could delay the replacement and require the customer to contact us again.", "The RMA was not created after replacement approval, leaving the customer without the expected fulfillment process.", "Incorrect part or delivery details create a risk of extending the customer’s downtime and frustration."] },
+  "3.3": {
+    yes: ["You entered the customer’s requested address in the designated fields, helping ensure delivery to the correct location.", "Confirming every address component protected the customer from shipment delays, failed delivery, or additional contact.", "The alternate address was accurately reflected throughout the request, providing the customer with confidence in the delivery arrangement."],
+    no: ["The alternative address was not entered in the required fields, creating a risk of delivery to the wrong location.", "Placing the address only in notes may prevent fulfillment from processing the customer’s delivery request correctly.", "The address was not fully verified, potentially causing delays and additional effort for the customer."] },
+  "3.4": {
+    yes: ["The complete complaint accurately represented the customer’s hardware experience and enabled the appropriate internal review.", "You captured the failure, product, and customer impact, ensuring their reported concern received proper visibility.", "Linking the complaint to the support case preserved the customer’s full journey and prevented information from being lost."],
+    no: ["The qualifying hardware concern was not recorded as a complaint, limiting visibility into the customer’s product experience.", "Missing hardware details may delay investigation and require the customer to provide the same information again.", "The complaint differed from the customer’s actual report, potentially directing review toward the wrong issue."] },
+  "3.5": {
+    yes: ["You documented the software behavior and customer impact, ensuring the concern reached the appropriate review process.", "The complaint contained enough detail to investigate the issue without requesting repeated information from the customer.", "Accurate software documentation demonstrated that the customer’s reported experience was taken seriously and preserved for action."],
+    no: ["The qualifying software concern was not created, leaving the customer’s reported experience without appropriate visibility.", "Missing error and environment details may delay investigation and increase the customer’s waiting time.", "Recording the concern only in general notes may prevent it from reaching the team responsible for customer-impacting software issues."] },
+  "3.6": {
+    yes: ["You recorded the customer’s service concern objectively, ensuring their experience received the appropriate attention.", "The complaint captured the customer’s actual account and impact without adding assumptions or defensive language.", "You documented both the concern and assistance provided, creating transparency and supporting customer trust."],
+    no: ["The service concern was not recorded through the required process, limiting our ability to respond to the customer’s experience.", "The complaint omitted the impact on the customer, reducing the context needed for meaningful review.", "Subjective documentation may make the customer feel blamed instead of accurately representing their concern."] },
+  "6.11": { reason: ["The potential safety concern was handled only as technical support, leaving a critical customer protection process incomplete.", "Important customer-reported safety details were omitted, potentially delaying the appropriate assessment and response.", "The missing safety ticket may undermine customer trust and prevent the concern from reaching the responsible team."] },
+  "3.8": {
+    yes: ["The correct template organized the customer’s symptoms, troubleshooting, outcome, and next steps for seamless future support.", "Your structured documentation helps another agent assist the customer without asking them to repeat the interaction.", "Completing every relevant section created a reliable account of what the customer experienced and what we committed to do."],
+    no: ["The incorrect template omitted details needed to continue supporting the customer efficiently.", "Blank sections created gaps that may force the customer to repeat information during future contact.", "Unstructured notes make it harder for another agent to understand and advance the customer’s resolution."] },
+  "3.9": {
+    yes: ["Your notes preserved the complete customer journey, enabling future support without unnecessary repetition or delays.", "The documented concern, actions, outcome, and expectations provide continuity if the customer contacts us again.", "Your concise structure makes the customer’s needs immediately visible while retaining every detail required for continued support."],
+    no: ["Important discussion points were omitted, which may require the customer to repeat information during the next contact.", "The notes did not clearly identify the resolution or next owner, creating uncertainty for both the customer and future agents.", "Excessive unrelated detail obscured the customer’s main concern and could delay continued assistance."] },
+  "3.10": {
+    yes: ["Your documentation accurately reflected what the customer reported and what was completed, protecting trust and case integrity.", "You distinguished customer-reported information from confirmed findings, allowing future agents to make safe, informed decisions.", "Every documented action matched the interaction, ensuring the customer’s support history remained reliable."],
+    no: ["An uncompleted action was documented as finished, potentially creating incorrect expectations and delays for the customer.", "A customer statement was presented as confirmed fact, which could lead future support down an inaccurate path.", "The recorded outcome did not match the case status, risking confusion and repeated effort for the customer."] },
+  "3.11": {
+    yes: ["The attached evidence supported the customer’s reported issue and enabled faster review without requesting the files again.", "Relevant logs and images strengthened the resolution decision and reduced waiting time for the customer.", "Your complete attachments gave receiving teams the information needed to continue helping the customer immediately."],
+    no: ["Missing evidence may delay the customer’s escalation and require them to reproduce or resend information.", "The attachment did not clearly demonstrate the reported behavior, limiting its value in resolving the customer’s concern.", "Required logs were omitted, increasing the possibility of repeated troubleshooting and additional customer effort."] },
+  "3.12": {
+    yes: ["Accurate ticket fields ensure the customer’s case reaches the correct workflow and receives timely attention.", "Your field selections aligned with the customer’s concern and resolution, supporting consistent future assistance.", "Complete records reduce processing errors that could otherwise delay the customer or create repeat contact."],
+    no: ["Missing fields may prevent the customer’s case from progressing through the correct support process.", "Field values conflicted with the customer’s documented concern, creating a risk of incorrect handling.", "Unverified default selections may misrepresent the customer’s experience and affect future support decisions."] },
+  "3.13": {
+    yes: ["Selecting the return option initiated the required process and provided the customer with a complete replacement experience.", "Your selection aligned with the communicated expectations, preventing confusion about the customer’s return responsibility.", "You verified the requirement before submission, helping the customer avoid unexpected instructions or charges."],
+    no: ["The missing selection prevented the return process from starting and may create additional work for the customer.", "The notes referenced a return, but the system action was incomplete, creating conflicting expectations for the customer.", "The return was triggered without confirming applicability, potentially causing unnecessary inconvenience for the customer."] },
+  "3.14": {
+    yes: ["You verified the record before documenting, preserving an accurate and complete history for the customer.", "Updating the correct ticket prevents customers from repeating information and keeps all related actions together.", "Accurate record selection protects customer information and helps future agents continue from the correct point."],
+    no: ["Documentation on the wrong account creates privacy concerns and may leave the actual customer’s history incomplete.", "Notes were added to an unrelated case, potentially forcing the customer to repeat the entire interaction.", "An unnecessary new ticket fragmented the customer’s history and may lead to duplicated or conflicting actions."] },
+  "3.15": {
+    yes: ["You confirmed the affected asset, ensuring troubleshooting and replacement actions applied to the customer’s actual device.", "The asset matched the serial number and reported concern, supporting an accurate and efficient resolution.", "Correct asset selection preserved the device history and prevented the customer from receiving incompatible support or parts."],
+    no: ["The selected asset did not match the affected device, risking incorrect troubleshooting or replacement for the customer.", "No asset was associated despite confirmation, leaving the customer’s device history incomplete.", "The asset was selected without customer verification, increasing the possibility of actions being applied to the wrong product."] },
+  "3.16": {
+    yes: ["The selected part matched the confirmed issue and device, protecting the customer from an incorrect shipment.", "When the part was unavailable, your notes clearly preserved the customer’s requirement for the next team.", "Consistent part information across the ticket and RMA supported a smooth replacement experience."],
+    no: ["The selected part did not match the customer’s device or diagnosed issue, potentially extending their downtime.", "The unavailable part was not documented, leaving the next team without enough information to assist the customer.", "Compatibility was not verified, creating a risk that the customer could receive an unusable replacement."] },
+  "3.17": {
+    yes: ["Your clear email allowed the customer to understand the outcome and act without seeking additional clarification.", "Well-organized instructions reduced customer effort and provided confidence about the next steps.", "Accurate names, dates, and ticket details created a professional communication the customer could trust."],
+    no: ["Grammatical issues made important instructions difficult for the customer to interpret confidently.", "The email did not clearly state the next action, potentially causing delays or repeat contact.", "Internal terminology and fragmented wording made the communication less accessible to the customer."] },
+  "3.18": {
+    yes: ["The appropriate template ensured the customer received all required information for their specific situation.", "You personalized the template, making the communication relevant rather than generic or automated.", "Removing irrelevant content helped the customer focus on the instructions and expectations that applied to them."],
+    no: ["The incorrect template provided information that did not match the customer’s situation or resolution.", "Unedited placeholders may reduce the customer’s confidence in the care taken with their case.", "The generic template did not explain the customer’s specific outcome, leading to possible confusion or additional questions."] },
+  "3.19": {
+    yes: ["You verified the customer’s name, supporting accurate records and respectful personalized communication.", "Correct spelling helps future teams confidently identify and address the customer during continued support.", "Accurate name documentation prevents confusion about who contacted us and whose needs must be addressed."],
+    no: ["The customer’s name was misspelled, which may make them feel that their personal information received insufficient attention.", "Another contact’s name was recorded, creating uncertainty about the customer involved in the interaction.", "The incomplete name may affect future identification and reduce the professionalism of customer communications."] },
+  "3.20": {
+    yes: ["The specific subject makes the customer’s main concern immediately understandable to any future supporting team.", "Consistent subjects across related tickets help preserve a clear customer journey and prevent duplicated work.", "The subject accurately reflected the customer’s issue, supporting faster routing and continued assistance."],
+    no: ["The generic subject does not show what the customer needs, potentially slowing future handling.", "The subject described another issue, creating a risk that the customer’s case could be misunderstood or misrouted.", "A default subject was retained, limiting visibility into the actual customer impact and required action."] },
+  "3.21": {
+    yes: ["The attached article supports the resolution and helps future agents provide consistent guidance to the customer.", "Selecting guidance for the correct product protects the customer from receiving incompatible or inaccurate instructions.", "The article creates a reliable reference if the customer needs continued assistance with the same concern."],
+    no: ["The supporting article was not attached, making it harder to verify and continue the customer’s resolution.", "The article addressed another scenario, potentially exposing the customer to irrelevant or incorrect guidance.", "A broad article was used instead of the specific resource supporting the customer’s troubleshooting process."] },
+  "4.1": {
+    yes: ["You balanced efficiency and accuracy, resolving the concern without making the customer feel rushed.", "Every portion of the call moved the customer closer to resolution, respecting their time and effort.", "You avoided repetition while completing the required process, creating a smooth and complete customer experience."],
+    no: ["Repeated steps extended the customer’s time without contributing new information to the resolution.", "The call was rushed, leaving customer questions unanswered and increasing the possibility of repeat contact.", "System activity was not managed efficiently, causing the customer to experience preventable delays."] },
+  "4.2": {
+    yes: ["Your progress updates reassured the customer that you remained connected and actively working on the resolution.", "You explained what was being reviewed, making unavoidable waiting periods feel purposeful and transparent.", "Keeping the customer informed reduced uncertainty and maintained engagement throughout the support process."],
+    no: ["Extended silence left the customer uncertain about whether the call remained connected or progress was being made.", "System navigation occurred without updates, making the customer feel excluded from their own resolution process.", "The customer had to ask if you were still present, signaling a need for more frequent communication."] },
+  "4.3": {
+    yes: ["Your prompt answer reduced the customer’s wait and communicated immediate readiness to help.", "The quick response created a responsive first impression and respected the customer’s time.", "You answered and greeted the customer without delay, starting their support journey with confidence."],
+    no: ["The delayed answer increased the customer’s waiting time and may suggest limited readiness to assist.", "Silence after connection created uncertainty about whether the customer’s call had been successfully answered.", "A faster response would provide customers with a more dependable and welcoming start to the interaction."] },
+  "4.4": {
+    yes: ["Hold was used only for research necessary to provide the customer with an accurate resolution.", "The hold activity directly supported the customer’s request and prevented incomplete or speculative guidance.", "You kept the customer engaged when hold was unnecessary, reducing disruption to their support experience."],
+    no: ["Hold was used for an activity that could have been completed while keeping the customer informed.", "The hold did not contribute to the customer’s resolution and unnecessarily extended their effort.", "Repeated hold periods disrupted the interaction without delivering meaningful progress for the customer."] },
+  "4.5": {
+    yes: ["You requested permission and waited for the customer’s response, demonstrating respect for their time.", "Asking first gave the customer control and made the interruption feel planned rather than unexpected.", "Your courteous request maintained transparency and protected the customer’s confidence during the wait."],
+    no: ["The customer was placed on hold without permission, creating an unexpected and potentially frustrating interruption.", "Hold was announced without allowing the customer to respond or agree to the proposed wait.", "Unexplained mute created silence that may have made the customer believe the connection was lost."] },
+  "4.6": {
+    yes: ["You explained what required review and how it would help resolve the customer’s concern.", "The specific explanation reassured the customer that their waiting time would support meaningful progress.", "You connected the hold activity to the customer’s requested outcome rather than using vague wording."],
+    no: ["Hold was requested without explaining how the wait would help address the customer’s concern.", "The vague explanation did not give the customer confidence that useful action was being completed.", "Clarifying the purpose can make customers more comfortable with the interruption and expected waiting time."] },
+  "4.7": {
+    yes: ["Your realistic timeframe gave the customer a clear expectation for when you would return.", "The specific estimate reduced uncertainty and demonstrated respect for the customer’s time.", "You avoided an open-ended wait, allowing the customer to make an informed decision about remaining available."],
+    no: ["No timeframe was provided, leaving the customer uncertain about how long they would be waiting.", "The proposed hold exceeded the expected limit and may have created unnecessary inconvenience.", "A vague estimate did not provide the customer with a meaningful expectation for the next update."] },
+  "4.8": {
+    yes: ["You returned as promised, showing the customer that our commitments and their time are respected.", "When extra research was required, you updated the customer and requested permission for additional time.", "Your timely progress updates reassured the customer that they had not been forgotten during the review."],
+    no: ["The promised timeframe passed without an update, potentially making the customer feel forgotten.", "Additional hold time was used without refreshing expectations or obtaining the customer’s agreement.", "Returning late without acknowledging the delay may reduce customer trust in future commitments."] },
+  "4.9": {
+    yes: ["You thanked the customer for waiting, acknowledging the time they invested in reaching a resolution.", "Your appreciation was followed by a meaningful update, showing that the customer’s patience produced progress.", "You resumed professionally by recognizing the wait and clearly explaining what had been found."],
+    no: ["The call resumed without acknowledging the customer’s wait, missing an opportunity to show respect for their time.", "Appreciation was expressed without explaining the progress made during the hold.", "The abrupt return may make the customer feel that the inconvenience of waiting was overlooked."] },
+  "4.10": {
+    yes: ["You explained the receiving team’s role and how the transfer would advance the customer’s resolution.", "The correct transfer prevented additional routing and reduced the customer’s need to repeat information.", "You prepared the customer and receiving team, creating a seamless continuation of support."],
+    no: ["The customer was transferred without understanding which team would assist or why the transfer was necessary.", "Routing to the wrong queue created avoidable delay and additional customer effort.", "Insufficient transfer context required the customer to repeat information already shared."] },
+  "5.1": {
+    yes: ["Your targeted questions uncovered the customer’s symptoms, impact, and previous actions before troubleshooting began.", "You adapted your questions to the customer’s answers, creating a personalized and efficient diagnostic experience.", "Thorough discovery prevented unnecessary steps and helped the customer reach the correct resolution faster."],
+    no: ["Troubleshooting began before the customer’s full situation was understood, resulting in avoidable steps and questions.", "Key information about timing, symptoms, or impact was not gathered, limiting resolution accuracy.", "Repeated questions increased customer effort because earlier answers were not fully acknowledged or used."] },
+  "5.2": {
+    yes: ["You translated technical concepts into practical steps the customer could understand and complete confidently.", "Your accessible language helped the customer participate in troubleshooting without feeling overwhelmed or excluded.", "You adjusted the explanation to the customer’s knowledge level, improving understanding and satisfaction."],
+    no: ["Unexplained technical language caused confusion and made the resolution more difficult for the customer to follow.", "Internal acronyms were unnecessary and increased the customer’s effort to understand the guidance.", "Repeating the same technical explanation did not address the customer’s need for simpler instructions."] },
+  "5.3": {
+    yes: ["You verified the information before sharing it, giving the customer confidence that the guidance was dependable.", "Your recommendation matched the customer’s specific product and scenario, protecting them from unnecessary actions.", "You researched rather than guessed, reducing the risk of repeat contact caused by incorrect information."],
+    no: ["Unverified information was presented as confirmed, potentially damaging the customer’s confidence and resolution path.", "The guidance conflicted with the applicable resource, creating a risk of additional customer effort or disruption.", "An assumption was shared without explaining that further validation was required before the customer acted."] },
+  "5.4": {
+    yes: ["You addressed every request and confirmed completion, providing the customer with a comprehensive support experience.", "Related questions were resolved without losing focus on the customer’s primary reason for contacting us.", "When immediate completion was not possible, you established a clear owner, action, and expectation for the customer."],
+    no: ["An additional customer request was raised but not acknowledged or included in the resolution.", "The interaction ended without confirming whether all the customer’s needs had been addressed.", "An outstanding request lacked an owner or timeframe, leaving the customer uncertain about the next step."] },
+  "5.5": {
+    yes: ["You followed the correct process and confirmed each relevant outcome, providing the customer with an accurate resolution.", "Your troubleshooting addressed the underlying issue instead of offering only a temporary workaround.", "You adapted the approved process to the customer’s responses while maintaining accuracy and efficiency."],
+    no: ["Required steps were skipped, leaving the customer’s root issue unconfirmed and at risk of recurring.", "The troubleshooting path did not match the scenario, increasing customer effort without advancing the resolution.", "The process stopped after temporary improvement without confirming that the customer’s main concern was resolved."] },
+  "5.6": {
+    yes: ["You reconnected promptly and continued from the previous point, preventing the customer from restarting the process.", "Honoring the callback request demonstrated reliability and respect for the customer’s availability.", "You documented the callback outcome, preserving continuity if the customer requires further assistance."],
+    no: ["No callback attempt was made after disconnection, leaving the customer without the expected continuation of support.", "The callback commitment was not honored, which may significantly reduce the customer’s trust in our support.", "The callback result was not documented, creating uncertainty and possible repeated outreach to the customer."] },
+  "5.7": {
+    yes: ["You identified the correct specialized team and provided complete context, reducing the customer’s waiting time.", "The escalation included evidence and customer impact, allowing the receiving team to act without repeating discovery.", "You explained why escalation was needed and what the customer should expect next."],
+    no: ["The issue required specialized support but was not escalated, delaying the appropriate resolution for the customer.", "Escalation to the wrong team created avoidable transfers and extended the customer’s resolution time.", "Incomplete escalation details may require the customer to repeat troubleshooting or provide evidence again."] },
+  "5.8": {
+    yes: ["You kept the case active until the customer received a resolution or a clearly owned next step.", "Closure occurred only after the outcome and customer expectations were appropriately confirmed.", "You protected the customer from premature closure while required work or confirmation remained outstanding."],
+    no: ["The case was closed while the customer’s main concern remained unresolved.", "Closure occurred without confirming the outcome, potentially forcing the customer to contact us again.", "An outstanding action remained without an active case through which the customer could receive continued support."] },
+  "5.9": {
+    yes: ["You closed the resolved ticket promptly, keeping the customer’s history accurate and preventing unnecessary follow-up.", "The final status correctly reflected that all customer requests and commitments had been completed.", "Accurate closure prevents customers from receiving confusing or unnecessary updates about a completed concern."],
+    no: ["The resolved ticket remained open, which may trigger unnecessary actions or communications for the customer.", "The status did not reflect the completed resolution, creating an inaccurate picture of the customer’s journey.", "An open resolved case may create duplicate work and confusion if the customer contacts us again."] },
+  "5.10": {
+    yes: ["You explained the cause, prevention, and next action, empowering the customer to manage the situation confidently.", "Your practical guidance reduced the likelihood that the customer would experience the same disruption again.", "You confirmed understanding, ensuring the customer could apply the information without requiring additional assistance."],
+    no: ["The immediate issue was resolved, but the customer was not shown how to prevent or recognize it in the future.", "Missing preventive guidance increases the possibility of repeated inconvenience and another customer contact.", "Education was provided without confirming comprehension, leaving uncertainty about whether the customer can use it independently."] },
+  "5.11": {
+    yes: ["The requested part was supported by the customer’s product, history, and confirmed troubleshooting outcome.", "Reviewing previous replacements prevented the customer from receiving the same ineffective solution again.", "The compatible part directly addressed the confirmed failure, reducing downtime and additional customer effort."],
+    no: ["The requested part was not supported by troubleshooting, risking an ineffective shipment and further delay.", "Previous replacement history was not reviewed, potentially repeating an action that had already failed the customer.", "The part did not match the customer’s registered product, creating the possibility of an unusable delivery."] },
+  "5.12": {
+    yes: ["You contacted the customer within the agreed timeframe and delivered the update they were expecting.", "Your timely follow-up demonstrated reliability and kept the customer informed while the case remained active.", "When more time was required, you proactively reset expectations rather than leaving the customer without information."],
+    no: ["The promised timeframe passed without contact, leaving the customer uncertain about the status of their concern.", "The follow-up did not provide the specific information the customer was expecting.", "A delay occurred without establishing a new expectation, reducing customer confidence in the support process."] },
+  "5.13": {
+    yes: ["Your timely phone or email update kept the customer informed even though the final resolution was still pending.", "You communicated meaningful progress and clear next steps, reducing the customer’s need to request status updates.", "The selected communication method respected the customer’s preference and supported a convenient experience."],
+    no: ["The customer did not receive an update within the agreed timeframe and had to seek information independently.", "The message lacked meaningful status or next steps, leaving the customer uncertain about progress.", "The update was sent through a method that did not align with the customer’s documented preference."] },
+  "6.1": { reason: ["The interaction was not documented, leaving no reliable record of the customer’s concern or our commitments.", "Missing notes may force the customer to repeat the entire experience during their next contact.", "Without documentation, future teams cannot confidently continue the customer’s resolution or verify completed actions."] },
+  "6.2": { reason: ["The tone or wording may make the customer feel dismissed rather than supported.", "Unprofessional comments can damage customer trust beyond the immediate issue being discussed.", "A more composed and respectful approach is required to protect the customer’s dignity and confidence in our support."] },
+  "6.3": { reason: ["Rejecting the valid transfer left the customer without assistance and increased their effort to obtain support.", "The customer was redirected without ownership, creating frustration and a fragmented experience.", "Assistance was not provided despite the scenario being within scope, undermining the customer’s confidence in our support."] },
+  "6.4": { reason: ["The call ended before resolution or a professional closing, leaving the customer without complete support.", "No reconnection attempt followed the disconnection, requiring the customer to begin the process again.", "Ending the call unexpectedly can significantly damage customer trust and create unnecessary additional effort."] },
+  "6.5": { reason: ["The line remained open after the interaction, creating potential privacy concerns for the customer.", "Failure to disconnect professionally may expose unintended conversation and reduce customer trust.", "Verify that the line is closed immediately after the farewell to protect the customer’s information and experience."] },
+  "6.6": { reason: ["The disclaimer was omitted, preventing the customer from receiving important information about the recorded interaction.", "The disclosure occurred too late, after the customer had already shared information.", "The disclaimer was rushed or unclear, limiting the customer’s ability to understand its meaning."] },
+  "6.7": { reason: ["The ticket was left without action or ownership while the customer was still awaiting support.", "Abandoning the case may force the customer to contact us again and restart the resolution process.", "No handoff or follow-up expectation was documented, leaving the customer without a clear path forward."] },
+  "6.8": { reason: ["The required safety process was not initiated despite information indicating a potential customer risk.", "Missing safety documentation may delay protective action and leave the customer’s concern insufficiently addressed.", "Handling the scenario only as routine support can undermine customer safety, confidence, and trust."] },
+  "6.9": { reason: ["The extended delay increased customer waiting time and may create uncertainty about whether assistance is available.", "Failure to answer promptly can negatively affect the customer’s perception before the conversation even begins.", "A faster response is necessary to provide customers with a reliable and accessible support experience."] },
+  "6.10": { reason: ["Sensitive information was shared without sufficient validation, exposing the customer to a serious privacy risk.", "Information was added to an unrelated ticket, potentially making customer data accessible in the wrong context.", "Continuing without verifying the requestor can permanently damage customer trust and compromise confidential information."] },
+};
+
 const DEFAULT_NAMES = [
   "Aaron Ramirez Loria","Adrian Quesada",
   "Andrea Trejos Flores","Angelo Miguel Espinoza Flores",
@@ -1903,7 +2111,7 @@ const DEFAULT_ITEM_TEMPLATE = `{{icon}} {{text}}{{pts}}`;
 
 const DEFAULT_SUPERVISORS = ['Joffrey Arroyo', 'Lester Brown'];
 const DEFAULT_ROLES = [
-  { name: 'SME', purple: true }, { name: 'SME/POD', purple: false }, { name: 'ESC', purple: false }, { name: 'TSA', purple: false },
+  { name: 'SME', color: 'purple' }, { name: 'SME/POD', color: '' }, { name: 'ESC', color: '' }, { name: 'TSA', color: '' },
 ];
 
 let CONFIG = null;
@@ -2190,9 +2398,10 @@ async function loadConfig(){
     order[sec.key] = sec.items.map(it=>it[0]);
     const isZero = sec.key === 'zero';
     sec.items.forEach(([id,label,pts,a,b])=>{
+      const extra = CRITERIA_TEXTS[id] || {};
       items[id] = isZero
-        ? { label, pts, reason: a, zeroType: true }
-        : { label, pts, yes: a, no: b, zeroType: false };
+        ? { label, pts, reason: a, reasonAlts: (extra.reason || []).slice(), zeroType: true }
+        : { label, pts, yes: a, no: b, yesAlts: (extra.yes || []).slice(), noAlts: (extra.no || []).slice(), zeroType: false };
     });
   });
 
@@ -2205,6 +2414,7 @@ async function loadConfig(){
     activeScenarioId: 'general',
     supervisors: DEFAULT_SUPERVISORS.slice(),
     roles: DEFAULT_ROLES.map(r=> Object.assign({}, r)),
+    criteriaSeed: CRITERIA_SEED,
   };
 
   if(stored){
@@ -2232,7 +2442,16 @@ async function loadConfig(){
           const src = stored.items[id] || {};
           const allowed = cur.zeroType ? ['label','reason'] : ['label','yes','no'];
           allowed.forEach(k=>{ if(typeof src[k] === 'string' && src[k].length) cur[k] = src[k]; });
-          (cur.zeroType ? ['reasonAlts'] : ['yesAlts', 'noAlts']).forEach(k=>{ cur[k] = cleanAlts(src[k]); });
+          // Configs saved before the criteria sheet keep their own options and
+          // get the sheet's texts appended; newer ones are taken as saved.
+          const seeded = Number(stored.criteriaSeed) >= CRITERIA_SEED;
+          (cur.zeroType ? ['reasonAlts'] : ['yesAlts', 'noAlts']).forEach(k=>{
+            if(seeded){ if(Array.isArray(src[k])) cur[k] = cleanAlts(src[k]); return; }
+            const base = cur[k === 'yesAlts' ? 'yes' : k === 'noAlts' ? 'no' : 'reason'];
+            const merged = cleanAlts(src[k]);
+            (cur[k] || []).forEach(t=>{ if(t !== base && !merged.includes(t)) merged.push(t); });
+            cur[k] = merged.slice(0, MAX_TEXT_ALTS);
+          });
         });
       }
       if(stored.order){
@@ -2268,7 +2487,7 @@ async function loadConfig(){
       }
       if(Array.isArray(stored.roles)){
         CONFIG.roles = stored.roles.filter(r=> r && typeof r.name === 'string' && r.name.trim())
-          .map(r=> ({ name: r.name.trim(), purple: !!r.purple }));
+          .map(r=> ({ name: r.name.trim(), color: roleColorKey(r) }));
       }
       if(typeof stored.activeScenarioId === 'string' && CONFIG.scenarios.items[stored.activeScenarioId]){
         CONFIG.activeScenarioId = stored.activeScenarioId;
@@ -2698,8 +2917,9 @@ function renderConfigPeople(){
   const roles = document.getElementById('cfgRoles');
   roles.innerHTML = CONFIG.roles.map((r, i)=> '<div class="name-chip">' +
     (i ? '<button type="button" class="role-move" data-role-up="' + i + '" title="Move up (higher in the hierarchy)">\u25B2</button>' : '') +
-    '<span class="role-badge' + (r.purple ? ' role-purple' : '') + '">' + escapeHtml(r.name) + '</span>' +
-    '<label class="role-chip-toggle"><input type="checkbox" data-role-purple="' + i + '"' + (r.purple ? ' checked' : '') + '>Purple</label>' +
+    '<span class="role-badge' + roleColorClass(r) + '">' + escapeHtml(r.name) + '</span>' +
+    '<span class="role-swatches">' + [''].concat(ROLE_COLORS).map(c=>
+      '<button type="button" class="role-swatch ' + (c ? 'role-' + c : 'none') + (roleColorKey(r) === c ? ' on' : '') + '" data-role-color="' + i + '" data-color="' + c + '" title="' + (c ? c[0].toUpperCase() + c.slice(1) : 'No color') + '"></button>').join('') + '</span>' +
     '<button data-role="' + i + '" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>').join('') ||
     '<div class="extras-empty">No roles yet.</div>';
 }
@@ -2712,7 +2932,7 @@ function addConfigListItem(inputId, kind){
     ? CONFIG.supervisors.some(x=> x.toLowerCase() === v.toLowerCase())
     : CONFIG.roles.some(r=> r.name.toLowerCase() === v.toLowerCase());
   if(exists){ showToast('"' + v + '" is already in the list'); return; }
-  if(kind === 'sup') CONFIG.supervisors.push(v); else CONFIG.roles.push({ name: v, purple: false });
+  if(kind === 'sup') CONFIG.supervisors.push(v); else CONFIG.roles.push({ name: v, color: '' });
   input.value = '';
   renderConfigPeople();
   showToast('Added "' + v + '". Click Save changes to keep it.');
@@ -2729,6 +2949,12 @@ document.getElementById('cfgSupervisors').addEventListener('click', (e)=>{
   renderConfigPeople();
 });
 document.getElementById('cfgRoles').addEventListener('click', (e)=>{
+  const sw = e.target.closest('button[data-role-color]');
+  if(sw){
+    CONFIG.roles[Number(sw.dataset.roleColor)].color = sw.dataset.color;
+    renderConfigPeople();
+    return;
+  }
   const up = e.target.closest('button[data-role-up]');
   if(up){
     const i = Number(up.dataset.roleUp);
@@ -2739,12 +2965,6 @@ document.getElementById('cfgRoles').addEventListener('click', (e)=>{
   const b = e.target.closest('button[data-role]');
   if(!b) return;
   CONFIG.roles.splice(Number(b.dataset.role), 1);
-  renderConfigPeople();
-});
-document.getElementById('cfgRoles').addEventListener('change', (e)=>{
-  const c = e.target.closest('input[data-role-purple]');
-  if(!c) return;
-  CONFIG.roles[Number(c.dataset.rolePurple)].purple = c.checked;
   renderConfigPeople();
 });
 
@@ -2803,9 +3023,11 @@ function renderPerf(){
     : '<div class="fail-empty">No focus points in this range.</div>';
 }
 
-function renderPerfSlider(){
+// vis: unrounded {from, to} days so handles track the pointer smoothly while dragging.
+function renderPerfSlider(vis){
   const span = PERF.maxDay - PERF.minDay || 1;
-  const a = (PERF.from - PERF.minDay) / span * 100, b = (PERF.to - PERF.minDay) / span * 100;
+  const vf = vis ? vis.from : PERF.from, vt = vis ? vis.to : PERF.to;
+  const a = (vf - PERF.minDay) / span * 100, b = (vt - PERF.minDay) / span * 100;
   document.getElementById('perfRangeFrom').style.left = a + '%';
   document.getElementById('perfRangeTo').style.left = b + '%';
   const sel = document.getElementById('perfRangeSel');
@@ -2869,11 +3091,21 @@ function renderPerfChart(evals){
 // Dragging a handle moves one end; dragging the bar between them moves both.
 (function setupPerfRange(){
   const root = document.getElementById('perfRange');
-  let drag = null;
+  let drag = null, frame = 0, pendingVis = null, rangeDirty = false;
   const dayAt = (clientX)=>{
     const r = root.getBoundingClientRect();
     const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
-    return Math.round(PERF.minDay + f * (PERF.maxDay - PERF.minDay));
+    return PERF.minDay + f * (PERF.maxDay - PERF.minDay);
+  };
+  // One paint per frame: the handles move every frame, the chart only when the day changes.
+  const schedule = ()=>{
+    if(frame) return;
+    frame = requestAnimationFrame(()=>{
+      frame = 0;
+      if(!PERF) return;
+      if(rangeDirty){ rangeDirty = false; renderPerf(); }
+      if(pendingVis) renderPerfSlider(pendingVis);
+    });
   };
   root.addEventListener('pointerdown', (e)=>{
     if(!PERF) return;
@@ -2884,26 +3116,43 @@ function renderPerfChart(evals){
     else if(t.id === 'perfRangeSel') drag = { kind: 'move', start: day, from: PERF.from, to: PERF.to };
     else{
       // Click on the track: move the nearest end there.
-      drag = { kind: Math.abs(day - PERF.from) <= Math.abs(day - PERF.to) ? 'from' : 'to' };
+      // Click on the track: the nearest end glides there.
+      drag = { kind: Math.abs(day - PERF.from) <= Math.abs(day - PERF.to) ? 'from' : 'to', click: true };
       applyDrag(day);
     }
     root.setPointerCapture(e.pointerId);
     e.preventDefault();
   });
-  root.addEventListener('pointermove', (e)=>{ if(drag) applyDrag(dayAt(e.clientX)); });
-  const end = ()=>{ drag = null; };
+  root.addEventListener('pointermove', (e)=>{
+    if(!drag) return;
+    if(drag.click){ drag.click = false; root.classList.add('dragging'); }
+    applyDrag(dayAt(e.clientX));
+  });
+  const end = ()=>{
+    if(!drag) return;
+    drag = null;
+    pendingVis = null;
+    root.classList.remove('dragging');
+    if(frame){ cancelAnimationFrame(frame); frame = 0; }
+    if(PERF){ if(rangeDirty){ rangeDirty = false; renderPerf(); } else renderPerfSlider(); }
+  };
   root.addEventListener('pointerup', end);
   root.addEventListener('pointercancel', end);
-  function applyDrag(day){
-    if(drag.kind === 'from') PERF.from = Math.min(day, PERF.to);
-    else if(drag.kind === 'to') PERF.to = Math.max(day, PERF.from);
+  function applyDrag(dayF){
+    if(!drag.click) root.classList.add('dragging');
+    let vf = PERF.from, vt = PERF.to;
+    if(drag.kind === 'from'){ vf = Math.min(dayF, PERF.to); }
+    else if(drag.kind === 'to'){ vt = Math.max(dayF, PERF.from); }
     else{
       const width = drag.to - drag.from;
-      let f = drag.from + (day - drag.start);
-      f = Math.max(PERF.minDay, Math.min(PERF.maxDay - width, f));
-      PERF.from = f; PERF.to = f + width;
+      vf = Math.max(PERF.minDay, Math.min(PERF.maxDay - width, drag.from + (dayF - drag.start)));
+      vt = vf + width;
     }
-    renderPerf();
+    const nf = Math.round(vf), nt = Math.round(vt);
+    if(nf !== PERF.from || nt !== PERF.to){ PERF.from = nf; PERF.to = nt; rangeDirty = true; }
+    pendingVis = drag.click ? null : { from: vf, to: vt };
+    if(drag.click){ rangeDirty = false; renderPerf(); return; }
+    schedule();
   }
   ['perfRangeFrom', 'perfRangeTo'].forEach(id=>{
     document.getElementById(id).addEventListener('keydown', (e)=>{
@@ -3087,16 +3336,29 @@ document.getElementById('gridSort').addEventListener('change', (e)=>{
 /* ---------- Agent role and supervisor ---------- */
 function roleOf(agent){
   if(!agent || !agent.role) return null;
-  return CONFIG.roles.find(r=> r.name === agent.role) || { name: agent.role, purple: false };
+  return CONFIG.roles.find(r=> r.name === agent.role) || { name: agent.role, color: '' };
 }
 
-// Role badge followed by the name; purple roles color both.
+const ROLE_COLORS = ['purple', 'blue', 'teal', 'green', 'amber', 'orange', 'red', 'pink'];
+// Older configs only had a purple on/off flag.
+function roleColorKey(r){
+  if(!r) return '';
+  if(typeof r.color === 'string') return ROLE_COLORS.includes(r.color) ? r.color : '';
+  return r.purple ? 'purple' : '';
+}
+function roleColorClass(r){
+  const c = roleColorKey(r);
+  return c ? ' role-c role-' + c : '';
+}
+
+// Role badge followed by the name; a role color tints both.
 function agentNameHtml(agent, name){
   const r = roleOf(agent);
   const n = escapeHtml(name != null ? name : (agent ? agent.name : ''));
   if(!r) return n;
-  return '<span class="role-badge' + (r.purple ? ' role-purple' : '') + '">' + escapeHtml(r.name) + '</span>' +
-    (r.purple ? '<span class="role-purple">' + n + '</span>' : n);
+  const cls = roleColorClass(r);
+  return '<span class="role-badge' + cls + '">' + escapeHtml(r.name) + '</span>' +
+    (cls ? '<span class="' + cls.trim() + '">' + n + '</span>' : n);
 }
 
 function selectOptions(list, current, emptyLabel){
@@ -3270,14 +3532,19 @@ function refreshScenarioUI(){
   renderScenarioSelect();
 }
 
-const MAX_TEXT_ALTS = 3;
+const MAX_TEXT_ALTS = 5;
 const ALT_FIELD = { yes: 'yesAlts', no: 'noAlts', reason: 'reasonAlts' };
 
 function cfgTextColumn(id, cfg, field, labelClass, labelText, addLabel, fullWidth){
   const alts = cfg[ALT_FIELD[field]] || [];
+  const canRemoveBase = alts.some(t=> typeof t === 'string' && t.trim());
   let html = '<div class="cfg-text-col"' + (fullWidth ? ' style="grid-column:1 / -1;"' : '') + '>' +
     '<label class="' + labelClass + '">' + labelText + '</label>' +
-    '<textarea data-id="' + id + '" data-field="' + field + '">' + escapeHtml(cfg[field] || '') + '</textarea>';
+    '<div class="cfg-alt-row cfg-base-row">' +
+      '<span class="cfg-alt-num ' + labelClass + '" title="Base option">1</span>' +
+      '<textarea data-id="' + id + '" data-field="' + field + '">' + escapeHtml(cfg[field] || '') + '</textarea>' +
+      '<button type="button" class="cfg-alt-remove" data-remove-base="' + field + '"' + (canRemoveBase ? ' title="Remove this option; option 2 becomes the base"' : ' disabled title="Add another option before removing the base"') + '>×</button>' +
+    '</div>';
   alts.forEach((t, i)=>{
     html += '<div class="cfg-alt-row">' +
       '<span class="cfg-alt-num ' + labelClass + '">' + (i + 2) + '</span>' +
@@ -3337,7 +3604,20 @@ function buildCfgItem(id, secKey){
       rebuild('textarea[data-alt-field="' + field + '"][data-alt-idx="' + (list.length - 1) + '"]');
     });
   });
-  box.querySelectorAll('.cfg-alt-remove').forEach(btn=>{
+  box.querySelectorAll('.cfg-alt-remove[data-remove-base]').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const field = btn.dataset.removeBase;
+      const list = cfg[ALT_FIELD[field]] || [];
+      const next = list.findIndex(t=> typeof t === 'string' && t.trim());
+      if(next < 0) return;
+      if((cfg[field] || '').trim() && !confirm('Remove this text option? Option ' + (next + 2) + ' becomes the base.')) return;
+      cfg[field] = list[next];
+      list.splice(0, next + 1);
+      Object.keys(CHOICES).forEach(k=>{ if(k === id) CHOICES[k] = {}; });
+      rebuild();
+    });
+  });
+  box.querySelectorAll('.cfg-alt-remove[data-remove-field]').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       const list = cfg[btn.dataset.removeField] || [];
       const idx = Number(btn.dataset.removeIdx);
@@ -4019,6 +4299,8 @@ function applyRoleToUI(){
   const isAdmin = role === 'admin';
   const summaryBlock = document.getElementById('cfgSummaryBlock');
   if(summaryBlock) summaryBlock.style.display = isAdmin ? '' : 'none';
+  // Call types and the hold switch are admin tools; evaluators don't see them.
+  document.body.classList.toggle('is-admin', isAdmin);
   // Configuration changes the rubric for everyone, so only admins see it.
   document.getElementById('tabConfigBtn').style.display = isAdmin ? '' : 'none';
   if(!isAdmin && isViewVisible('view-config')) switchTab('eval');
