@@ -421,6 +421,7 @@
   .eval-item .date{ color:var(--text-dim); flex-shrink:0; width:78px; }
   .eval-item .ticket{ color:var(--text); flex-grow:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .eval-item .score{ font-weight:800; flex-shrink:0; width:44px; text-align:right; }
+  .eval-item .score.cell-good{ color:var(--yes); } .eval-item .score.cell-mid{ color:var(--warn); } .eval-item .score.cell-bad{ color:var(--no); }
   .eval-item .eval-actions{ display:flex; gap:4px; flex-shrink:0; }
   .eval-item .eval-actions button{
     display:flex; align-items:center; justify-content:center; width:24px; height:24px; border-radius:6px;
@@ -674,6 +675,23 @@
   .x-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .x-chip.acc{ border-color:var(--yes); background:var(--yes-soft); }
   .x-chip.focus{ border-color:var(--accent-dim); background:var(--accent-soft); }
+  .x-chip .ic-svg{ width:13px; height:13px; flex:none; }
+  .x-chip.acc .ic-svg{ color:var(--yes); }
+  .x-chip.focus .ic-svg{ color:var(--accent); }
+  .fail-item .name .ic-svg{ width:13px; height:13px; vertical-align:-2px; margin-right:5px; color:var(--accent); }
+  .role-badge{
+    display:inline-block; font-size:9px; font-weight:800; letter-spacing:.3px; padding:1px 5px; border-radius:4px; margin-right:6px;
+    border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); vertical-align:1px; white-space:nowrap;
+  }
+  .role-purple{ color:#a78bfa !important; }
+  .role-badge.role-purple{ border-color:#a78bfa; background:rgba(167,139,250,0.14); }
+  .agent-meta-row{ display:flex; gap:12px; flex-wrap:wrap; margin:4px 0 14px; }
+  .agent-meta-row label{ display:flex; flex-direction:column; gap:4px; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
+  .agent-meta-row select{ min-width:180px; padding:7px 9px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; text-transform:none; letter-spacing:0; color-scheme: light dark; }
+  .agent-meta-row select:disabled{ opacity:.75; cursor:not-allowed; }
+  .role-chip-toggle{ display:inline-flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); cursor:pointer; margin-left:4px; }
+  .role-chip-toggle input{ accent-color:#a78bfa; margin:0; }
+  .search-scenario-row .scenario-row{ display:none !important; }
   .x-chip button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
   .x-chip button:hover{ color:var(--no); }
   .focus-select{
@@ -1179,6 +1197,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div id="agentCard" class="agent-stat-card" style="display:none;">
       <h3 id="agentCardName">Agent</h3>
+      <div class="agent-meta-row">
+        <label>Supervisor<select id="agentSupervisor"></select></label>
+        <label>Role<select id="agentRole"></select></label>
+      </div>
       <div class="agent-stat-row">
         <div class="agent-stat-box">
           <div class="lbl">General average</div>
@@ -1294,6 +1316,31 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <textarea id="cfgSummaryTemplate"></textarea>
       <textarea id="cfgItemTemplate" style="min-height:52px; margin-top:10px;"></textarea>
+    </div>
+
+    <div class="cfg-block">
+      <h4>Supervisors</h4>
+      <div class="cfg-names" id="cfgSupervisors"></div>
+      <div class="add-name">
+        <input id="newSupervisorInput" placeholder="Supervisor name">
+        <button id="btnAddSupervisor" title="Add this supervisor">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add
+        </button>
+      </div>
+    </div>
+
+    <div class="cfg-block">
+      <h4>Agent roles</h4>
+      <p style="font-size:12px; color:var(--text-dim); margin:0 0 6px;">Tick "Purple" to show agents with that role in purple.</p>
+      <div class="cfg-names" id="cfgRoles"></div>
+      <div class="add-name">
+        <input id="newRoleInput" placeholder="Role (e.g. SME)">
+        <button id="btnAddRole" title="Add this role">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add
+        </button>
+      </div>
     </div>
 
     <div class="cfg-block">
@@ -1747,6 +1794,11 @@ Score: {{score}} / 100  ({{earned}} / {{possible}} pts)
 
 const DEFAULT_ITEM_TEMPLATE = `{{icon}} {{text}}{{pts}}`;
 
+const DEFAULT_SUPERVISORS = ['Joffrey Arroyo', 'Lester Brown'];
+const DEFAULT_ROLES = [
+  { name: 'SME', purple: true }, { name: 'TSA', purple: false }, { name: 'ESC', purple: false }, { name: 'SME/POD', purple: false },
+];
+
 let CONFIG = null;
 let ANSWERS = {};
 let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zeroReasons: [] };
@@ -1807,13 +1859,13 @@ function renderExtras(){
   accCount.textContent = n + ' / ' + MAX_ACCOMPLISHMENTS;
   accCount.classList.toggle('full', n >= MAX_ACCOMPLISHMENTS);
   accList.innerHTML = n
-    ? ACCOMPLISHMENTS.map(id=> '<span class="x-chip acc" title="' + escapeHtml(chosenText(id, CONFIG.items[id], 'yes')) + '"><span>\u2705 ' +
+    ? ACCOMPLISHMENTS.map(id=> '<span class="x-chip acc" title="' + escapeHtml(chosenText(id, CONFIG.items[id], 'yes')) + '"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="m8 12.5 2.8 2.7L16 9.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' +
         escapeHtml(CONFIG.items[id].label) + '</span><button type="button" data-acc="' + escapeHtml(id) + '" title="Remove">\u00d7</button></span>').join('')
     : '<div class="extras-empty">None yet. Use the green 1/N button on a met rubric to add one.</div>';
   const focusList = document.getElementById('focusList');
   document.getElementById('focusCount').textContent = FOCUS_POINTS.length ? String(FOCUS_POINTS.length) : '';
   focusList.innerHTML = FOCUS_POINTS.length
-    ? FOCUS_POINTS.map((f, i)=> '<span class="x-chip focus"><span>\uD83C\uDFAF ' + escapeHtml(f) +
+    ? FOCUS_POINTS.map((f, i)=> '<span class="x-chip focus"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg><span>' + escapeHtml(f) +
         '</span><button type="button" data-focus="' + i + '" title="Remove">\u00d7</button></span>').join('')
     : '<div class="extras-empty">None yet.</div>';
   const sel = document.getElementById('focusSelect');
@@ -2004,8 +2056,13 @@ function applyScenario(scenarioId){
   });
 }
 
+// Every rubric starts as met (green); zero call drivers start untouched.
 function resetAnswersToDefault(){
-  applyScenario(CONFIG.activeScenarioId || CONFIG.scenarios.order[0]);
+  ANSWERS = {};
+  SECTIONS.forEach(sec=>{
+    if(sec.key === 'zero') return;
+    CONFIG.order[sec.key].forEach(id=>{ if(CONFIG.items[id] && !CONFIG.items[id].zeroType) ANSWERS[id] = 'yes'; });
+  });
 }
 
 /* ============================================================
@@ -2039,6 +2096,8 @@ async function loadConfig(){
     itemTemplate: DEFAULT_ITEM_TEMPLATE,
     scenarios: buildSeedScenarios(),
     activeScenarioId: 'general',
+    supervisors: DEFAULT_SUPERVISORS.slice(),
+    roles: DEFAULT_ROLES.map(r=> Object.assign({}, r)),
   };
 
   if(stored){
@@ -2097,6 +2156,13 @@ async function loadConfig(){
           CONFIG.scenarios = { order: validIds, items: cleanItems };
         }
       }
+      if(Array.isArray(stored.supervisors)){
+        CONFIG.supervisors = stored.supervisors.filter(x=> typeof x === 'string' && x.trim());
+      }
+      if(Array.isArray(stored.roles)){
+        CONFIG.roles = stored.roles.filter(r=> r && typeof r.name === 'string' && r.name.trim())
+          .map(r=> ({ name: r.name.trim(), purple: !!r.purple }));
+      }
       if(typeof stored.activeScenarioId === 'string' && CONFIG.scenarios.items[stored.activeScenarioId]){
         CONFIG.activeScenarioId = stored.activeScenarioId;
       }
@@ -2135,7 +2201,7 @@ function isViewVisible(id){
 }
 function configSnapshot(){
   if(!CONFIG) return null;
-  return JSON.stringify({ items: CONFIG.items, scenarios: CONFIG.scenarios, summaryTemplate: CONFIG.summaryTemplate, itemTemplate: CONFIG.itemTemplate });
+  return JSON.stringify({ items: CONFIG.items, scenarios: CONFIG.scenarios, summaryTemplate: CONFIG.summaryTemplate, itemTemplate: CONFIG.itemTemplate, supervisors: CONFIG.supervisors, roles: CONFIG.roles });
 }
 function configIsDirty(){
   if(!CONFIG_SAVED_SNAPSHOT) return false;
@@ -2517,6 +2583,108 @@ function renderConfigNames(){
   });
 }
 
+function renderConfigPeople(){
+  const sup = document.getElementById('cfgSupervisors');
+  sup.innerHTML = CONFIG.supervisors.map((n, i)=> '<div class="name-chip"><span>' + escapeHtml(n) + '</span>' +
+    '<button data-sup="' + i + '" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>').join('') ||
+    '<div class="extras-empty">No supervisors yet.</div>';
+  const roles = document.getElementById('cfgRoles');
+  roles.innerHTML = CONFIG.roles.map((r, i)=> '<div class="name-chip"><span class="role-badge' + (r.purple ? ' role-purple' : '') + '">' + escapeHtml(r.name) + '</span>' +
+    '<label class="role-chip-toggle"><input type="checkbox" data-role-purple="' + i + '"' + (r.purple ? ' checked' : '') + '>Purple</label>' +
+    '<button data-role="' + i + '" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>').join('') ||
+    '<div class="extras-empty">No roles yet.</div>';
+}
+
+function addConfigListItem(inputId, kind){
+  const input = document.getElementById(inputId);
+  const v = input.value.trim();
+  if(!v) return;
+  const exists = kind === 'sup'
+    ? CONFIG.supervisors.some(x=> x.toLowerCase() === v.toLowerCase())
+    : CONFIG.roles.some(r=> r.name.toLowerCase() === v.toLowerCase());
+  if(exists){ showToast('"' + v + '" is already in the list'); return; }
+  if(kind === 'sup') CONFIG.supervisors.push(v); else CONFIG.roles.push({ name: v, purple: false });
+  input.value = '';
+  renderConfigPeople();
+  showToast('Added "' + v + '". Click Save changes to keep it.');
+}
+
+document.getElementById('btnAddSupervisor').addEventListener('click', ()=> addConfigListItem('newSupervisorInput', 'sup'));
+document.getElementById('btnAddRole').addEventListener('click', ()=> addConfigListItem('newRoleInput', 'role'));
+document.getElementById('newSupervisorInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addConfigListItem('newSupervisorInput', 'sup'); });
+document.getElementById('newRoleInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addConfigListItem('newRoleInput', 'role'); });
+document.getElementById('cfgSupervisors').addEventListener('click', (e)=>{
+  const b = e.target.closest('button[data-sup]');
+  if(!b) return;
+  CONFIG.supervisors.splice(Number(b.dataset.sup), 1);
+  renderConfigPeople();
+});
+document.getElementById('cfgRoles').addEventListener('click', (e)=>{
+  const b = e.target.closest('button[data-role]');
+  if(!b) return;
+  CONFIG.roles.splice(Number(b.dataset.role), 1);
+  renderConfigPeople();
+});
+document.getElementById('cfgRoles').addEventListener('change', (e)=>{
+  const c = e.target.closest('input[data-role-purple]');
+  if(!c) return;
+  CONFIG.roles[Number(c.dataset.rolePurple)].purple = c.checked;
+  renderConfigPeople();
+});
+
+/* ---------- Agent role and supervisor ---------- */
+function roleOf(agent){
+  if(!agent || !agent.role) return null;
+  return CONFIG.roles.find(r=> r.name === agent.role) || { name: agent.role, purple: false };
+}
+
+// Role badge followed by the name; purple roles color both.
+function agentNameHtml(agent, name){
+  const r = roleOf(agent);
+  const n = escapeHtml(name != null ? name : (agent ? agent.name : ''));
+  if(!r) return n;
+  return '<span class="role-badge' + (r.purple ? ' role-purple' : '') + '">' + escapeHtml(r.name) + '</span>' +
+    (r.purple ? '<span class="role-purple">' + n + '</span>' : n);
+}
+
+function selectOptions(list, current, emptyLabel){
+  const all = list.slice();
+  if(current && !all.includes(current)) all.push(current);  // keep a value removed from Configuration
+  return '<option value="">' + emptyLabel + '</option>' +
+    all.map(v=> '<option value="' + escapeHtml(v) + '"' + (v === current ? ' selected' : '') + '>' + escapeHtml(v) + '</option>').join('');
+}
+
+function renderAgentMeta(agent){
+  const sup = document.getElementById('agentSupervisor');
+  const role = document.getElementById('agentRole');
+  sup.innerHTML = selectOptions(CONFIG.supervisors, agent && agent.supervisor, 'No supervisor');
+  role.innerHTML = selectOptions(CONFIG.roles.map(r=> r.name), agent && agent.role, 'No role');
+  const editable = isAdminUser() && !!agent && !!agent.id && AGENT_META_AVAILABLE;
+  sup.disabled = role.disabled = !editable;
+  sup.title = role.title = editable ? '' : 'Only admins can change this';
+  document.getElementById('agentCardName').innerHTML = agent ? agentNameHtml(agent) : 'Agent';
+}
+
+async function saveAgentMeta(field, value){
+  const agentId = document.getElementById('agentsSelect').value;
+  const agent = (AGENTS_LIST_CACHE || []).find(a=> a.id === agentId);
+  if(!agent) return;
+  const { error } = await supabaseClient.from('agents').update({ [field]: value || null }).eq('id', agentId);
+  if(error){
+    console.error('Could not update agent', error);
+    showToast('Could not save: ' + (error.message || 'unknown error'));
+    renderAgentMeta(agent);
+    return;
+  }
+  agent[field] = value || null;
+  showToast((field === 'role' ? 'Role' : 'Supervisor') + ' saved for ' + agent.name);
+  renderAgentMeta(agent);
+  if(LAST_GRID) rerenderGrid();
+}
+
+document.getElementById('agentSupervisor').addEventListener('change', (e)=> saveAgentMeta('supervisor', e.target.value));
+document.getElementById('agentRole').addEventListener('change', (e)=> saveAgentMeta('role', e.target.value));
+
 async function syncConfigNamesFromDatabase(){
   if(!supabaseClient) return;
   try{
@@ -2850,7 +3018,7 @@ function switchTab(view){
 
   const populate = ()=>{
     if(view==='config'){
-      renderConfigNames(); renderConfigSections();
+      renderConfigNames(); renderConfigPeople(); renderConfigSections();
       document.getElementById('cfgSummaryTemplate').value = CONFIG.summaryTemplate;
       document.getElementById('cfgItemTemplate').value = CONFIG.itemTemplate;
       refreshScenarioUI();
@@ -3760,11 +3928,17 @@ document.getElementById('btnSendEmail').addEventListener('click', async ()=>{
 document.getElementById('btnSaveEvaluation').addEventListener('click', saveEvaluationToDatabase);
 
 let AGENTS_LIST_CACHE = null;
+let AGENT_META_AVAILABLE = true;
 
 async function ensureAgentsListLoaded(){
   if(AGENTS_LIST_CACHE) return AGENTS_LIST_CACHE;
   try{
-    const { data, error } = await supabaseClient.from('agents').select('id,name').order('name');
+    let { data, error } = await supabaseClient.from('agents').select('id,name,supervisor,role').order('name');
+    if(error && error.code === '42703'){
+      // Database without the supervisor / role columns yet.
+      AGENT_META_AVAILABLE = false;
+      ({ data, error } = await supabaseClient.from('agents').select('id,name').order('name'));
+    }
     if(error) throw error;
     AGENTS_LIST_CACHE = data || [];
   }catch(e){
@@ -3922,7 +4096,7 @@ function renderRanking(evals){
   }
   let html = '<table class="ranking-table"><thead><tr><th>#</th><th>Agent</th><th>Avg score</th><th>Evaluations</th></tr></thead><tbody>';
   rows.forEach((r, i)=>{
-    html += '<tr><td class="rank' + (i === 0 ? ' top1' : '') + '">' + (i + 1) + '</td><td>' + escapeHtml(r.name) +
+    html += '<tr><td class="rank' + (i === 0 ? ' top1' : '') + '">' + (i + 1) + '</td><td>' + agentNameHtml(findAgentByName(r.name), r.name) +
       '</td><td class="score-cell">' + Math.round(r.avg) + '%</td><td>' + r.count + '</td></tr>';
   });
   html += '</tbody></table>';
@@ -3935,6 +4109,11 @@ const MONTH_NAMES = ['January','February','March','April','May','June','July','A
 
 function scoreClass(score){
   return score >= 85 ? 'cell-good' : score >= 60 ? 'cell-mid' : 'cell-bad';
+}
+
+// Individual evaluation scores: 95-100 green, 85-94 yellow, 84 or less red.
+function evalScoreClass(score){
+  return score >= 95 ? 'cell-good' : score >= 85 ? 'cell-mid' : 'cell-bad';
 }
 
 // The grid always shows one period: the month or custom range picked above,
@@ -4272,22 +4451,22 @@ async function openViewEvalModal(evalId, fromProfile){
     const score = Math.round(Number(row.score));
     const meta = [
       ['Call date', row.call_date], ['Ticket ID', row.ticket_id], ['Call reason', row.call_reason],
-      ['Caller', d && d.caller], ['Order ID', d && d.orderId], ['Call type', d && d.scenarioName],
+      ['Caller', d && d.caller], ['Order ID', d && d.orderId],
       ['Evaluated by', evaluatorLabel(row)], ['Assignment', row.assignment_id || row.kind ? (kindLabel(row.kind) || 'Yes') : 'Not scheduled'],
       ['Saved', row.created_at ? new Date(row.created_at).toLocaleString() : ''],
       ['Last edited', row.updated_at ? new Date(row.updated_at).toLocaleString() : ''],
     ].filter(([, v])=> v);
     document.getElementById('viewEvalTitle').textContent = 'Evaluation · ' + (row.agents ? row.agents.name : 'Agent');
     body.innerHTML =
-      '<div class="ve-head"><div class="ve-score ' + scoreClass(score) + '">' + score + '%<small>' + row.points_earned + ' / ' + row.points_possible + ' pts</small></div>' +
+      '<div class="ve-head"><div class="ve-score ' + evalScoreClass(score) + '">' + score + '%<small>' + row.points_earned + ' / ' + row.points_possible + ' pts</small></div>' +
       (row.zero_triggered ? '<div class="ve-zero">Automatic zero</div>' : '') + '</div>' +
       '<div class="ve-meta">' + meta.map(([k, v])=> '<div><label>' + k + '</label>' + escapeHtml(String(v)) + '</div>').join('') + '</div>' +
       (d && Array.isArray(d.focusPoints) && d.focusPoints.length
-        ? '<div class="ve-subtitle">Focus points</div><div class="chip-list">' + d.focusPoints.map(f=> '<span class="x-chip focus"><span>\uD83C\uDFAF ' + escapeHtml(f) + '</span></span>').join('') + '</div>' : '') +
+        ? '<div class="ve-subtitle">Focus points</div><div class="chip-list">' + d.focusPoints.map(f=> '<span class="x-chip focus"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg><span>' + escapeHtml(f) + '</span></span>').join('') + '</div>' : '') +
       (d && Array.isArray(d.accomplishments) && d.accomplishments.length && Array.isArray(d.items)
         ? '<div class="ve-subtitle">Accomplishments</div><div class="chip-list">' + d.accomplishments.map(id=>{
             const it = d.items.find(x=> x.id === id);
-            return it ? '<span class="x-chip acc"><span>\u2705 ' + escapeHtml(it.label) + '</span></span>' : '';
+            return it ? '<span class="x-chip acc"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="m8 12.5 2.8 2.7L16 9.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + escapeHtml(it.label) + '</span></span>' : '';
           }).join('') + '</div>' : '') +
       '<div class="ve-subtitle">Rubrics</div>' +
       sectionsHtml +
@@ -4559,7 +4738,7 @@ function renderMonthlyGrid(evals, scope, assignments){
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
     html += '<tr data-agent="' + escapeHtml(agent.id) + '"' + (agent.id === selectedId ? ' class="selected"' : '') + '>' +
-      '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + escapeHtml(agent.name) + '</button></td>';
+      '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + agentNameHtml(agent) + '</button></td>';
     for(let i = 0; i < cols; i++){
       const sl = slots[i];
       if(sl && sl.type === 'eval'){
@@ -4568,7 +4747,7 @@ function renderMonthlyGrid(evals, scope, assignments){
         const by = evaluatorLabel(e);
         const tip = (e.call_date || '') + (e.ticket_id ? ' · Ticket ' + e.ticket_id : '') + ' · evaluated by ' + by +
           (sl.assignment ? ' · assigned ' + sl.assignment.kind : ' · not scheduled') + (e.zero_triggered ? ' · automatic zero' : '') + ' · click to view';
-        html += '<td class="cell-score ' + scoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%' +
+        html += '<td class="cell-score ' + evalScoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%' +
           '<span class="cell-by">' + escapeHtml(by) + '</span></td>';
         colTotals[i].earned += Number(e.points_earned || 0);
         colTotals[i].possible += Number(e.points_possible || 0);
@@ -4677,7 +4856,7 @@ async function refreshAgentsView(){
     if(selectedAgentId){
       const agentMeta = AGENTS_LIST_CACHE.find(a=> a.id === selectedAgentId);
       document.getElementById('agentCard').style.display = 'block';
-      document.getElementById('agentCardName').textContent = agentMeta ? agentMeta.name : 'Agent';
+      renderAgentMeta(agentMeta);
 
       const generalEvals = await fetchEvaluations({ agentId: selectedAgentId });
       const generalAvg = weightedAvg(generalEvals);
@@ -4851,7 +5030,7 @@ async function renderAgentFocusPoints(evalIds){
   (data || []).forEach(r=> ((r.details && r.details.focusPoints) || []).forEach(f=>{ counts[f] = (counts[f] || 0) + 1; }));
   const sorted = Object.entries(counts).sort((a, b)=> b[1] - a[1]);
   box.innerHTML = sorted.length
-    ? sorted.map(([f, n])=> '<div class="fail-item"><span class="name">\uD83C\uDFAF ' + escapeHtml(f) + '</span><span class="count">' + n + '\u00d7</span></div>').join('')
+    ? sorted.map(([f, n])=> '<div class="fail-item"><span class="name"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>' + escapeHtml(f) + '</span><span class="count">' + n + '\u00d7</span></div>').join('')
     : '<div class="fail-empty">No focus points in this scope.</div>';
 }
 
@@ -4875,7 +5054,7 @@ function renderEvalList(evals){
       '<span class="date">' + (e.call_date || 'N/A') + '</span>' +
       '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
       '<span class="by" title="Evaluated by">' + escapeHtml(evaluatorLabel(e)) + '</span>' +
-      '<span class="score">' + Math.round(e.score) + '%</span>' +
+      '<span class="score ' + evalScoreClass(Math.round(e.score)) + '">' + Math.round(e.score) + '%</span>' +
       actions +
       '</div>';
   }).join('');
