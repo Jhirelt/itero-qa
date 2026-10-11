@@ -767,6 +767,27 @@
     background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:14px; line-height:1; margin-left:4px; padding:0 2px;
   }
   .monthly-table .assign-remove:hover{ color:var(--no); }
+  .bulk-start-btn{ flex:none; padding:6px 12px; font-size:12px; margin-left:auto; }
+  .bulk-bar{
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:12px; padding:10px 12px;
+    border:1px solid var(--accent-dim); background:var(--accent-soft); border-radius:var(--radius-sm);
+  }
+  .bulk-step{ display:flex; align-items:center; gap:8px; flex-wrap:wrap; flex:1; }
+  .bulk-step .assign-choice{ flex:none; padding:6px 14px; font-size:12.5px; }
+  .bulk-label{ font-size:12px; font-weight:700; color:var(--text); display:inline-flex; align-items:center; gap:6px; }
+  .bulk-label .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; }
+  .bulk-count{ font-size:12px; font-weight:800; color:var(--accent); margin-left:auto; }
+  .bulk-small{ flex:none; padding:6px 12px; font-size:12px; }
+  .bulk-bar .bulk-select{ width:auto; max-width:220px; margin-top:0; padding:6px 8px; font-size:12.5px; }
+  .monthly-table.bulk-mode .assign-btn{ display:none; }
+  .monthly-table .bulk-cell{ cursor:pointer; }
+  .monthly-table .bulk-box{
+    display:inline-block; width:16px; height:16px; border:1.5px solid var(--text-faint); border-radius:4px; vertical-align:middle;
+  }
+  .monthly-table .bulk-cell:hover .bulk-box{ border-color:var(--accent); }
+  .monthly-table .bulk-cell.picked{ background:var(--accent-soft); }
+  .monthly-table .bulk-cell.picked .bulk-box{ background:var(--accent); border-color:var(--accent); }
+  .monthly-table .bulk-cell.picked .bulk-box::after{ content:"✓"; color:#00110f; font-size:11px; font-weight:900; display:block; line-height:14px; text-align:center; }
   .assign-box{ max-width:380px; }
   .assign-agent{ font-size:12.5px; color:var(--text-dim); margin-bottom:14px; }
   .assign-step{ margin-bottom:14px; transition:opacity .15s; }
@@ -988,6 +1009,23 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="monthly-head">
         <h3 id="monthlyTitle">Monthly scores</h3>
         <span class="monthly-sub" id="monthlySub"></span>
+        <button type="button" class="btn btn-ghost bulk-start-btn" id="btnBulkAssign" style="display:none;">Assign several</button>
+      </div>
+      <div class="bulk-bar" id="bulkBar" style="display:none;">
+        <div class="bulk-step" id="bulkStepKind">
+          <span class="bulk-label">1. Call or ticket?</span>
+          <button type="button" class="assign-choice kind-call" data-bulk-kind="call">Call</button>
+          <button type="button" class="assign-choice kind-ticket" data-bulk-kind="ticket">Ticket</button>
+        </div>
+        <div class="bulk-step" id="bulkStepPick" style="display:none;">
+          <span class="bulk-label"><span class="kind" id="bulkKindTag"></span> 2. Select the evaluations in the table</span>
+          <button type="button" class="btn btn-ghost bulk-small" id="btnBulkSelectAll">Select all empty</button>
+          <span class="bulk-count" id="bulkCount">0 selected</span>
+          <label class="bulk-label" for="bulkAssignee">Assign to</label>
+          <select id="bulkAssignee" class="assign-select bulk-select"></select>
+          <button type="button" class="btn btn-primary bulk-small" id="btnBulkConfirm" disabled>Assign</button>
+        </div>
+        <button type="button" class="btn btn-ghost bulk-small" id="btnBulkCancel">Cancel</button>
       </div>
       <div id="monthlyTable"></div>
     </div>
@@ -3559,11 +3597,113 @@ async function removeAssignment(a){
   refreshAgentsView();
 }
 
+// Bulk assignment: pick call/ticket first, then tick any number of empty
+// slots in the grid, then choose who gets them.
+const BULK = { active: false, kind: null, picked: new Set() };
+let LAST_GRID = null;
+
+function bulkPickedCount(){ return BULK.picked.size; }
+
+function updateBulkBar(){
+  const bar = document.getElementById('bulkBar');
+  bar.style.display = BULK.active ? 'flex' : 'none';
+  document.getElementById('bulkStepKind').style.display = BULK.active && !BULK.kind ? 'flex' : 'none';
+  document.getElementById('bulkStepPick').style.display = BULK.active && BULK.kind ? 'flex' : 'none';
+  if(BULK.kind){
+    const tag = document.getElementById('bulkKindTag');
+    tag.textContent = BULK.kind === 'call' ? 'Call' : 'Ticket';
+    tag.className = 'kind kind-' + BULK.kind;
+  }
+  const n = bulkPickedCount();
+  document.getElementById('bulkCount').textContent = n + ' selected';
+  document.getElementById('btnBulkConfirm').disabled = n === 0;
+  document.getElementById('btnBulkConfirm').textContent = n ? 'Assign ' + n : 'Assign';
+}
+
+function startBulk(){
+  BULK.active = true; BULK.kind = null; BULK.picked.clear();
+  const sel = document.getElementById('bulkAssignee');
+  sel.innerHTML = '<option value="' + escapeHtml(CURRENT_USER.id) + '">Me (' + escapeHtml(CURRENT_USER.display_name || 'me') + ')</option>' +
+    (PROFILES_CACHE || []).filter(p=> p.id !== CURRENT_USER.id)
+      .map(p=> '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.display_name || 'QA') + '</option>').join('');
+  updateBulkBar();
+  rerenderGrid();
+}
+
+function stopBulk(){
+  BULK.active = false; BULK.kind = null; BULK.picked.clear();
+  updateBulkBar();
+  rerenderGrid();
+}
+
+function rerenderGrid(){
+  if(LAST_GRID) renderMonthlyGrid(LAST_GRID.evals, LAST_GRID.scope, LAST_GRID.assignments);
+}
+
+async function confirmBulkAssign(){
+  if(!LAST_GRID || !BULK.kind || !BULK.picked.size) return;
+  const month = LAST_GRID.scope.month;
+  const assigneeId = document.getElementById('bulkAssignee').value;
+  const perAgent = {};
+  BULK.picked.forEach(key=>{ const agentId = key.split('|')[0]; perAgent[agentId] = (perAgent[agentId] || 0) + 1; });
+  const btn = document.getElementById('btnBulkConfirm');
+  btn.disabled = true;
+  try{
+    const { data: existing, error: exErr } = await supabaseClient.from('evaluation_assignments')
+      .select('agent_id, slot').eq('month', month);
+    if(exErr) throw exErr;
+    const rows = [];
+    Object.keys(perAgent).forEach(agentId=>{
+      let next = (existing || []).filter(r=> r.agent_id === agentId).reduce((m, r)=> Math.max(m, r.slot), 0);
+      for(let i = 0; i < perAgent[agentId]; i++){
+        rows.push({ agent_id: agentId, month, slot: ++next, assignee_id: assigneeId, kind: BULK.kind, assigned_by: CURRENT_USER.id });
+      }
+    });
+    const { error } = await supabaseClient.from('evaluation_assignments').insert(rows);
+    if(error) throw error;
+    const who = assigneeId === CURRENT_USER.id ? 'you' : profileName(assigneeId);
+    showToast(rows.length + ' ' + (BULK.kind === 'call' ? 'call' : 'ticket') + ' evaluation' + (rows.length === 1 ? '' : 's') + ' assigned to ' + who);
+    BULK.active = false; BULK.kind = null; BULK.picked.clear();
+    updateBulkBar();
+    refreshAgentsView();
+  }catch(err){
+    console.error('Bulk assign failed', err);
+    showToast(err && err.code === '23505' ? 'Someone assigned some of these at the same time. Nothing was assigned; check the table and try again.' : 'Could not assign: ' + (err.message || 'unknown error'));
+    refreshAgentsView();
+  }finally{
+    btn.disabled = BULK.picked.size === 0;
+  }
+}
+
+document.getElementById('btnBulkAssign').addEventListener('click', ()=> BULK.active ? stopBulk() : startBulk());
+document.getElementById('btnBulkCancel').addEventListener('click', stopBulk);
+document.querySelectorAll('[data-bulk-kind]').forEach(b=> b.addEventListener('click', ()=>{
+  BULK.kind = b.dataset.bulkKind;
+  updateBulkBar();
+  rerenderGrid();
+}));
+document.getElementById('btnBulkSelectAll').addEventListener('click', ()=>{
+  const cells = Array.from(document.querySelectorAll('.monthly-table .bulk-cell'));
+  const allPicked = cells.length && cells.every(c=> BULK.picked.has(c.dataset.bulkKey));
+  cells.forEach(c=>{
+    if(allPicked) BULK.picked.delete(c.dataset.bulkKey); else BULK.picked.add(c.dataset.bulkKey);
+    c.classList.toggle('picked', !allPicked);
+  });
+  updateBulkBar();
+});
+document.getElementById('btnBulkConfirm').addEventListener('click', confirmBulkAssign);
+
 function renderMonthlyGrid(evals, scope, assignments){
   assignments = assignments || [];
+  LAST_GRID = { evals, scope, assignments };
   document.getElementById('monthlyTitle').textContent = 'Monthly scores · ' + scope.label;
   const root = document.getElementById('monthlyTable');
   const canAssign = ASSIGNMENTS_AVAILABLE && !!scope.month && !!CURRENT_USER;
+  document.getElementById('btnBulkAssign').style.display = canAssign ? '' : 'none';
+  document.getElementById('btnBulkAssign').textContent = BULK.active ? 'Close bulk assign' : 'Assign several';
+  if(!canAssign && BULK.active){ BULK.active = false; BULK.kind = null; BULK.picked.clear(); updateBulkBar(); }
+  const picking = BULK.active && !!BULK.kind;
+  const renderedBulkKeys = new Set();
 
   const agents = (AGENTS_LIST_CACHE || []).slice();
   const byAgent = {};
@@ -3597,7 +3737,7 @@ function renderMonthlyGrid(evals, scope, assignments){
     ' · click an agent to open their details';
 
   const selectedId = document.getElementById('agentsSelect').value;
-  let html = '<div class="monthly-scroll"><table class="monthly-table"><thead><tr><th>Agent</th>';
+  let html = '<div class="monthly-scroll"><table class="monthly-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= cols; i++) html += '<th>Eval ' + i + '</th>';
   html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
 
@@ -3627,6 +3767,10 @@ function renderMonthlyGrid(evals, scope, assignments){
           '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
           (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
           '</td>';
+      }else if(canAssign && picking && i < MONTHLY_EVAL_TARGET){
+        const key = agent.id + '|' + i;
+        renderedBulkKeys.add(key);
+        html += '<td class="cell-empty bulk-cell' + (BULK.picked.has(key) ? ' picked' : '') + '" data-bulk-key="' + escapeHtml(key) + '" title="Select to assign"><span class="bulk-box"></span></td>';
       }else if(canAssign && i < MONTHLY_EVAL_TARGET){
         html += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '">+ Assign</button></td>';
       }else{
@@ -3651,9 +3795,21 @@ function renderMonthlyGrid(evals, scope, assignments){
   html += evals.length ? '<td class="' + scoreClass(weightedAvg(evals)) + '">' + fmtPct(weightedAvg(evals)) + '</td>' : '<td class="cell-empty">—</td>';
   html += '</tr></tfoot></table></div>';
   root.innerHTML = html;
+  // Drop selections whose cell is no longer an empty slot (data refreshed).
+  Array.from(BULK.picked).forEach(k=>{ if(!renderedBulkKeys.has(k)) BULK.picked.delete(k); });
+  if(BULK.active) updateBulkBar();
 
   root.querySelectorAll('tbody tr').forEach(tr=>{
     tr.addEventListener('click', (ev)=>{
+      const bulkCell = ev.target.closest('.bulk-cell');
+      if(bulkCell){
+        const key = bulkCell.dataset.bulkKey;
+        if(BULK.picked.has(key)) BULK.picked.delete(key); else BULK.picked.add(key);
+        bulkCell.classList.toggle('picked', BULK.picked.has(key));
+        updateBulkBar();
+        return;
+      }
+      if(BULK.active) return;
       const assignBtn = ev.target.closest('.assign-btn');
       if(assignBtn){ openAssignModal(assignBtn.dataset.assignAgent, scope.month); return; }
       const removeBtn = ev.target.closest('.assign-remove');
