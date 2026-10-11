@@ -206,6 +206,8 @@
   }
   .btn-clear-all svg{ width:14px; height:14px; }
   .btn-clear-all:hover{ background:var(--no); color:#fff; }
+  .btn-clear-all.fresh{ border-color:var(--yes); color:var(--yes); }
+  .btn-clear-all.fresh:hover{ background:var(--yes); color:#fff; }
   .btn-clear-all.confirming{ background:var(--no); color:#fff; animation:clearPulse 1s ease-in-out infinite; }
   @keyframes clearPulse{ 50%{ box-shadow:0 0 0 4px var(--no-soft); } }
   .ongoing-drafts-toggle{
@@ -1006,6 +1008,7 @@
     border:1px solid var(--accent-dim); background:var(--accent-soft); font-size:12.5px; color:var(--text);
   }
   .editing-banner.show{ display:flex; }
+  .editing-banner.just-saved{ border-color:var(--yes); background:color-mix(in srgb, var(--yes) 12%, transparent); }
   .editing-banner span{ flex-grow:1; }
   .editing-banner .btn{ flex:none; padding:6px 12px; font-size:12px; }
   .agent-input-big[readonly]{ color:var(--text-dim); cursor:not-allowed; }
@@ -3927,7 +3930,8 @@ async function init(){
   document.getElementById('fCallDate').max = todayLocal();
 
   try{
-    const rawDraft = localStorage.getItem(LS_CURRENT_DRAFT_KEY);
+    adoptLegacyDrafts();
+    const rawDraft = localStorage.getItem(draftKey(LS_CURRENT_DRAFT_KEY));
     if(rawDraft){
       const draft = JSON.parse(rawDraft);
       if(draftHasContent(draft)){
@@ -4004,9 +4008,16 @@ async function init(){
   const disarmClear = ()=>{
     clearTimeout(clearArmTimer);
     clearBtn.classList.remove('confirming');
-    clearBtn.querySelector('span').textContent = EDITING_EXISTING ? 'Cancel editing' : 'Clear all';
+    clearBtn.querySelector('span').textContent = clearButtonLabel();
   };
   clearBtn.addEventListener('click', ()=>{
+    // Just saved: nothing would be lost, so start the next one right away.
+    if(EDITING_EXISTING && EDITING_EXISTING.justSaved){
+      stopEditingEvaluation();
+      disarmClear();
+      showToast('Ready for a new evaluation');
+      return;
+    }
     if(!clearBtn.classList.contains('confirming')){
       clearBtn.classList.add('confirming');
       clearBtn.querySelector('span').textContent = 'Are you sure? Click again';
@@ -4546,11 +4557,14 @@ async function saveEvaluationToDatabase(){
 
   // Check the schedule again right before saving: someone may have assigned
   // or taken this evaluation in the meantime.
+  const shown = SCHEDULE;
   const schedule = await refreshScheduleBanner();
   if(schedule && schedule.state === 'other'){
     showToast('This evaluation is assigned to ' + profileName(schedule.assignment.assignee_id) + '. Press "Assign to me" first.');
     return;
   }
+  if(shown && shown.state === 'mine' && schedule && shown.agentId === schedule.agentId && schedule.state !== 'mine' &&
+     !confirm('The scheduled evaluation you had open is no longer yours: someone else took it or already did it. Save this one anyway as an extra evaluation?')) return;
 
   const payload = buildEvaluationPayload(check.agent, check.callDate, schedule);
   const signature = JSON.stringify([payload.evaluation.agent_id, payload.evaluation.call_date, payload.evaluation.ticket_id, ANSWERS]);
@@ -4561,11 +4575,12 @@ async function saveEvaluationToDatabase(){
   btn.textContent = 'Saving...';
 
   try{
+    let newId = null;
     try{
-      await insertEvaluationAtomic(payload);
+      newId = await insertEvaluationAtomic(payload);
     }catch(rpcErr){
       if(rpcErr && (rpcErr.code === 'PGRST202' || rpcErr.code === '42883')){
-        await insertEvaluationSequential(payload);
+        newId = await insertEvaluationSequential(payload);
       }else{
         throw rpcErr;
       }
@@ -4574,7 +4589,11 @@ async function saveEvaluationToDatabase(){
     showToast('Evaluation saved for ' + check.agent.name +
       (schedule && schedule.state === 'mine' ? ' (scheduled evaluation ' + schedule.position + ')' : ''));
     clearCurrentDraftFromLocal();
-    refreshScheduleBanner();
+    if(newId){
+      adoptSavedEvaluation(newId, check.agent.name, check.callDate, payload.evaluation.ticket_id);
+      SCHEDULE = null;
+      renderScheduleBanner();
+    }else refreshScheduleBanner();
   }catch(err){
     console.error('Save evaluation failed', err);
     showToast('Could not save: ' + (err.message || 'unknown error'));
@@ -5232,7 +5251,7 @@ function startEditingEvaluation(row){
   const d = row.details;
   if(!d || !d.answers){ closeViewEvalModal(); openEditEvalModal(row); return; }
   if(!EDITING_EXISTING){ archiveCurrentDraftIfMeaningful(); clearCurrentDraftFromLocal(); }
-  EDITING_EXISTING = { id: row.id, agentName: row.agents ? row.agents.name : '', callDate: row.call_date };
+  EDITING_EXISTING = { id: row.id, agentName: row.agents ? row.agents.name : '', callDate: row.call_date, disputes: Array.isArray(d.disputes) ? d.disputes : [] };
   const agentName = EDITING_EXISTING.agentName;
   document.getElementById('fAgent').value = agentName;
   document.getElementById('fAgent').readOnly = true;
@@ -5268,18 +5287,24 @@ function startEditingEvaluation(row){
   showToast('Editing ' + agentName + '\'s evaluation');
 }
 
+function clearButtonLabel(){
+  return EDITING_EXISTING ? (EDITING_EXISTING.justSaved ? 'New evaluation' : 'Cancel editing') : 'Clear all';
+}
+
 function syncSaveButtonLabel(){
   const btn = document.getElementById('btnSaveEvaluation');
+  document.getElementById('btnClear').classList.toggle('fresh', !!(EDITING_EXISTING && EDITING_EXISTING.justSaved));
   btn.lastChild.textContent = EDITING_EXISTING ? ' Save changes' : ' Save evaluation';
   const clear = document.getElementById('btnClear');
-  if(!clear.classList.contains('confirming')) clear.querySelector('span').textContent = EDITING_EXISTING ? 'Cancel editing' : 'Clear all';
+  if(!clear.classList.contains('confirming')) clear.querySelector('span').textContent = clearButtonLabel();
 }
 
 function stopEditingEvaluation(){
   if(!EDITING_EXISTING) return;
   EDITING_EXISTING = null;
   document.getElementById('fAgent').readOnly = false;
-  document.getElementById('editingBanner').classList.remove('show');
+  document.getElementById('editingBanner').classList.remove('show', 'just-saved');
+  document.getElementById('btnCancelEditing').textContent = 'Cancel editing';
   syncSaveButtonLabel();
   resetEvaluationForm();
 }
@@ -5306,15 +5331,31 @@ function resetEvaluationForm(){
 
 async function saveEditedEvaluation(btn, check){
   const payload = buildEvaluationPayload(check.agent, check.callDate, null);
+  // Dispute notes live in details too; editing must not drop them.
+  if(EDITING_EXISTING.disputes && EDITING_EXISTING.disputes.length) payload.evaluation.details.disputes = EDITING_EXISTING.disputes;
   const { error } = await supabaseClient.rpc('update_evaluation', { eval_id: EDITING_EXISTING.id, payload });
   if(error && (error.code === 'PGRST202' || error.code === '42883')){
     throw new Error('the database is missing its latest update (update_evaluation). Ask an admin to apply it.');
   }
   if(error) throw error;
   showToast('Changes saved for ' + check.agent.name);
-  stopEditingEvaluation();
   clearCurrentDraftFromLocal();
+  // Right after saving, fixes stay on the Evaluation tab and keep updating the same record.
+  if(EDITING_EXISTING.justSaved){ EDITING_EXISTING.callDate = check.callDate; return; }
+  stopEditingEvaluation();
   switchTab('agents');
+}
+
+// After a new evaluation is saved the form keeps showing it; from then on
+// Save updates that record instead of creating a second one.
+function adoptSavedEvaluation(id, agentName, callDate, ticket){
+  EDITING_EXISTING = { id, agentName, callDate, disputes: [], justSaved: true };
+  document.getElementById('fAgent').readOnly = true;
+  document.getElementById('editingBannerText').textContent =
+    'Saved: ' + agentName + ' (' + callDate + (ticket ? ' · ' + ticket : '') + '). Changes you make now update this same evaluation.';
+  document.getElementById('editingBanner').classList.add('show', 'just-saved');
+  document.getElementById('btnCancelEditing').textContent = 'New evaluation';
+  syncSaveButtonLabel();
 }
 
 document.getElementById('btnCloseViewEval').addEventListener('click', closeViewEvalModal);
@@ -5326,9 +5367,10 @@ document.getElementById('btnViewEvalDelete').addEventListener('click', async ()=
   if(await deleteEvaluation(VIEW_EVAL.row.id)) closeViewEvalModal();
 });
 document.getElementById('btnCancelEditing').addEventListener('click', ()=>{
-  if(!confirm('Stop editing? Changes you made here will not be saved.')) return;
+  const justSaved = EDITING_EXISTING && EDITING_EXISTING.justSaved;
+  if(!justSaved && !confirm('Stop editing? Changes you made here will not be saved.')) return;
   stopEditingEvaluation();
-  showToast('Editing cancelled');
+  showToast(justSaved ? 'Ready for a new evaluation' : 'Editing cancelled');
 });
 
 // Bulk assignment: pick call/ticket first, then tick any number of empty
@@ -5963,6 +6005,20 @@ document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
    ============================================================ */
 const LS_CURRENT_DRAFT_KEY = 'qa_current_draft_v1';
 const LS_ONGOING_DRAFTS_KEY = 'qa_ongoing_drafts_v1';
+// Drafts belong to whoever is signed in, so two evaluators sharing a computer
+// never pick up each other's half-done evaluations.
+function draftKey(base){ return CURRENT_USER && CURRENT_USER.id ? base + ':' + CURRENT_USER.id : base; }
+// Drafts saved before they were per person go to the first one who signs in.
+function adoptLegacyDrafts(){
+  try{
+    [LS_CURRENT_DRAFT_KEY, LS_ONGOING_DRAFTS_KEY].forEach(base=>{
+      const old = localStorage.getItem(base);
+      if(old === null || draftKey(base) === base) return;
+      if(localStorage.getItem(draftKey(base)) === null) localStorage.setItem(draftKey(base), old);
+      localStorage.removeItem(base);
+    });
+  }catch(e){}
+}
 
 function captureDraftSnapshot(){
   return {
@@ -5993,24 +6049,24 @@ function saveCurrentDraftToLocal(){
   if(EDITING_EXISTING) return;  // a saved evaluation being edited is not a draft
   try{
     const snap = captureDraftSnapshot();
-    if(!draftHasContent(snap)){ localStorage.removeItem(LS_CURRENT_DRAFT_KEY); return; }
-    localStorage.setItem(LS_CURRENT_DRAFT_KEY, JSON.stringify(snap));
+    if(!draftHasContent(snap)){ localStorage.removeItem(draftKey(LS_CURRENT_DRAFT_KEY)); return; }
+    localStorage.setItem(draftKey(LS_CURRENT_DRAFT_KEY), JSON.stringify(snap));
   }catch(e){ /* localStorage unavailable (e.g. private browsing) — ignore */ }
 }
 
 function clearCurrentDraftFromLocal(){
-  try{ localStorage.removeItem(LS_CURRENT_DRAFT_KEY); }catch(e){}
+  try{ localStorage.removeItem(draftKey(LS_CURRENT_DRAFT_KEY)); }catch(e){}
 }
 
 function loadOngoingDrafts(){
   try{
-    const raw = localStorage.getItem(LS_ONGOING_DRAFTS_KEY);
+    const raw = localStorage.getItem(draftKey(LS_ONGOING_DRAFTS_KEY));
     return raw ? JSON.parse(raw) : [];
   }catch(e){ return []; }
 }
 
 function saveOngoingDrafts(list){
-  try{ localStorage.setItem(LS_ONGOING_DRAFTS_KEY, JSON.stringify(list.slice(0, 25))); }catch(e){}
+  try{ localStorage.setItem(draftKey(LS_ONGOING_DRAFTS_KEY), JSON.stringify(list.slice(0, 25))); }catch(e){}
 }
 
 function archiveCurrentDraftIfMeaningful(){
@@ -6083,6 +6139,7 @@ function renderOngoingList(){
 function resumeOngoingDraft(idx){
   const snap = loadOngoingDrafts()[idx];
   if(!snap) return;
+  if(EDITING_EXISTING && EDITING_EXISTING.justSaved) stopEditingEvaluation();
   if(EDITING_EXISTING){ showToast('Finish or cancel the evaluation you are editing first'); return; }
   archiveCurrentDraftIfMeaningful();
   // Re-read after archiving so the evaluation that was open is kept.
