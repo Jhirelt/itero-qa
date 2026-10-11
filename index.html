@@ -4193,6 +4193,9 @@ function resetEvaluationForm(){
 async function saveEditedEvaluation(btn, check){
   const payload = buildEvaluationPayload(check.agent, check.callDate, null);
   const { error } = await supabaseClient.rpc('update_evaluation', { eval_id: EDITING_EXISTING.id, payload });
+  if(error && (error.code === 'PGRST202' || error.code === '42883')){
+    throw new Error('the database is missing its latest update (update_evaluation). Ask an admin to apply it.');
+  }
   if(error) throw error;
   showToast('Changes saved for ' + check.agent.name);
   stopEditingEvaluation();
