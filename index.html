@@ -625,6 +625,42 @@
     border-radius:var(--radius-sm); color:var(--text); font-size:11.5px; padding:7px; outline:none; font-family:inherit;
   }
   .cfg-texts textarea:focus{ border-color:var(--accent); }
+  .cfg-text-col{ display:flex; flex-direction:column; gap:6px; }
+  .cfg-alt-row{ display:flex; align-items:flex-start; gap:6px; }
+  .cfg-alt-row textarea{ flex:1; min-height:40px; }
+  .cfg-alt-num{ font-size:10px; font-weight:800; width:16px; text-align:center; padding-top:8px; flex:none; }
+  .cfg-alt-num.y{ color:var(--yes); } .cfg-alt-num.n{ color:var(--no); }
+  .cfg-alt-remove{
+    flex:none; background:none; border:1px solid var(--border); color:var(--text-faint); border-radius:5px;
+    width:22px; height:22px; cursor:pointer; font-size:14px; line-height:1; margin-top:4px;
+  }
+  .cfg-alt-remove:hover{ color:var(--no); border-color:var(--no); }
+  .cfg-alt-add{
+    align-self:flex-start; background:none; border:1px dashed var(--border); border-radius:var(--radius-sm);
+    padding:4px 9px; font-size:11px; font-weight:700; cursor:pointer;
+  }
+  .cfg-alt-add.y{ color:var(--yes); } .cfg-alt-add.n{ color:var(--no); }
+  .cfg-alt-add span{ color:var(--text-faint); font-weight:600; }
+  .cfg-alt-add:hover:not(:disabled){ border-style:solid; }
+  .cfg-alt-add:disabled{ opacity:.4; cursor:not-allowed; }
+  .txt-pick{
+    flex-shrink:0; height:25px; min-width:30px; padding:0 6px; border-radius:6px; border:1px dashed currentColor;
+    background:transparent; font-size:10.5px; font-weight:800; cursor:pointer;
+  }
+  .txt-pick.y{ color:var(--yes); } .txt-pick.n{ color:var(--no); }
+  .txt-pick-popover{
+    position:fixed; z-index:200; background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius);
+    box-shadow:var(--shadow); padding:8px; display:flex; flex-direction:column; gap:4px; max-height:60vh; overflow:auto;
+  }
+  .txt-pick-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; font-weight:800; padding:2px 4px 6px; }
+  .txt-pick-title.y{ color:var(--yes); } .txt-pick-title.n{ color:var(--no); }
+  .txt-pick-opt{
+    display:flex; gap:8px; align-items:flex-start; text-align:left; background:var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); padding:8px; color:var(--text); font-size:12px; line-height:1.35; cursor:pointer;
+  }
+  .txt-pick-opt:hover{ border-color:var(--accent-dim); }
+  .txt-pick-opt.active{ border-color:var(--accent); background:var(--accent-soft); }
+  .txt-pick-opt .num{ font-weight:800; color:var(--text-dim); flex:none; }
   .cfg-section-title{
     display:flex; align-items:center; justify-content:space-between; font-size:12px; text-transform:uppercase;
     letter-spacing:.6px; color:var(--accent); margin:20px 0 10px; font-weight:800;
@@ -1593,6 +1629,58 @@ let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zer
 // not overwrite their text. LAST_AUTO_SUMMARY is what the template would
 // produce right now; AUTO_SUMMARY_AT_EDIT is what it produced when they
 // started editing, so we can tell them the rubrics changed since.
+// Which text option the evaluator picked per rubric: { id: { yes: n, no: n } },
+// 0 being the main text and 1-3 the extra options from Configuration.
+let CHOICES = {};
+
+function textOptions(cfg, kind){
+  const base = cfg.zeroType ? 'reason' : (kind === 'yes' ? 'yes' : 'no');
+  return [cfg[base]].concat(cfg[ALT_FIELD[base]] || []).filter(t=> typeof t === 'string' && t.trim());
+}
+
+function chosenText(id, cfg, kind){
+  const opts = textOptions(cfg, kind);
+  const key = kind === 'yes' ? 'yes' : 'no';
+  const i = (CHOICES[id] && CHOICES[id][key]) || 0;
+  return opts[i] || opts[0] || '';
+}
+
+function closeTextPicker(){
+  const pop = document.getElementById('txtPickPopover');
+  if(pop) pop.remove();
+}
+
+function openTextPicker(btn){
+  closeTextPicker();
+  const id = btn.dataset.id, cfg = CONFIG.items[id], val = ANSWERS[id];
+  if(!cfg || !val) return;
+  const kind = val === 'yes' ? 'yes' : 'no';
+  const opts = textOptions(cfg, kind);
+  const current = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
+  const pop = document.createElement('div');
+  pop.id = 'txtPickPopover';
+  pop.className = 'txt-pick-popover';
+  pop.innerHTML = '<div class="txt-pick-title ' + (kind === 'yes' ? 'y' : 'n') + '">' + escapeHtml(cfg.label) + ' · ' +
+    (kind === 'yes' ? 'met' : 'not met') + ' text</div>' +
+    opts.map((t, i)=> '<button type="button" class="txt-pick-opt' + (i === current ? ' active' : '') + '" data-idx="' + i + '">' +
+      '<span class="num">' + (i + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('');
+  document.body.appendChild(pop);
+  const r = btn.getBoundingClientRect();
+  const w = Math.min(380, window.innerWidth - 24);
+  pop.style.width = w + 'px';
+  pop.style.left = Math.max(12, Math.min(window.innerWidth - w - 12, r.right - w)) + 'px';
+  const below = r.bottom + 6 + pop.offsetHeight < window.innerHeight;
+  pop.style.top = (below ? r.bottom + 6 : Math.max(12, r.top - 6 - pop.offsetHeight)) + 'px';
+  pop.querySelectorAll('.txt-pick-opt').forEach(o=> o.addEventListener('click', (e)=>{
+    e.stopPropagation();
+    CHOICES[id] = Object.assign({}, CHOICES[id], { [kind]: Number(o.dataset.idx) });
+    closeTextPicker();
+    refreshEval();
+  }));
+}
+document.addEventListener('click', (e)=>{ if(!e.target.closest('#txtPickPopover')) closeTextPicker(); });
+window.addEventListener('scroll', closeTextPicker, true);
+
 let SUMMARY_MANUAL = false;
 let LAST_AUTO_SUMMARY = '';
 let AUTO_SUMMARY_AT_EDIT = '';
@@ -1735,15 +1823,17 @@ async function loadConfig(){
     try{
       // Restore any custom (non-factory) items first, so they aren't dropped
       // by the defensive "unknown id" filtering below.
+      const cleanAlts = (arr)=> Array.isArray(arr)
+        ? arr.filter(t=> typeof t === 'string' && t.trim()).slice(0, MAX_TEXT_ALTS) : [];
       if(stored.items){
         Object.keys(stored.items).forEach(id=>{
           if(CONFIG.items[id]) return; // factory item, handled in the next pass
           const src = stored.items[id];
           if(!src || typeof src.label !== 'string' || !src.label.trim()) return;
           if(src.zeroType){
-            if(typeof src.reason === 'string') CONFIG.items[id] = { label: src.label, pts: 0, reason: src.reason, zeroType: true };
+            if(typeof src.reason === 'string') CONFIG.items[id] = { label: src.label, pts: 0, reason: src.reason, reasonAlts: cleanAlts(src.reasonAlts), zeroType: true };
           } else if(typeof src.yes === 'string' && typeof src.no === 'string' && typeof src.pts === 'number'){
-            CONFIG.items[id] = { label: src.label, pts: src.pts, yes: src.yes, no: src.no, zeroType: false };
+            CONFIG.items[id] = { label: src.label, pts: src.pts, yes: src.yes, no: src.no, yesAlts: cleanAlts(src.yesAlts), noAlts: cleanAlts(src.noAlts), zeroType: false };
           }
         });
       }
@@ -1754,6 +1844,7 @@ async function loadConfig(){
           const src = stored.items[id] || {};
           const allowed = cur.zeroType ? ['label','reason'] : ['label','yes','no'];
           allowed.forEach(k=>{ if(typeof src[k] === 'string' && src[k].length) cur[k] = src[k]; });
+          (cur.zeroType ? ['reasonAlts'] : ['yesAlts', 'noAlts']).forEach(k=>{ cur[k] = cleanAlts(src[k]); });
         });
       }
       if(stored.order){
@@ -1795,6 +1886,11 @@ async function saveConfig(){
   if(!supabaseClient) return false;
   if(!isAdminUser()) return false;
   try{
+    Object.values(CONFIG.items).forEach(it=>{
+      ['yesAlts', 'noAlts', 'reasonAlts'].forEach(k=>{
+        if(Array.isArray(it[k])) it[k] = it[k].filter(t=> typeof t === 'string' && t.trim());
+      });
+    });
     const { names, ...toSave } = CONFIG; // names live in the agents table, not here
     const { error } = await supabaseClient.from('app_config').upsert({
       id: 1,
@@ -1912,6 +2008,7 @@ function renderSections(){
             <span class="lbl">${escapeHtml(cfg.label)}</span>
             <span class="pts zero">auto-0</span>
             <div class="ic-controls">
+              <button class="txt-pick" data-id="${id}" title="Choose which text goes in the summary" style="display:none;"></button>
               <button class="pill no" data-id="${id}" data-val="no" title="Triggered">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
@@ -1923,6 +2020,7 @@ function renderSections(){
             <span class="lbl">${escapeHtml(cfg.label)}</span>
             <span class="pts">${cfg.pts}pt</span>
             <div class="ic-controls">
+              <button class="txt-pick" data-id="${id}" title="Choose which text goes in the summary" style="display:none;"></button>
               <button class="pill yes" data-id="${id}" data-val="yes" title="Met">
                 <svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
               </button>
@@ -1936,6 +2034,10 @@ function renderSections(){
         itemsWrap.appendChild(row);
       }catch(e){ console.error('Skipping broken item', id, e); }
     });
+  });
+
+  root.querySelectorAll('.txt-pick').forEach(btn=>{
+    btn.addEventListener('click', (e)=>{ e.stopPropagation(); openTextPicker(btn); });
   });
 
   root.querySelectorAll('.pill').forEach(btn=>{
@@ -1964,8 +2066,22 @@ function refreshEval(){
   });
   document.querySelectorAll('.item-card[data-id]').forEach(row=>{
     const cfg = CONFIG.items[row.dataset.id];
-    if(!cfg || cfg.zeroType) return;
-    row.classList.toggle('not-applicable', !ANSWERS[row.dataset.id]);
+    if(!cfg) return;
+    const id = row.dataset.id, val = ANSWERS[id];
+    const pick = row.querySelector('.txt-pick');
+    if(pick){
+      const kind = val === 'yes' ? 'yes' : 'no';
+      const opts = val ? textOptions(cfg, kind) : [];
+      const usable = opts.length > 1 && (cfg.zeroType ? (val === 'no' || val === 'feedback') : true);
+      pick.style.display = usable ? '' : 'none';
+      if(usable){
+        const i = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
+        pick.textContent = (i + 1) + '/' + opts.length;
+        pick.className = 'txt-pick ' + (kind === 'yes' ? 'y' : 'n');
+      }
+    }
+    if(cfg.zeroType) return;
+    row.classList.toggle('not-applicable', !val);
   });
 
   let earned = 0, possible = 0, count = 0, total = 0, zeroTriggered = false;
@@ -2292,6 +2408,87 @@ function refreshScenarioUI(){
   renderScenarioSelect();
 }
 
+const MAX_TEXT_ALTS = 3;
+const ALT_FIELD = { yes: 'yesAlts', no: 'noAlts', reason: 'reasonAlts' };
+
+function cfgTextColumn(id, cfg, field, labelClass, labelText, addLabel, fullWidth){
+  const alts = cfg[ALT_FIELD[field]] || [];
+  let html = '<div class="cfg-text-col"' + (fullWidth ? ' style="grid-column:1 / -1;"' : '') + '>' +
+    '<label class="' + labelClass + '">' + labelText + '</label>' +
+    '<textarea data-id="' + id + '" data-field="' + field + '">' + escapeHtml(cfg[field] || '') + '</textarea>';
+  alts.forEach((t, i)=>{
+    html += '<div class="cfg-alt-row">' +
+      '<span class="cfg-alt-num ' + labelClass + '">' + (i + 2) + '</span>' +
+      '<textarea data-id="' + id + '" data-alt-field="' + ALT_FIELD[field] + '" data-alt-idx="' + i + '" placeholder="Another ' + (field === 'yes' ? 'met' : field === 'no' ? 'not met' : 'reason') + ' text">' + escapeHtml(t) + '</textarea>' +
+      '<button type="button" class="cfg-alt-remove" data-remove-field="' + ALT_FIELD[field] + '" data-remove-idx="' + i + '" title="Remove this option">×</button>' +
+      '</div>';
+  });
+  html += '<button type="button" class="cfg-alt-add ' + labelClass + '" data-add-field="' + ALT_FIELD[field] + '"' + (alts.length >= MAX_TEXT_ALTS ? ' disabled' : '') + '>' +
+    '+ ' + addLabel + ' <span>(' + alts.length + '/' + MAX_TEXT_ALTS + ')</span></button>';
+  return html + '</div>';
+}
+
+function buildCfgItem(id, secKey){
+  const cfg = CONFIG.items[id];
+  const box = document.createElement('div');
+  box.className = 'cfg-item';
+  box.dataset.id = id;
+  box.dataset.sec = secKey;
+  box.draggable = false;
+
+  const textsHtml = '<div class="cfg-texts">' + (cfg.zeroType
+    ? cfgTextColumn(id, cfg, 'reason', 'n', 'Reason (shown when triggered)', 'Add reason option', true)
+    : cfgTextColumn(id, cfg, 'yes', 'y', 'Met (yes) text', 'Add yes option') +
+      cfgTextColumn(id, cfg, 'no', 'n', 'Not met (no) text', 'Add no option')) + '</div>';
+
+  box.innerHTML = `
+    <div class="cfg-item-top">
+      <span class="drag-handle" title="Drag to reorder or move to another box">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/><circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/><circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/></svg>
+      </span>
+      <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
+      <input class="cfg-label" data-id="${id}" value="${escapeHtml(cfg.label)}">
+    </div>
+    ${textsHtml}
+  `;
+
+  box.querySelector('.cfg-label').addEventListener('input', (e)=>{ cfg.label = e.target.value; });
+  box.querySelectorAll('textarea[data-field]').forEach(ta=>{
+    ta.addEventListener('input', ()=>{ cfg[ta.dataset.field] = ta.value; });
+  });
+  box.querySelectorAll('textarea[data-alt-field]').forEach(ta=>{
+    ta.addEventListener('input', ()=>{ cfg[ta.dataset.altField][Number(ta.dataset.altIdx)] = ta.value; });
+  });
+  const rebuild = (focusSelector)=>{
+    const fresh = buildCfgItem(id, secKey);
+    box.replaceWith(fresh);
+    bindCfgItemDrag(fresh, document.getElementById('cfgSections'));
+    const f = focusSelector && fresh.querySelector(focusSelector);
+    if(f) f.focus();
+  };
+  box.querySelectorAll('.cfg-alt-add').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const field = btn.dataset.addField;
+      const list = cfg[field] = Array.isArray(cfg[field]) ? cfg[field] : [];
+      if(list.length >= MAX_TEXT_ALTS) return;
+      list.push('');
+      rebuild('textarea[data-alt-field="' + field + '"][data-alt-idx="' + (list.length - 1) + '"]');
+    });
+  });
+  box.querySelectorAll('.cfg-alt-remove').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const list = cfg[btn.dataset.removeField] || [];
+      const idx = Number(btn.dataset.removeIdx);
+      if(list[idx] && list[idx].trim() && !confirm('Remove this text option?')) return;
+      list.splice(idx, 1);
+      // Evaluations in progress that picked a later option shift down with it.
+      Object.keys(CHOICES).forEach(k=>{ if(k === id) CHOICES[k] = {}; });
+      rebuild();
+    });
+  });
+  return box;
+}
+
 function renderConfigSections(){
   const root = document.getElementById('cfgSections');
   root.innerHTML = '';
@@ -2320,52 +2517,8 @@ function renderConfigSections(){
     });
 
     CONFIG.order[sec.key].forEach(id=>{
-      const cfg = CONFIG.items[id];
-      const box = document.createElement('div');
-      box.className = 'cfg-item';
-      box.dataset.id = id;
-      box.dataset.sec = sec.key;
-      box.draggable = false;
-
-      const textsHtml = cfg.zeroType ? `
-        <div class="cfg-texts">
-          <div style="grid-column:1 / -1;">
-            <label class="n">Reason (shown when triggered)</label>
-            <textarea data-id="${id}" data-field="reason">${escapeHtml(cfg.reason)}</textarea>
-          </div>
-        </div>
-      ` : `
-        <div class="cfg-texts">
-          <div>
-            <label class="y">Met (yes) text</label>
-            <textarea data-id="${id}" data-field="yes">${escapeHtml(cfg.yes)}</textarea>
-          </div>
-          <div>
-            <label class="n">Not met (no) text</label>
-            <textarea data-id="${id}" data-field="no">${escapeHtml(cfg.no)}</textarea>
-          </div>
-        </div>
-      `;
-
-      box.innerHTML = `
-        <div class="cfg-item-top">
-          <span class="drag-handle" title="Drag to reorder or move to another box">
-            <svg viewBox="0 0 24 24" fill="none"><circle cx="9" cy="6" r="1.6" fill="currentColor"/><circle cx="15" cy="6" r="1.6" fill="currentColor"/><circle cx="9" cy="12" r="1.6" fill="currentColor"/><circle cx="15" cy="12" r="1.6" fill="currentColor"/><circle cx="9" cy="18" r="1.6" fill="currentColor"/><circle cx="15" cy="18" r="1.6" fill="currentColor"/></svg>
-          </span>
-          <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
-          <input class="cfg-label" data-id="${id}" value="${escapeHtml(cfg.label)}">
-        </div>
-        ${textsHtml}
-      `;
-      grid.appendChild(box);
+      grid.appendChild(buildCfgItem(id, sec.key));
     });
-  });
-
-  root.querySelectorAll('.cfg-label').forEach(inp=>{
-    inp.addEventListener('input', ()=>{ CONFIG.items[inp.dataset.id].label = inp.value; });
-  });
-  root.querySelectorAll('.cfg-texts textarea').forEach(ta=>{
-    ta.addEventListener('input', ()=>{ CONFIG.items[ta.dataset.id][ta.dataset.field] = ta.value; });
   });
 
   setupDragAndDrop(root);
@@ -2375,7 +2528,12 @@ function renderConfigSections(){
 let dragState = { id: null, from: null };
 
 function setupDragAndDrop(root){
-  root.querySelectorAll('.cfg-item').forEach(card=>{
+  root.querySelectorAll('.cfg-item').forEach(card=> bindCfgItemDrag(card, root));
+  setupDropZones(root);
+}
+
+function bindCfgItemDrag(card, root){
+  {
     const handle = card.querySelector('.drag-handle');
     if(handle){
       handle.addEventListener('mousedown', ()=>{ card.draggable = true; });
@@ -2393,8 +2551,10 @@ function setupDragAndDrop(root){
       root.querySelectorAll('.cfg-grid').forEach(g=>g.classList.remove('drag-over'));
     });
     card.addEventListener('mouseup', ()=>{ card.draggable = false; });
-  });
+  }
+}
 
+function setupDropZones(root){
   root.querySelectorAll('.cfg-grid').forEach(grid=>{
     grid.addEventListener('dragover', (e)=>{
       e.preventDefault();
@@ -2517,13 +2677,13 @@ function computeSectionBreakdown(){
       if(!cfg) return;
       const val = ANSWERS[id];
       if(cfg.zeroType){
-        if(val === 'no') zeroList.push({ label: cfg.label, text: cfg.reason, pts: cfg.pts });
-        else if(val === 'feedback') zeroFeedback.push({ label: cfg.label, text: cfg.reason, pts: cfg.pts });
+        if(val === 'no') zeroList.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
+        else if(val === 'feedback') zeroFeedback.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
         return;
       }
-      if(val === 'yes'){ earned += cfg.pts; possible += cfg.pts; accomplishments.push({ label: cfg.label, text: cfg.yes, pts: cfg.pts }); }
-      else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, text: cfg.no, pts: cfg.pts }); }
-      else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, text: cfg.no, pts: cfg.pts }); }
+      if(val === 'yes'){ earned += cfg.pts; possible += cfg.pts; accomplishments.push({ label: cfg.label, text: chosenText(id, cfg, 'yes'), pts: cfg.pts }); }
+      else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
+      else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
     });
     return {
       key: sec.key, title: sec.title, earned, possible,
@@ -2706,6 +2866,7 @@ async function init(){
     setFieldError('fCallDate', 'errCallDate', '');
     setSummaryManual(false);
     LAST_SAVED_SIGNATURE = null;
+    CHOICES = {};
     renderSections();
     refreshEval();
     renderOngoingList();
@@ -4234,6 +4395,7 @@ function captureDraftSnapshot(){
     summaryAutoAtEdit: SUMMARY_MANUAL ? AUTO_SUMMARY_AT_EDIT : null,
     scenarioId: CONFIG ? CONFIG.activeScenarioId : null,
     answers: Object.assign({}, ANSWERS),
+    choices: JSON.parse(JSON.stringify(CHOICES)),
     updatedAt: new Date().toISOString(),
   };
 }
@@ -4289,6 +4451,7 @@ function applyDraftSnapshot(snap){
     document.getElementById('scenarioSelect').value = snap.scenarioId;
   }
   ANSWERS = Object.assign({}, snap.answers || {});
+  CHOICES = (snap.choices && typeof snap.choices === 'object') ? JSON.parse(JSON.stringify(snap.choices)) : {};
   SECTIONS.forEach(sec=> sortByApplicability(sec.key));
   renderSections();
   refreshEval();
