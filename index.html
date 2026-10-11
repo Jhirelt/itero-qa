@@ -685,6 +685,68 @@
   }
   .role-purple{ color:#a78bfa !important; }
   .role-badge.role-purple{ border-color:#a78bfa; background:rgba(167,139,250,0.14); }
+  /* ---------- Agent performance chart ---------- */
+  .perf-box{ border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-elev-2); padding:14px 14px 10px; margin-bottom:16px; }
+  .perf-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:6px; }
+  .perf-head h4{ margin:0; font-size:12.5px; }
+  .perf-legend{ display:flex; gap:14px; font-size:11.5px; color:var(--text-dim); }
+  .perf-legend i{ display:inline-block; width:16px; height:0; border-top:2px solid var(--accent); vertical-align:middle; margin-right:5px; }
+  .perf-legend i.avg{ border-top:2px dashed var(--text-dim); }
+  .perf-chart{ position:relative; }
+  .perf-chart svg{ display:block; width:100%; height:220px; overflow:visible; }
+  .perf-chart .grid line{ stroke:var(--border); stroke-width:1; }
+  .perf-chart .axis text{ fill:var(--text-faint); font-size:10.5px; }
+  .perf-chart .line{ fill:none; stroke:var(--accent); stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+  .perf-chart .avg-line{ stroke:var(--text-dim); stroke-width:1.5; stroke-dasharray:5 4; }
+  .perf-chart .avg-label{ fill:var(--text-dim); font-size:10.5px; font-weight:700; }
+  .perf-chart .pt{ fill:var(--accent); stroke:var(--bg-elev-2); stroke-width:2; }
+  .perf-chart .pt.hi{ r:6; }
+  .perf-chart .hit{ fill:transparent; cursor:pointer; }
+  .perf-tip{
+    position:absolute; pointer-events:none; background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-sm);
+    box-shadow:var(--shadow); padding:6px 9px; font-size:11.5px; color:var(--text); white-space:nowrap; transform:translate(-50%, -110%); display:none;
+  }
+  .perf-tip b{ font-weight:800; }
+  .perf-tip span{ color:var(--text-dim); }
+  .perf-empty{ font-size:12px; color:var(--text-faint); padding:24px 0; text-align:center; }
+  .range-slider{ position:relative; height:34px; margin:10px 8px 2px; user-select:none; touch-action:none; }
+  .range-slider .rs-track{ position:absolute; left:0; right:0; top:15px; height:4px; border-radius:2px; background:var(--border); }
+  .range-slider .rs-sel{ position:absolute; top:11px; height:12px; border-radius:6px; background:var(--accent-soft); border:1px solid var(--accent-dim); cursor:grab; }
+  .range-slider .rs-sel:active{ cursor:grabbing; }
+  .range-slider .rs-handle{
+    position:absolute; top:7px; width:18px; height:20px; margin-left:-9px; border-radius:5px; background:var(--accent); border:2px solid var(--bg-elev-2);
+    cursor:ew-resize; box-shadow:0 1px 4px rgba(0,0,0,.35);
+  }
+  .range-slider .rs-handle:focus-visible{ outline:2px solid var(--text); outline-offset:1px; }
+  .rs-labels{ display:flex; justify-content:space-between; gap:10px; font-size:11.5px; color:var(--text-dim); margin:0 2px; }
+  .rs-labels b{ color:var(--text); font-weight:800; }
+  .perf-cols{ display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:16px; }
+  @media (max-width: 760px){ .perf-cols{ grid-template-columns:1fr; } }
+  .disputed-tag{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; background:var(--warn-soft); color:var(--warn); flex-shrink:0; }
+  .eval-item .eval-actions button.dispute-eval-btn{ width:auto; padding:0 7px; font-size:10.5px; font-weight:800; color:var(--warn); }
+  .eval-item .eval-actions button.dispute-eval-btn:hover{ border-color:var(--warn); }
+  .dispute-box{ max-width:820px; max-height:90vh; }
+  .dispute-score{ display:flex; align-items:baseline; gap:10px; margin:6px 0 12px; font-size:13px; color:var(--text-dim); }
+  .dispute-score b{ font-size:26px; font-weight:900; }
+  .dispute-score b.cell-good{ color:var(--yes); } .dispute-score b.cell-mid{ color:var(--warn); } .dispute-score b.cell-bad{ color:var(--no); }
+  .dispute-foot{ position:sticky; bottom:-22px; background:var(--bg-elev); margin:8px -24px -22px; padding:10px 24px 18px; border-top:1px solid var(--border); }
+  .dispute-foot .dispute-note{ min-height:64px; }
+  .dispute-score .delta{ font-weight:800; color:var(--yes); }
+  .dispute-sec{ border:1px solid var(--border); border-radius:var(--radius-sm); margin-bottom:8px; overflow:hidden; }
+  .dispute-sec h4{ margin:0; padding:7px 12px; font-size:12px; background:var(--bg-elev-2); }
+  .dispute-row{ display:flex; align-items:center; gap:8px; padding:6px 12px; border-top:1px solid var(--border); font-size:12.5px; }
+  .dispute-row .lbl{ flex:1; }
+  .dispute-row .pts{ color:var(--text-dim); font-size:11px; font-weight:700; }
+  .dispute-row.changed{ background:var(--yes-soft); }
+  .dispute-note{ width:100%; min-height:80px; margin-top:6px; }
+  .dispute-hist{ font-size:12px; border-left:3px solid var(--warn); padding:6px 10px; margin-bottom:8px; background:var(--bg-elev-2); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
+  .dispute-hist .when{ color:var(--text-dim); font-size:11px; margin-bottom:2px; }
+  .grid-sort{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim); font-weight:700; }
+  .grid-sort select{ padding:5px 8px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12px; color-scheme: light dark; }
+  .monthly-head .grid-sort{ margin-left:auto; }
+  .monthly-head .grid-sort + .bulk-start-btn{ margin-left:0; }
+  .role-move{ background:none; border:none; color:var(--text-faint); cursor:pointer; padding:0 2px; font-size:12px; }
+  .role-move:hover{ color:var(--accent); }
   .agent-meta-row{ display:flex; gap:12px; flex-wrap:wrap; margin:4px 0 14px; }
   .agent-meta-row label{ display:flex; flex-direction:column; gap:4px; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
   .agent-meta-row select{ min-width:180px; padding:7px 9px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; text-transform:none; letter-spacing:0; color-scheme: light dark; }
@@ -1174,6 +1236,13 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="monthly-head">
         <h3 id="monthlyTitle">Monthly scores</h3>
         <span class="monthly-sub" id="monthlySub"></span>
+        <label class="grid-sort">Sort by
+          <select id="gridSort">
+            <option value="name">Name (A–Z)</option>
+            <option value="role">Role</option>
+            <option value="supervisor">Supervisor</option>
+          </select>
+        </label>
         <button type="button" class="btn btn-ghost bulk-start-btn" id="btnBulkAssign" style="display:none;">Assign several</button>
       </div>
       <div class="bulk-bar" id="bulkBar" style="display:none;">
@@ -1213,10 +1282,30 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           <div class="sub" id="agentMonthlyCount"></div>
         </div>
       </div>
-      <div class="agent-fail-title">Rubrics this agent fails most</div>
-      <div id="agentFailList" class="fail-list"></div>
-      <div class="agent-fail-title" style="margin-top:16px;">Focus points</div>
-      <div id="agentFocusList" class="fail-list"></div>
+      <div class="perf-box">
+        <div class="perf-head">
+          <h4>Scores over time</h4>
+          <div class="perf-legend"><span><i></i>Evaluation score</span><span><i class="avg"></i>Average</span></div>
+        </div>
+        <div class="perf-chart" id="perfChart"></div>
+        <div class="range-slider" id="perfRange">
+          <div class="rs-track"></div>
+          <div class="rs-sel" id="perfRangeSel" title="Drag to move the range"></div>
+          <div class="rs-handle" id="perfRangeFrom" tabindex="0" role="slider" aria-label="Range start"></div>
+          <div class="rs-handle" id="perfRangeTo" tabindex="0" role="slider" aria-label="Range end"></div>
+        </div>
+        <div class="rs-labels"><span id="perfRangeFromLbl"></span><span id="perfRangeSummary"></span><span id="perfRangeToLbl"></span></div>
+      </div>
+      <div class="perf-cols">
+        <div>
+          <div class="agent-fail-title">Top 3 most repeated errors</div>
+          <div id="agentFailList" class="fail-list"></div>
+        </div>
+        <div>
+          <div class="agent-fail-title">Focus points</div>
+          <div id="agentFocusList" class="fail-list"></div>
+        </div>
+      </div>
       <div class="agent-fail-title" style="margin-top:16px;">Evaluations</div>
       <div id="agentEvalList" class="eval-list"></div>
     </div>
@@ -1269,7 +1358,25 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div id="viewEvalBody"></div>
       <div class="ve-actions" id="viewEvalActions">
         <button type="button" class="btn btn-primary" id="btnViewEvalEdit">Edit evaluation</button>
+        <button type="button" class="btn btn-ghost" id="btnViewEvalDispute">Disputed</button>
         <button type="button" class="btn btn-danger" id="btnViewEvalDelete">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="disputeOverlay">
+    <div class="modal-box dispute-box">
+      <button class="modal-close" id="btnCloseDispute">&times;</button>
+      <h3 id="disputeTitle">Disputed evaluation</h3>
+      <div class="dispute-score" id="disputeScore"></div>
+      <div id="disputeHistory"></div>
+      <div id="disputeRubrics"></div>
+      <div class="dispute-foot">
+        <div class="ve-subtitle" style="margin-top:0;">Notes</div>
+        <textarea id="disputeNote" class="dispute-note" placeholder="Why the points were given back, or why they were not earned"></textarea>
+        <div class="ve-actions" style="margin-top:8px;">
+          <button type="button" class="btn btn-primary" id="btnSaveDispute">Save dispute</button>
+        </div>
       </div>
     </div>
   </div>
@@ -1332,7 +1439,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="cfg-block">
       <h4>Agent roles</h4>
-      <p style="font-size:12px; color:var(--text-dim); margin:0 0 6px;">Tick "Purple" to show agents with that role in purple.</p>
+      <p style="font-size:12px; color:var(--text-dim); margin:0 0 6px;">The order is the hierarchy used to sort agents by role (use ▲ to move one up). Tick "Purple" to show agents with that role in purple.</p>
       <div class="cfg-names" id="cfgRoles"></div>
       <div class="add-name">
         <input id="newRoleInput" placeholder="Role (e.g. SME)">
@@ -1796,7 +1903,7 @@ const DEFAULT_ITEM_TEMPLATE = `{{icon}} {{text}}{{pts}}`;
 
 const DEFAULT_SUPERVISORS = ['Joffrey Arroyo', 'Lester Brown'];
 const DEFAULT_ROLES = [
-  { name: 'SME', purple: true }, { name: 'TSA', purple: false }, { name: 'ESC', purple: false }, { name: 'SME/POD', purple: false },
+  { name: 'SME', purple: true }, { name: 'SME/POD', purple: false }, { name: 'ESC', purple: false }, { name: 'TSA', purple: false },
 ];
 
 let CONFIG = null;
@@ -2589,7 +2696,9 @@ function renderConfigPeople(){
     '<button data-sup="' + i + '" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>').join('') ||
     '<div class="extras-empty">No supervisors yet.</div>';
   const roles = document.getElementById('cfgRoles');
-  roles.innerHTML = CONFIG.roles.map((r, i)=> '<div class="name-chip"><span class="role-badge' + (r.purple ? ' role-purple' : '') + '">' + escapeHtml(r.name) + '</span>' +
+  roles.innerHTML = CONFIG.roles.map((r, i)=> '<div class="name-chip">' +
+    (i ? '<button type="button" class="role-move" data-role-up="' + i + '" title="Move up (higher in the hierarchy)">\u25B2</button>' : '') +
+    '<span class="role-badge' + (r.purple ? ' role-purple' : '') + '">' + escapeHtml(r.name) + '</span>' +
     '<label class="role-chip-toggle"><input type="checkbox" data-role-purple="' + i + '"' + (r.purple ? ' checked' : '') + '>Purple</label>' +
     '<button data-role="' + i + '" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>').join('') ||
     '<div class="extras-empty">No roles yet.</div>';
@@ -2620,6 +2729,13 @@ document.getElementById('cfgSupervisors').addEventListener('click', (e)=>{
   renderConfigPeople();
 });
 document.getElementById('cfgRoles').addEventListener('click', (e)=>{
+  const up = e.target.closest('button[data-role-up]');
+  if(up){
+    const i = Number(up.dataset.roleUp);
+    [CONFIG.roles[i - 1], CONFIG.roles[i]] = [CONFIG.roles[i], CONFIG.roles[i - 1]];
+    renderConfigPeople();
+    return;
+  }
   const b = e.target.closest('button[data-role]');
   if(!b) return;
   CONFIG.roles.splice(Number(b.dataset.role), 1);
@@ -2630,6 +2746,342 @@ document.getElementById('cfgRoles').addEventListener('change', (e)=>{
   if(!c) return;
   CONFIG.roles[Number(c.dataset.rolePurple)].purple = c.checked;
   renderConfigPeople();
+});
+
+/* ---------- Agent performance: chart, range slider, top errors, focus points ---------- */
+const DAY_MS = 86400000;
+const FOCUS_ICON = '<svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>';
+let PERF = null;   // { evals, deductions, details, minDay, maxDay, from, to }
+
+function dayNum(dateStr){ return Math.floor(Date.UTC(+dateStr.slice(0, 4), +dateStr.slice(5, 7) - 1, +dateStr.slice(8, 10)) / DAY_MS); }
+function dayStr(n){ return new Date(n * DAY_MS).toISOString().slice(0, 10); }
+function fmtDay(n){
+  const d = new Date(n * DAY_MS);
+  return MONTH_NAMES[d.getUTCMonth()].slice(0, 3) + ' ' + d.getUTCDate() + ', ' + d.getUTCFullYear();
+}
+
+async function loadAgentPerformance(evals, scope){
+  const ids = evals.map(e=> e.id);
+  const [deductions, detailRows] = await Promise.all([
+    fetchDeductionsFor(ids),
+    (EVAL_LINK_AVAILABLE && ids.length)
+      ? supabaseClient.from('evaluations').select('id, details').in('id', ids).then(r=>{ if(r.error) throw r.error; return r.data || []; })
+      : Promise.resolve([]),
+  ]);
+  const details = {};
+  detailRows.forEach(r=>{ details[r.id] = r.details || null; });
+  const sorted = sortEvalsChrono(evals.filter(e=> e.call_date));
+  const today = dayNum(todayLocal());
+  let minDay = sorted.length ? dayNum(sorted[0].call_date) : today - 30;
+  let maxDay = Math.max(today, sorted.length ? dayNum(sorted[sorted.length - 1].call_date) : today);
+  if(maxDay - minDay < 7) minDay = maxDay - 7;
+  // Start on the period picked at the top of the page, otherwise everything.
+  let from = scope.startDate ? Math.max(minDay, dayNum(scope.startDate)) : minDay;
+  let to = scope.endDate ? Math.min(maxDay, dayNum(scope.endDate)) : maxDay;
+  if(from > to){ from = minDay; to = maxDay; }
+  PERF = { evals: sorted, deductions, details, minDay, maxDay, from, to };
+  renderPerf();
+  return details;
+}
+
+function perfInRange(){
+  return PERF.evals.filter(e=>{ const d = dayNum(e.call_date); return d >= PERF.from && d <= PERF.to; });
+}
+
+function renderPerf(){
+  if(!PERF) return;
+  const evals = perfInRange();
+  renderPerfSlider();
+  renderPerfChart(evals);
+  const ids = new Set(evals.map(e=> e.id));
+  renderFailList(document.getElementById('agentFailList'), PERF.deductions.filter(d=> ids.has(d.evaluation_id)), 3);
+  const counts = {};
+  evals.forEach(e=> (((PERF.details[e.id] || {}).focusPoints) || []).forEach(f=>{ counts[f] = (counts[f] || 0) + 1; }));
+  const sortedFocus = Object.entries(counts).sort((a, b)=> b[1] - a[1]);
+  document.getElementById('agentFocusList').innerHTML = sortedFocus.length
+    ? sortedFocus.map(([f, n])=> '<div class="fail-item"><span class="name">' + FOCUS_ICON + escapeHtml(f) + '</span><span class="count">' + n + '×</span></div>').join('')
+    : '<div class="fail-empty">No focus points in this range.</div>';
+}
+
+function renderPerfSlider(){
+  const span = PERF.maxDay - PERF.minDay || 1;
+  const a = (PERF.from - PERF.minDay) / span * 100, b = (PERF.to - PERF.minDay) / span * 100;
+  document.getElementById('perfRangeFrom').style.left = a + '%';
+  document.getElementById('perfRangeTo').style.left = b + '%';
+  const sel = document.getElementById('perfRangeSel');
+  sel.style.left = a + '%';
+  sel.style.width = Math.max(0, b - a) + '%';
+  document.getElementById('perfRangeFrom').setAttribute('aria-valuetext', fmtDay(PERF.from));
+  document.getElementById('perfRangeTo').setAttribute('aria-valuetext', fmtDay(PERF.to));
+  document.getElementById('perfRangeFromLbl').innerHTML = '<b>' + fmtDay(PERF.from) + '</b>';
+  document.getElementById('perfRangeToLbl').innerHTML = '<b>' + fmtDay(PERF.to) + '</b>';
+  const n = perfInRange().length;
+  document.getElementById('perfRangeSummary').textContent = n + ' evaluation' + (n === 1 ? '' : 's') + ' in range';
+}
+
+function renderPerfChart(evals){
+  const box = document.getElementById('perfChart');
+  if(!evals.length){ box.innerHTML = '<div class="perf-empty">No evaluations in this range. Drag the bar below to widen it.</div>'; return; }
+  const W = Math.max(320, box.clientWidth || 600), H = 220;
+  const L = 34, R = 64, T = 10, B = 24;
+  const x0 = PERF.from, x1 = Math.max(PERF.to, PERF.from + 1);
+  // Several evaluations on the same day sit side by side.
+  const perDay = {};
+  const pts = evals.map(e=>{
+    const d = dayNum(e.call_date);
+    const k = perDay[d] = (perDay[d] || 0) + 1;
+    const xv = d + (k - 1) * 0.35;
+    return { e, x: L + (Math.min(xv, x1) - x0) / (x1 - x0) * (W - L - R), y: T + (1 - Math.max(0, Math.min(100, Number(e.score))) / 100) * (H - T - B) };
+  });
+  const avg = weightedAvg(evals);
+  const yAvg = T + (1 - avg / 100) * (H - T - B);
+  let svg = '<svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Evaluation scores over time, average ' + Math.round(avg) + '%"><g class="grid axis">';
+  [0, 25, 50, 75, 100].forEach(v=>{
+    const y = T + (1 - v / 100) * (H - T - B);
+    svg += '<line x1="' + L + '" x2="' + (W - R) + '" y1="' + y + '" y2="' + y + '"/><text x="' + (L - 6) + '" y="' + (y + 3.5) + '" text-anchor="end">' + v + '</text>';
+  });
+  svg += '<text x="' + L + '" y="' + (H - 6) + '">' + fmtDay(PERF.from) + '</text>' +
+    '<text x="' + (W - R) + '" y="' + (H - 6) + '" text-anchor="end">' + fmtDay(PERF.to) + '</text></g>';
+  svg += '<line class="avg-line" x1="' + L + '" x2="' + (W - R) + '" y1="' + yAvg + '" y2="' + yAvg + '"/>' +
+    '<text class="avg-label" x="' + (W - R + 6) + '" y="' + (yAvg + 3.5) + '">Avg ' + Math.round(avg) + '%</text>';
+  if(pts.length > 1) svg += '<path class="line" d="' + pts.map((p, i)=> (i ? 'L' : 'M') + p.x.toFixed(1) + ' ' + p.y.toFixed(1)).join(' ') + '"/>';
+  pts.forEach((p, i)=>{ svg += '<circle class="pt" data-i="' + i + '" cx="' + p.x + '" cy="' + p.y + '" r="4.5"/>'; });
+  pts.forEach((p, i)=>{ svg += '<circle class="hit" data-i="' + i + '" cx="' + p.x + '" cy="' + p.y + '" r="12"/>'; });
+  svg += '</svg><div class="perf-tip" id="perfTip"></div>';
+  box.innerHTML = svg;
+  const tip = document.getElementById('perfTip');
+  box.querySelectorAll('.hit').forEach(h=>{
+    const p = pts[Number(h.dataset.i)];
+    const dot = box.querySelector('.pt[data-i="' + h.dataset.i + '"]');
+    h.addEventListener('mouseenter', ()=>{
+      dot.classList.add('hi');
+      tip.innerHTML = '<b>' + Math.round(Number(p.e.score)) + '%</b> <span>· ' + escapeHtml(p.e.call_date) +
+        (p.e.ticket_id ? ' · ' + escapeHtml(p.e.ticket_id) : '') + ' · ' + escapeHtml(evaluatorLabel(p.e)) + '</span>';
+      tip.style.left = (p.x / W * 100) + '%';
+      tip.style.top = p.y + 'px';
+      tip.style.display = 'block';
+    });
+    h.addEventListener('mouseleave', ()=>{ dot.classList.remove('hi'); tip.style.display = 'none'; });
+    h.addEventListener('click', ()=> openViewEvalModal(p.e.id, true));
+  });
+}
+
+// Dragging a handle moves one end; dragging the bar between them moves both.
+(function setupPerfRange(){
+  const root = document.getElementById('perfRange');
+  let drag = null;
+  const dayAt = (clientX)=>{
+    const r = root.getBoundingClientRect();
+    const f = Math.max(0, Math.min(1, (clientX - r.left) / r.width));
+    return Math.round(PERF.minDay + f * (PERF.maxDay - PERF.minDay));
+  };
+  root.addEventListener('pointerdown', (e)=>{
+    if(!PERF) return;
+    const t = e.target;
+    const day = dayAt(e.clientX);
+    if(t.id === 'perfRangeFrom') drag = { kind: 'from' };
+    else if(t.id === 'perfRangeTo') drag = { kind: 'to' };
+    else if(t.id === 'perfRangeSel') drag = { kind: 'move', start: day, from: PERF.from, to: PERF.to };
+    else{
+      // Click on the track: move the nearest end there.
+      drag = { kind: Math.abs(day - PERF.from) <= Math.abs(day - PERF.to) ? 'from' : 'to' };
+      applyDrag(day);
+    }
+    root.setPointerCapture(e.pointerId);
+    e.preventDefault();
+  });
+  root.addEventListener('pointermove', (e)=>{ if(drag) applyDrag(dayAt(e.clientX)); });
+  const end = ()=>{ drag = null; };
+  root.addEventListener('pointerup', end);
+  root.addEventListener('pointercancel', end);
+  function applyDrag(day){
+    if(drag.kind === 'from') PERF.from = Math.min(day, PERF.to);
+    else if(drag.kind === 'to') PERF.to = Math.max(day, PERF.from);
+    else{
+      const width = drag.to - drag.from;
+      let f = drag.from + (day - drag.start);
+      f = Math.max(PERF.minDay, Math.min(PERF.maxDay - width, f));
+      PERF.from = f; PERF.to = f + width;
+    }
+    renderPerf();
+  }
+  ['perfRangeFrom', 'perfRangeTo'].forEach(id=>{
+    document.getElementById(id).addEventListener('keydown', (e)=>{
+      if(!PERF || (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight')) return;
+      const step = (e.key === 'ArrowLeft' ? -1 : 1) * (e.shiftKey ? 7 : 1);
+      if(id === 'perfRangeFrom') PERF.from = Math.max(PERF.minDay, Math.min(PERF.to, PERF.from + step));
+      else PERF.to = Math.min(PERF.maxDay, Math.max(PERF.from, PERF.to + step));
+      renderPerf();
+      e.preventDefault();
+    });
+  });
+  let resizeTimer = null;
+  window.addEventListener('resize', ()=>{ clearTimeout(resizeTimer); resizeTimer = setTimeout(()=>{ if(PERF && isViewVisible('view-agents')) renderPerfChart(perfInRange()); }, 150); });
+})();
+
+/* ---------- Disputed evaluations ---------- */
+// Re-score saved answers without touching the evaluation open in the Evaluation tab.
+function withEvalState(answers, choices, accomplishments, fn){
+  const saved = [ANSWERS, CHOICES, ACCOMPLISHMENTS];
+  ANSWERS = answers; CHOICES = choices || {}; ACCOMPLISHMENTS = accomplishments || [];
+  try{ return fn(); }finally{ [ANSWERS, CHOICES, ACCOMPLISHMENTS] = saved; }
+}
+
+function scoreFromSections(sections){
+  let earned = 0, possible = 0, zero = false;
+  sections.forEach(sec=>{
+    if(sec.isZeroSection){ if(sec.zeroList.length) zero = true; return; }
+    earned += sec.earned; possible += sec.possible;
+  });
+  const score = zero ? 0 : (possible > 0 ? Math.round(earned / possible * 100) : 100);
+  return { score, earned, possible, zero };
+}
+
+function sectionAndDeductionRows(sections){
+  const sectionRows = sections.filter(sec=> !sec.isZeroSection && sec.possible > 0)
+    .map(sec=> ({ section_key: sec.key, section_title: sec.title, points_earned: sec.earned, points_possible: sec.possible }));
+  const deductionRows = [];
+  sections.forEach(sec=>{
+    sec.deductions.forEach(d=> deductionRows.push({ section_key: sec.key, rubric_label: d.label, points_lost: d.pts }));
+    sec.zeroList.forEach(d=> deductionRows.push({ section_key: sec.key, rubric_label: d.label, points_lost: 0 }));
+  });
+  return { sectionRows, deductionRows };
+}
+
+let DISPUTE = null;   // { row, answers, original }
+
+function disputeHistoryHtml(d){
+  const list = (d && Array.isArray(d.disputes)) ? d.disputes : [];
+  return list.map(x=> '<div class="dispute-hist"><div class="when">' + escapeHtml(new Date(x.at).toLocaleString()) + ' · ' + escapeHtml(x.by || 'QA') +
+    ' · ' + (x.after !== x.before ? Math.round(x.before) + '% → ' + Math.round(x.after) + '%' : 'no points returned') + '</div>' +
+    (x.changes && x.changes.length ? '<div>' + x.changes.map(c=> escapeHtml(c.label) + ': ' + escapeHtml(c.from) + ' → ' + escapeHtml(c.to)).join('; ') + '</div>' : '') +
+    '<div>' + escapeHtml(x.note || '') + '</div></div>').join('');
+}
+
+async function openDispute(evalId){
+  const { data: row, error } = await supabaseClient.from('evaluations').select('*, agents(name)').eq('id', evalId).single();
+  if(error){ showToast('Could not open it: ' + (error.message || 'unknown error')); return; }
+  if(!row.details || !row.details.answers){
+    showToast('This evaluation was saved before rubric answers were kept. Use Edit instead.');
+    return;
+  }
+  DISPUTE = { row, answers: Object.assign({}, row.details.answers), original: Object.assign({}, row.details.answers) };
+  document.getElementById('disputeTitle').textContent = 'Disputed evaluation · ' + (row.agents ? row.agents.name : 'Agent') + ' · ' + (row.call_date || '');
+  document.getElementById('disputeNote').value = '';
+  const hist = disputeHistoryHtml(row.details);
+  document.getElementById('disputeHistory').innerHTML = hist ? '<div class="ve-subtitle">Earlier disputes</div>' + hist : '';
+  renderDisputeRubrics();
+  closeViewEvalModal();
+  document.getElementById('disputeOverlay').classList.add('show');
+}
+
+function renderDisputeRubrics(){
+  const A = DISPUTE.answers, O = DISPUTE.original;
+  let html = '';
+  SECTIONS.forEach(sec=>{
+    const ids = CONFIG.order[sec.key].filter(id=> CONFIG.items[id] && (O[id] || A[id]));
+    if(!ids.length) return;
+    html += '<div class="dispute-sec"><h4>' + escapeHtml(sec.title) + '</h4>' + ids.map(id=>{
+      const cfg = CONFIG.items[id];
+      const vals = cfg.zeroType ? ['no', 'feedback'] : ['yes', 'no', 'feedback'];
+      return '<div class="dispute-row' + (A[id] !== O[id] ? ' changed' : '') + '"><span class="lbl">' + escapeHtml(cfg.label) + '</span>' +
+        '<span class="pts">' + (cfg.zeroType ? 'auto-0' : cfg.pts + 'pt') + '</span>' +
+        vals.map(v=> '<button type="button" class="pill ' + (v === 'feedback' ? 'warn' : v) + (A[id] === v ? ' active' : '') + '" data-id="' + id + '" data-val="' + v + '" title="' + (v === 'yes' ? 'Met' : v === 'no' ? 'Not met' : 'Feedback') + '">' +
+          (v === 'yes' ? '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            : v === 'no' ? '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+            : '<svg viewBox="0 0 24 24" fill="none"><path d="M12 3.5 22 20H2L12 3.5Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="M12 9.5v3.6M12 16.2h.01" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>') +
+          '</button>').join('') + '</div>';
+    }).join('') + '</div>';
+  });
+  document.getElementById('disputeRubrics').innerHTML = html;
+  const d = DISPUTE.row.details;
+  const now = withEvalState(A, d.choices, d.accomplishments, ()=> scoreFromSections(computeSectionBreakdown()));
+  const before = Math.round(Number(DISPUTE.row.score));
+  const diff = now.score - before;
+  document.getElementById('disputeScore').innerHTML = 'Score <b class="' + evalScoreClass(now.score) + '">' + now.score + '%</b>' +
+    (diff ? '<span>was ' + before + '%</span><span class="delta"' + (diff < 0 ? ' style="color:var(--no)"' : '') + '>' + (diff > 0 ? '+' : '') + diff + '</span>' : '<span>unchanged</span>');
+}
+
+document.getElementById('disputeRubrics').addEventListener('click', (e)=>{
+  const b = e.target.closest('.pill');
+  if(!b || !DISPUTE) return;
+  const id = b.dataset.id, v = b.dataset.val;
+  if(DISPUTE.answers[id] === v) delete DISPUTE.answers[id]; else DISPUTE.answers[id] = v;
+  renderDisputeRubrics();
+});
+document.getElementById('btnCloseDispute').addEventListener('click', ()=> document.getElementById('disputeOverlay').classList.remove('show'));
+document.getElementById('disputeOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'disputeOverlay') e.currentTarget.classList.remove('show'); });
+
+document.getElementById('btnSaveDispute').addEventListener('click', async ()=>{
+  if(!DISPUTE) return;
+  const note = document.getElementById('disputeNote').value.trim();
+  if(!note){
+    document.getElementById('disputeNote').classList.add('invalid');
+    showToast('Write a note: why the points were given back or why they were not earned');
+    return;
+  }
+  document.getElementById('disputeNote').classList.remove('invalid');
+  const row = DISPUTE.row, d = row.details, A = DISPUTE.answers, O = DISPUTE.original;
+  const accomplishments = (d.accomplishments || []).filter(id=> A[id] === 'yes');
+  const built = withEvalState(A, d.choices, accomplishments, ()=>{
+    const sections = computeSectionBreakdown();
+    return { sections, score: scoreFromSections(sections), items: buildDetailItems() };
+  });
+  const label = (v)=> v === 'yes' ? 'met' : v === 'no' ? 'not met' : v === 'feedback' ? 'feedback' : 'not applicable';
+  const changes = Object.keys(Object.assign({}, A, O)).filter(id=> A[id] !== O[id] && CONFIG.items[id])
+    .map(id=> ({ id, label: CONFIG.items[id].label, from: label(O[id]), to: label(A[id]) }));
+  const { sectionRows, deductionRows } = sectionAndDeductionRows(built.sections);
+  const dispute = {
+    at: new Date().toISOString(), by: CURRENT_USER.display_name || 'QA', byId: CURRENT_USER.id, note,
+    before: Number(row.score), after: built.score.score, changes,
+  };
+  const payload = {
+    evaluation: {
+      call_date: row.call_date, ticket_id: row.ticket_id, call_reason: row.call_reason,
+      score: built.score.score, points_earned: built.score.earned, points_possible: built.score.possible, zero_triggered: built.score.zero,
+      details: Object.assign({}, d, { answers: Object.assign({}, A), items: built.items, accomplishments, disputes: (d.disputes || []).concat([dispute]) }),
+    },
+    sections: sectionRows,
+    deductions: deductionRows,
+  };
+  const btn = document.getElementById('btnSaveDispute');
+  btn.disabled = true; btn.textContent = 'Saving...';
+  try{
+    const { error } = await supabaseClient.rpc('update_evaluation', { eval_id: row.id, payload });
+    if(error) throw error;
+    document.getElementById('disputeOverlay').classList.remove('show');
+    showToast(changes.length ? 'Dispute saved: score ' + Math.round(Number(row.score)) + '% → ' + built.score.score + '%' : 'Dispute saved: no points returned');
+    DISPUTE = null;
+    refreshAgentsView();
+  }catch(err){
+    console.error('Could not save the dispute', err);
+    showToast('Could not save the dispute: ' + (err.message || 'unknown error'));
+  }finally{
+    btn.disabled = false; btn.textContent = 'Save dispute';
+  }
+});
+
+/* ---------- Agent order in the monthly table ---------- */
+function gridSortMode(){
+  try{ return localStorage.getItem('qa_grid_sort') || 'name'; }catch(e){ return 'name'; }
+}
+
+function compareAgents(mode){
+  const byName = (a, b)=> a.name.localeCompare(b.name);
+  if(mode === 'role'){
+    const rank = (a)=>{ const i = CONFIG.roles.findIndex(r=> r.name === a.role); return i < 0 ? 999 : i; };
+    return (a, b)=> rank(a) - rank(b) || byName(a, b);
+  }
+  if(mode === 'supervisor'){
+    return (a, b)=> (a.supervisor ? 0 : 1) - (b.supervisor ? 0 : 1) || (a.supervisor || '').localeCompare(b.supervisor || '') || byName(a, b);
+  }
+  return byName;
+}
+
+document.getElementById('gridSort').value = gridSortMode();
+document.getElementById('gridSort').addEventListener('change', (e)=>{
+  try{ localStorage.setItem('qa_grid_sort', e.target.value); }catch(err){}
+  if(LAST_GRID) rerenderGrid();
 });
 
 /* ---------- Agent role and supervisor ---------- */
@@ -3673,7 +4125,7 @@ function validateEvaluationForm(){
 }
 
 // Everything needed to show the evaluation again or reopen it for editing.
-function buildEvaluationDetails(){
+function buildDetailItems(){
   const items = [];
   SECTIONS.forEach(sec=>{
     CONFIG.order[sec.key].forEach(id=>{
@@ -3686,6 +4138,11 @@ function buildEvaluationDetails(){
       });
     });
   });
+  return items;
+}
+
+function buildEvaluationDetails(){
+  const items = buildDetailItems();
   const scenarioId = CONFIG.activeScenarioId || null;
   const scenario = scenarioId && CONFIG.scenarios.items[scenarioId];
   return {
@@ -4017,10 +4474,10 @@ async function fetchDeductionsFor(evalIds){
   return data || [];
 }
 
-function renderFailList(container, deductions){
+function renderFailList(container, deductions, limit){
   const counts = {};
   deductions.forEach(d=>{ counts[d.rubric_label] = (counts[d.rubric_label] || 0) + 1; });
-  const sorted = Object.entries(counts).sort((a, b)=> b[1] - a[1]).slice(0, 10);
+  const sorted = Object.entries(counts).sort((a, b)=> b[1] - a[1]).slice(0, limit || 10);
   if(!sorted.length){
     container.innerHTML = '<div class="fail-empty">No deductions recorded in this scope.</div>';
     return;
@@ -4468,11 +4925,13 @@ async function openViewEvalModal(evalId, fromProfile){
             const it = d.items.find(x=> x.id === id);
             return it ? '<span class="x-chip acc"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="m8 12.5 2.8 2.7L16 9.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + escapeHtml(it.label) + '</span></span>' : '';
           }).join('') + '</div>' : '') +
+      (d && d.disputes && d.disputes.length ? '<div class="ve-subtitle">Disputes</div>' + disputeHistoryHtml(d) : '') +
       '<div class="ve-subtitle">Rubrics</div>' +
       sectionsHtml +
       (d && d.summary ? '<div class="ve-subtitle">Summary</div><pre class="ve-summary">' + escapeHtml(d.summary) + '</pre>' : '');
     const canEdit = canEditEval(row);
     document.getElementById('btnViewEvalEdit').style.display = canEdit ? '' : 'none';
+    document.getElementById('btnViewEvalDispute').style.display = canEdit && d && d.answers ? '' : 'none';
     document.getElementById('btnViewEvalDelete').style.display = canEdit && fromProfile ? '' : 'none';
     document.getElementById('viewEvalActions').style.display = canEdit ? '' : 'none';
   }catch(err){
@@ -4579,6 +5038,7 @@ async function saveEditedEvaluation(btn, check){
 document.getElementById('btnCloseViewEval').addEventListener('click', closeViewEvalModal);
 document.getElementById('viewEvalOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'viewEvalOverlay') closeViewEvalModal(); });
 document.getElementById('btnViewEvalEdit').addEventListener('click', ()=>{ if(VIEW_EVAL) startEditingEvaluation(VIEW_EVAL.row); });
+document.getElementById('btnViewEvalDispute').addEventListener('click', ()=>{ if(VIEW_EVAL) openDispute(VIEW_EVAL.row.id); });
 document.getElementById('btnViewEvalDelete').addEventListener('click', async ()=>{
   if(!VIEW_EVAL) return;
   if(await deleteEvaluation(VIEW_EVAL.row.id)) closeViewEvalModal();
@@ -4703,7 +5163,7 @@ function renderMonthlyGrid(evals, scope, assignments){
     (byAgent[e.agent_id] = byAgent[e.agent_id] || []).push(e);
     if(!agents.some(a=> a.id === e.agent_id)) agents.push({ id: e.agent_id, name: e.agents ? e.agents.name : 'Unknown' });
   });
-  agents.sort((a, b)=> a.name.localeCompare(b.name));
+  agents.sort(compareAgents(gridSortMode()));
   Object.values(byAgent).forEach(list=> list.sort((a, b)=>
     (a.call_date || '').localeCompare(b.call_date || '') || (a.created_at || '').localeCompare(b.created_at || '')));
 
@@ -4874,11 +5334,8 @@ async function refreshAgentsView(){
         document.getElementById('agentMonthlyCount').textContent = 'Pick a month or range above';
       }
 
-      const scopedIds = scopedAgentEvals.map(e=> e.id);
-      const deductions = await fetchDeductionsFor(scopedIds);
-      renderFailList(document.getElementById('agentFailList'), deductions);
-      await renderAgentFocusPoints(scopedIds);
-      renderEvalList(scopedAgentEvals);
+      const details = await loadAgentPerformance(generalEvals, { startDate, endDate });
+      renderEvalList(scopedAgentEvals, details);
     }else{
       document.getElementById('agentCard').style.display = 'none';
     }
@@ -5020,21 +5477,8 @@ document.getElementById('teamHeadRow').addEventListener('click', ()=>{
 let EDITING_EVAL_ID = null;
 let EDITING_EVAL_ROW = null;
 
-// Focus points across this agent's evaluations in the current scope, most frequent first.
-async function renderAgentFocusPoints(evalIds){
-  const box = document.getElementById('agentFocusList');
-  if(!EVAL_LINK_AVAILABLE || !evalIds.length){ box.innerHTML = '<div class="fail-empty">No focus points in this scope.</div>'; return; }
-  const { data, error } = await supabaseClient.from('evaluations').select('id, details').in('id', evalIds);
-  if(error){ console.error('Could not load focus points', error); box.innerHTML = '<div class="fail-empty">Could not load focus points.</div>'; return; }
-  const counts = {};
-  (data || []).forEach(r=> ((r.details && r.details.focusPoints) || []).forEach(f=>{ counts[f] = (counts[f] || 0) + 1; }));
-  const sorted = Object.entries(counts).sort((a, b)=> b[1] - a[1]);
-  box.innerHTML = sorted.length
-    ? sorted.map(([f, n])=> '<div class="fail-item"><span class="name"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg>' + escapeHtml(f) + '</span><span class="count">' + n + '\u00d7</span></div>').join('')
-    : '<div class="fail-empty">No focus points in this scope.</div>';
-}
-
-function renderEvalList(evals){
+function renderEvalList(evals, details){
+  details = details || {};
   const container = document.getElementById('agentEvalList');
   if(!evals.length){
     container.innerHTML = '<div class="fail-empty">No evaluations in this scope.</div>';
@@ -5045,6 +5489,7 @@ function renderEvalList(evals){
     const canEdit = canEditEval(e);
     const actions = '<div class="eval-actions">' +
       '<button class="view-eval-btn" data-id="' + e.id + '" title="View the full evaluation"><svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button>' +
+      (canEdit ? '<button class="dispute-eval-btn" data-id="' + e.id + '" title="Disputed: review the rubrics and add a note">Disputed</button>' : '') +
       (canEdit
         ? '<button class="edit-eval-btn" data-id="' + e.id + '" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
           '<button class="delete-eval-btn danger" data-id="' + e.id + '" title="Delete"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2m-9 0 1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>'
@@ -5053,6 +5498,7 @@ function renderEvalList(evals){
     return '<div class="eval-item clickable" data-id="' + e.id + '">' +
       '<span class="date">' + (e.call_date || 'N/A') + '</span>' +
       '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
+      (details[e.id] && details[e.id].disputes && details[e.id].disputes.length ? '<span class="disputed-tag" title="This evaluation was disputed">Disputed</span>' : '') +
       '<span class="by" title="Evaluated by">' + escapeHtml(evaluatorLabel(e)) + '</span>' +
       '<span class="score ' + evalScoreClass(Math.round(e.score)) + '">' + Math.round(e.score) + '%</span>' +
       actions +
@@ -5063,6 +5509,7 @@ function renderEvalList(evals){
     item.addEventListener('click', async (ev)=>{
       const id = item.dataset.id;
       if(ev.target.closest('.delete-eval-btn')){ await deleteEvaluation(id); return; }
+      if(ev.target.closest('.dispute-eval-btn')){ await openDispute(id); return; }
       if(ev.target.closest('.edit-eval-btn')){
         // Load the full row (with its saved answers) before editing.
         const { data, error } = await supabaseClient.from('evaluations').select('*, agents(name)').eq('id', id).single();
