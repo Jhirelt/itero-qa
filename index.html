@@ -1158,6 +1158,16 @@
   .team-filter-field .team-switch button{ padding:6px 16px; }
   .team-switch-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
   .name-chip .team-tag{ font-size:9.5px; font-weight:800; color:var(--accent); border:1px solid var(--accent-dim); border-radius:999px; padding:0 6px; margin-right:6px; }
+  /* ---------- Clear button on the agent name ---------- */
+  .agent-clear{
+    position:absolute; right:2px; top:50%; transform:translateY(-50%); display:none; align-items:center; justify-content:center;
+    width:26px; height:26px; border-radius:50%; border:none; background:var(--bg-elev-2); color:var(--text-faint); cursor:pointer;
+  }
+  .agent-clear svg{ width:13px; height:13px; }
+  .agent-clear:hover{ color:var(--no); background:var(--no-soft); }
+  .agent-input-wrap.has-value .agent-clear{ display:flex; }
+  .agent-input-wrap.has-value .agent-input-big{ padding-right:34px; }
+  .req{ color:var(--no); font-weight:800; }
 </style>
 </head>
 <body>
@@ -1235,9 +1245,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           </div>
         </div>
         <div class="fields fields-4">
-          <div class="field field-wide"><label for="fReason">Call reason</label><input id="fReason" placeholder="Call reason"></div>
+          <div class="field field-wide"><label for="fReason">Call reason <span class="req" title="Required">*</span></label><input id="fReason" placeholder="Call reason"></div>
           <div class="field field-med"><label for="fCaller">Caller's name</label><input id="fCaller" placeholder="Caller's name"></div>
-          <div class="field field-narrow"><label for="fTicket">Ticket ID</label><input id="fTicket" placeholder="Ticket ID"></div>
+          <div class="field field-narrow"><label for="fTicket">Ticket ID <span class="req" title="Required">*</span></label><input id="fTicket" placeholder="Ticket ID"></div>
           <div class="field field-narrow"><label for="fOrder">Order ID</label><input id="fOrder" placeholder="Order ID"></div>
         </div>
         <div class="search-scenario-row">
@@ -1265,6 +1275,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           <div class="team-switch-row"><span>Team</span><div class="team-switch" role="group" aria-label="Team"><button type="button" data-team="NA">NA</button><button type="button" data-team="CALA">CALA</button></div></div>
           <div class="agent-input-wrap">
             <input id="fAgent" autocomplete="off" placeholder="Agent's name" class="agent-input-big">
+            <button type="button" class="agent-clear" id="btnClearAgent" title="Clear the name" aria-label="Clear the name">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+            </button>
             <div class="autocomplete-list" id="agentList"></div>
           </div>
           <div class="field-error" id="errAgent"></div>
@@ -1503,7 +1516,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <button class="modal-close" id="btnCloseEditEval">&times;</button>
       <h3>Edit evaluation</h3>
       <div class="edit-eval-field"><label>Call date</label><input type="date" id="editEvalDate" required></div>
-      <div class="edit-eval-field"><label>Ticket ID</label><input type="text" id="editEvalTicket"></div>
+      <div class="edit-eval-field"><label>Ticket ID <span class="req" title="Required">*</span></label><input type="text" id="editEvalTicket" required></div>
       <div class="edit-eval-field"><label>Call reason</label><input type="text" id="editEvalReason"></div>
       <div class="edit-eval-score-preview">Current score: <b id="editEvalScorePreview">—</b></div>
       <div class="agent-fail-title">Failed rubrics — remove one if it was marked in error</div>
@@ -2286,21 +2299,62 @@ const MAX_ACCOMPLISHMENTS = 3;
 let ACCOMPLISHMENTS = [];
 let FOCUS_POINTS = [];
 const FOCUS_POINT_OPTIONS = [
-  'additional assistance', 'Answering time', 'dead air', 'disconnected the call', 'greeting', 'hold management',
-  'left the line opened', 'mute usage', 'Parting phrase', 'Phone number', 'Recording disclaimer', 'Transfer protocol',
-  'Exception protocol', 'HIPPA violation', 'incorrect validation protocol', 'Lack of validation', 'active listening',
-  'Proving questions', 'Understanding the concern', 'Apologies', 'Communication clarity', 'Courteous Language',
-  'Email written errors', 'Empathy', 'Filler words\\sounds', 'Improper comments', 'Interruptions', 'Jargon', 'Pace',
-  'Professional language', 'tone of voice', 'Transition Statement', 'Unnecessary Validation Complexity',
-  'Lack of professionalism', 'Use of customer name', 'English proficiency', 'Additional Education\\Guidance',
-  'Addressing all issues', 'Completing All Steps', 'Information Provided', 'Voicemail', 'Follow-up Management',
-  'Workarounds', 'Asset', 'Attachment Naming', 'Contact name', 'Documentation clarity',
-  'Documentation under account\\ticket', 'Inaccurate Notes', 'Lack of details', 'Lack of documentation',
-  'Lack of evidence', 'Missing ticket comments', 'Not Linking the tickets', 'Order id', 'Product details', 'Subject',
-  'Template', 'Ticket classification', 'Ticket Closure', 'Ticket owner', 'Ticket status', 'Timely documentation',
-  'TICKET FILDS', 'KB Attachments', 'SERVICE COMPLAINT TICKET', 'RESOLUTION',
-  'SYMPTOM CODES MATCH THE CURRENT SCENARIO', 'ATTACHMENTS', 'Proper escalation',
+  'Active listening', 'Additional assistance', 'Additional education/guidance', 'Addressing all issues',
+  'Answering time', 'Apologies', 'Asset', 'Attachment naming', 'Attachments', 'Communication clarity',
+  'Completing all steps', 'Contact name', 'Courteous language', 'Dead air', 'Disconnected the call',
+  'Documentation clarity', 'Documentation under account/ticket', 'Email writing errors', 'Empathy',
+  'English proficiency', 'Exception protocol', 'Filler words/sounds', 'Follow-up management', 'Greeting',
+  'HIPAA violation', 'Hold management', 'Improper comments', 'Inaccurate notes',
+  'Incorrect validation protocol', 'Information provided', 'Interruptions', 'Jargon', 'KB attachments',
+  'Lack of details', 'Lack of documentation', 'Lack of evidence', 'Lack of professionalism',
+  'Lack of validation', 'Left the line open', 'Missing ticket comments', 'Mute usage',
+  'Not linking the tickets', 'Order ID', 'Pace', 'Parting phrase', 'Phone number', 'Probing questions',
+  'Product details', 'Professional language', 'Proper escalation', 'Recording disclaimer', 'Resolution',
+  'Service complaint ticket', 'Subject', 'Symptom codes match the current scenario', 'Template',
+  'Ticket classification', 'Ticket closure', 'Ticket fields', 'Ticket owner', 'Ticket status',
+  'Timely documentation', 'Tone of voice', 'Transfer protocol', 'Transition statements',
+  'Understanding the concern', 'Unnecessary validation complexity', 'Use of the customer\'s name', 'Voicemail',
+  'Workarounds',
 ];
+// Names saved before the list was cleaned up, shown and counted with today's spelling.
+const FOCUS_POINT_RENAMES = {
+  'additional assistance': 'Additional assistance',
+  'dead air': 'Dead air',
+  'disconnected the call': 'Disconnected the call',
+  'greeting': 'Greeting',
+  'hold management': 'Hold management',
+  'left the line opened': 'Left the line open',
+  'mute usage': 'Mute usage',
+  'HIPPA violation': 'HIPAA violation',
+  'incorrect validation protocol': 'Incorrect validation protocol',
+  'active listening': 'Active listening',
+  'Proving questions': 'Probing questions',
+  'Courteous Language': 'Courteous language',
+  'Email written errors': 'Email writing errors',
+  'Filler words\\sounds': 'Filler words/sounds',
+  'tone of voice': 'Tone of voice',
+  'Transition Statement': 'Transition statements',
+  'Unnecessary Validation Complexity': 'Unnecessary validation complexity',
+  'Use of customer name': 'Use of the customer\'s name',
+  'Additional Education\\Guidance': 'Additional education/guidance',
+  'Completing All Steps': 'Completing all steps',
+  'Information Provided': 'Information provided',
+  'Follow-up Management': 'Follow-up management',
+  'Attachment Naming': 'Attachment naming',
+  'Documentation under account\\ticket': 'Documentation under account/ticket',
+  'Inaccurate Notes': 'Inaccurate notes',
+  'Not Linking the tickets': 'Not linking the tickets',
+  'Order id': 'Order ID',
+  'Ticket Closure': 'Ticket closure',
+  'TICKET FILDS': 'Ticket fields',
+  'KB Attachments': 'KB attachments',
+  'SERVICE COMPLAINT TICKET': 'Service complaint ticket',
+  'RESOLUTION': 'Resolution',
+  'SYMPTOM CODES MATCH THE CURRENT SCENARIO': 'Symptom codes match the current scenario',
+  'ATTACHMENTS': 'Attachments',
+};
+function focusName(f){ return FOCUS_POINT_RENAMES[f] || f; }
+function focusList(list){ return Array.isArray(list) ? Array.from(new Set(list.map(focusName))) : []; }
 
 function textOptions(cfg, kind){
   const base = cfg.zeroType ? 'reason' : (kind === 'yes' ? 'yes' : 'no');
@@ -2826,6 +2880,8 @@ function renderSections(){
 }
 
 function refreshEval(){
+  const agentInput = document.getElementById('fAgent');
+  agentInput.parentElement.classList.toggle('has-value', !!agentInput.value && !agentInput.readOnly);
  try{
   ACCOMPLISHMENTS = ACCOMPLISHMENTS.filter(id=> ANSWERS[id] === 'yes' && CONFIG.items[id]).slice(0, MAX_ACCOMPLISHMENTS);
   renderExtras();
@@ -3031,6 +3087,15 @@ function setupAutocomplete(){
     return names.filter(n=>n.toLowerCase().startsWith(q) || n.toLowerCase().split(' ').some(p=>p.startsWith(q)));
   }
   input.addEventListener('input', ()=>{ hiIndex=-1; render(matchesFor(input.value)); refreshEval(); scheduleBannerSoon(); });
+  // The × empties the whole name at once.
+  document.getElementById('btnClearAgent').addEventListener('mousedown', (e)=> e.preventDefault());
+  document.getElementById('btnClearAgent').addEventListener('click', ()=>{
+    if(input.readOnly) return;
+    input.value = '';
+    setFieldError('fAgent', 'errAgent', '');
+    input.focus();
+    input.dispatchEvent(new Event('input'));
+  });
   input.addEventListener('focus', ()=>{ if(!input.readOnly) render(matchesFor(input.value)); });
   input.addEventListener('keydown', (e)=>{
     const items = Array.from(list.querySelectorAll('.autocomplete-item'));
@@ -3176,7 +3241,7 @@ function renderPerf(){
   const ids = new Set(evals.map(e=> e.id));
   renderFailList(document.getElementById('agentFailList'), PERF.deductions.filter(d=> ids.has(d.evaluation_id)), 3);
   const counts = {};
-  evals.forEach(e=> (((PERF.details[e.id] || {}).focusPoints) || []).forEach(f=>{ counts[f] = (counts[f] || 0) + 1; }));
+  evals.forEach(e=> focusList((PERF.details[e.id] || {}).focusPoints).forEach(f=>{ counts[f] = (counts[f] || 0) + 1; }));
   const sortedFocus = Object.entries(counts).sort((a, b)=> b[1] - a[1]);
   document.getElementById('agentFocusList').innerHTML = sortedFocus.length
     ? sortedFocus.map(([f, n])=> '<div class="fail-item"><span class="name">' + FOCUS_ICON + escapeHtml(f) + '</span><span class="count">' + n + '×</span></div>').join('')
@@ -5575,7 +5640,7 @@ async function openViewEvalModal(evalId, fromProfile){
       (row.zero_triggered ? '<div class="ve-zero">Automatic zero</div>' : '') + '</div>' +
       '<div class="ve-meta">' + meta.map(([k, v])=> '<div><label>' + k + '</label>' + escapeHtml(String(v)) + '</div>').join('') + '</div>' +
       (d && Array.isArray(d.focusPoints) && d.focusPoints.length
-        ? '<div class="ve-subtitle">Focus points</div><div class="chip-list">' + d.focusPoints.map(f=> '<span class="x-chip focus"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg><span>' + escapeHtml(f) + '</span></span>').join('') + '</div>' : '') +
+        ? '<div class="ve-subtitle">Focus points</div><div class="chip-list">' + focusList(d.focusPoints).map(f=> '<span class="x-chip focus"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg><span>' + escapeHtml(f) + '</span></span>').join('') + '</div>' : '') +
       (d && Array.isArray(d.accomplishments) && d.accomplishments.length && Array.isArray(d.items)
         ? '<div class="ve-subtitle">Accomplishments</div><div class="chip-list">' + d.accomplishments.map(id=>{
             const it = d.items.find(x=> x.id === id);
@@ -5625,7 +5690,7 @@ function startEditingEvaluation(row){
   ANSWERS = Object.assign({}, d.answers);
   CHOICES = d.choices && typeof d.choices === 'object' ? JSON.parse(JSON.stringify(d.choices)) : {};
   ACCOMPLISHMENTS = Array.isArray(d.accomplishments) ? d.accomplishments.slice() : [];
-  FOCUS_POINTS = Array.isArray(d.focusPoints) ? d.focusPoints.slice() : [];
+  FOCUS_POINTS = focusList(d.focusPoints);
   SUMMARY_MANUAL = !!(d.summaryManual && typeof d.summary === 'string');
   AUTO_SUMMARY_AT_EDIT = '';
   if(SUMMARY_MANUAL) document.getElementById('output').value = d.summary;
@@ -6344,6 +6409,10 @@ document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
     return;
   }
   dateInput.classList.remove('invalid');
+  const ticketInput = document.getElementById('editEvalTicket');
+  const noTicket = !ticketInput.value.trim();
+  ticketInput.classList.toggle('invalid', noTicket);
+  if(noTicket){ showToast('The ticket ID is required.'); return; }
   const btn = document.getElementById('btnSaveEditEval');
   const original = btn.textContent;
   btn.disabled = true;
@@ -6351,7 +6420,7 @@ document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
   try{
     const { error } = await supabaseClient.from('evaluations').update({
       call_date: dateInput.value,
-      ticket_id: document.getElementById('editEvalTicket').value.trim() || null,
+      ticket_id: ticketInput.value.trim(),
       call_reason: document.getElementById('editEvalReason').value.trim() || null,
     }).eq('id', EDITING_EVAL_ID);
     if(error) throw error;
@@ -6464,7 +6533,7 @@ function applyDraftSnapshot(snap){
   ANSWERS = Object.assign({}, snap.answers || {});
   CHOICES = (snap.choices && typeof snap.choices === 'object') ? JSON.parse(JSON.stringify(snap.choices)) : {};
   ACCOMPLISHMENTS = Array.isArray(snap.accomplishments) ? snap.accomplishments.slice() : [];
-  FOCUS_POINTS = Array.isArray(snap.focusPoints) ? snap.focusPoints.slice() : [];
+  FOCUS_POINTS = focusList(snap.focusPoints);
   SECTIONS.forEach(sec=> sortByApplicability(sec.key));
   renderSections();
   refreshEval();
@@ -7124,7 +7193,7 @@ function buildAgentPdf(agent, evals, allDeductions, details){
   // Focus points
   heading('Focus points');
   const focus = {};
-  evals.forEach(e=> (((details[e.id] || {}).focusPoints) || []).forEach(f=>{ focus[f] = (focus[f] || 0) + 1; }));
+  evals.forEach(e=> focusList((details[e.id] || {}).focusPoints).forEach(f=>{ focus[f] = (focus[f] || 0) + 1; }));
   const focusRows = Object.entries(focus).sort((a, b)=> b[1] - a[1]).map(([f, n])=> [f, n + '×']);
   if(focusRows.length) table(['Focus point', 'Times'], focusRows, { columnStyles: { 1: { halign: 'center', cellWidth: 80 } } });
   else para('No focus points in this period.', { color: [90, 90, 90] });
@@ -7172,7 +7241,7 @@ function buildAgentPdf(agent, evals, allDeductions, details){
     }
     if(Array.isArray(d.focusPoints) && d.focusPoints.length){
       heading('Focus points');
-      d.focusPoints.forEach(f=> para('- ' + f, { indent: 6 }));
+      focusList(d.focusPoints).forEach(f=> para('- ' + f, { indent: 6 }));
     }
     if(Array.isArray(d.accomplishments) && d.accomplishments.length){
       const acc = d.accomplishments.map(id=> (items.find(x=> x.id === id) || {}).label).filter(Boolean);
