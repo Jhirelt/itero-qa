@@ -53,10 +53,10 @@
   .brand-mark-wrap, .save-toast{
     transition: background-color .32s ease, color .32s ease, border-color .32s ease, opacity .18s ease;
   }
-  #view-eval, #view-config, #view-agents{
+  #view-eval, #view-config, #view-agents, #view-tasks{
     transition: opacity .18s ease, transform .18s ease;
   }
-  #view-eval.view-fade, #view-config.view-fade, #view-agents.view-fade{
+  #view-eval.view-fade, #view-config.view-fade, #view-agents.view-fade, #view-tasks.view-fade{
     opacity:0; transform:translateY(8px);
   }
   ::selection{ background: var(--accent-soft); }
@@ -361,7 +361,7 @@
   .zero-flag svg{ width:15px; height:15px; flex-shrink:0; }
 
   /* ---------- Configuration tab ---------- */
-  #view-config{ display:none; }
+  #view-config, #view-tasks{ display:none; }
   .cfg-toolbar{ display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
 
   /* ---------- Agents view ---------- */
@@ -673,7 +673,67 @@
   .extras-head h4{ margin:0; }
   .extras-count{ font-size:11px; font-weight:800; color:var(--text-dim); }
   .extras-count.full{ color:var(--yes); }
+  /* ---------- Tasks ---------- */
+  .tasks-card{ margin-bottom:18px; }
+  .tasks-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:12px; }
+  .tasks-head h3{ margin:0; }
+  .tasks-head .btn{ flex:none; padding:8px 14px; }
+  .tasks-head .btn svg{ width:15px; height:15px; }
+  .tasks-count{ font-size:11px; font-weight:800; color:var(--text-dim); background:var(--bg-elev-2); border:1px solid var(--border); border-radius:999px; padding:1px 8px; margin-left:6px; vertical-align:middle; }
+  .tasks-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:820px; }
+  .tasks-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:800; padding:8px; background:var(--bg-elev-2); border-bottom:1px solid var(--border); }
+  .tasks-table td{ padding:5px 6px; border-bottom:1px solid var(--border); vertical-align:middle; }
+  .tasks-table input, .tasks-table select, .task-date{
+    width:100%; box-sizing:border-box; padding:7px 8px; border-radius:var(--radius-sm); border:1px solid transparent; background:transparent;
+    color:var(--text); font:inherit; font-size:12.5px; outline:none; color-scheme: light dark;
+  }
+  .tasks-table input:hover, .tasks-table select:hover, .task-date:hover{ border-color:var(--border); }
+  .tasks-table input:focus, .tasks-table select:focus{ border-color:var(--accent); background:var(--bg-elev-2); }
+  .tasks-table select option{ background:var(--bg-elev); color:var(--text); }
+  .task-prio{ font-weight:800; text-align:center; }
+  .task-prio.p-high{ color:var(--no); background:var(--no-soft) !important; }
+  .task-prio.p-medium{ color:var(--warn); background:var(--warn-soft) !important; }
+  .task-prio.p-low{ color:var(--yes); background:var(--yes-soft) !important; }
+  .task-date-wrap{ position:relative; }
+  .task-date{ cursor:pointer; text-align:left; font-weight:700; }
+  .task-date-input{ position:absolute; left:0; bottom:0; width:1px !important; height:1px; opacity:0; pointer-events:none; border:none !important; padding:0 !important; }
+  .task-status.s-completed{ color:var(--yes); font-weight:800; }
+  .task-status.s-pending{ color:var(--accent); font-weight:800; }
+  .task-del{ background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:16px; padding:4px 8px; border-radius:6px; }
+  .task-del:hover{ color:var(--no); background:var(--no-soft); }
+  .tasks-table tr.task-new td{ animation: taskIn .5s ease; }
+  @keyframes taskIn{ from{ background:var(--accent-soft); } to{ background:transparent; } }
+  .tasks-table.done td{ padding:9px 8px; color:var(--text-dim); }
+  .tasks-table.done td.t-title{ color:var(--text); font-weight:700; }
+  .tasks-tally{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
+  .tasks-tally span{ font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev-2); }
+  .tasks-tally b{ color:var(--accent); margin-left:6px; }
+  .tasks-settings{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; }
+  .tasks-table tr.task-leaving td{ opacity:0; transition:opacity .25s ease; }
+  .task-prio-tag{ font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; }
+  .task-prio-tag.p-high{ color:var(--no); background:var(--no-soft); }
+  .task-prio-tag.p-medium{ color:var(--warn); background:var(--warn-soft); }
+  .task-prio-tag.p-low{ color:var(--yes); background:var(--yes-soft); }
+  .tasks-table .task-reopen{ padding:5px 10px; font-size:11.5px; flex:none; }
+  .tasks-table.done small{ color:var(--text-faint); }
+  .tasks-empty{ padding:16px 8px; color:var(--text-faint); font-size:12.5px; }
+  .user-badge .bell-btn{ position:relative; }
+  .user-badge .bell-btn:hover{ color:var(--accent); }
+  .user-badge .bell-btn svg{ width:16px; height:16px; }
+  .bell-count{ position:absolute; top:-3px; right:-4px; min-width:16px; height:16px; padding:0 4px; box-sizing:border-box; border-radius:999px; background:var(--no); color:#fff; font-size:10px; font-weight:800; line-height:16px; text-align:center; display:none; }
+  .bell-count.show{ display:block; }
+  .bell-menu{ min-width:280px; }
+  .user-badge #bellMenu button.vm-item{ flex-direction:column; align-items:flex-start; gap:2px; }
+  .user-badge #bellMenu .vm-item{ text-align:left; }
+  .user-badge #bellMenu .vm-item small{ text-transform:none; letter-spacing:0; font-size:11.5px; }
+  .user-badge .bell-menu .vm-item span{ font-weight:700; }
+  .bell-menu .bell-empty{ font-size:12px; color:var(--text-faint); padding:6px 4px; }
+  .user-badge .bell-menu .bell-all{ width:100%; height:auto; border-radius:var(--radius-sm); font-size:11.5px; font-weight:700; color:var(--accent); padding:6px; margin-top:4px; }
+  .team-focus-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
+  .team-focus-col .fail-list{ max-height:260px; overflow:auto; }
+  .team-focus-col.whole .agent-fail-title{ color:var(--accent); }
   .extras-empty{ font-size:11.5px; color:var(--text-faint); margin-bottom:4px; }
+  #accList .extras-empty, #focusList .extras-empty, .agents-scope-note:empty, #monthlySub{ display:none; }
   .chip-list{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:4px; }
   .x-chip{
     display:inline-flex; align-items:center; gap:6px; max-width:100%; padding:4px 6px 4px 10px; border-radius:999px;
@@ -1105,7 +1165,7 @@
   .viewas-banner .btn{ padding:4px 12px; font-size:12px; }
 
   /* ---------- Agent portal (an agent sees only their own data) ---------- */
-  body.is-agent #tabEvalBtn, body.is-agent #tabConfigBtn,
+  body.is-agent #tabEvalBtn, body.is-agent #tabConfigBtn, body.is-agent #tabTasksBtn, body.is-agent #btnBell,
   body.is-agent .agents-filter-row > .agents-filter-field:nth-child(-n+2), body.is-agent .team-switch-row,
   body.is-agent .monthly-card, body.is-agent #teamHeadRow, body.is-agent #teamDataWrap,
   body.is-agent .agent-meta-row, body.is-agent #agentsScopeNote{ display:none !important; }
@@ -1224,12 +1284,18 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div class="tabs" id="mainTabs">
     <button class="tab-btn active" data-view="eval" id="tabEvalBtn">Evaluation</button>
     <button class="tab-btn" data-view="agents">Agents</button>
+    <button class="tab-btn" data-view="tasks" id="tabTasksBtn">Tasks</button>
     <button class="tab-btn" data-view="config" id="tabConfigBtn">Configuration</button>
   </div>
 
   <div class="user-badge" id="userBadge" style="display:none;">
     <span class="name" id="userBadgeName"></span>
     <span class="role" id="userBadgeRole"></span>
+    <button type="button" id="btnBell" class="bell-btn" title="Notifications">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6.5 2 6.5H4S6 14 6 9Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 19a2 2 0 0 0 4 0" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <span class="bell-count" id="bellCount"></span>
+    </button>
+    <div class="viewas-menu bell-menu" id="bellMenu"></div>
     <button type="button" id="btnViewAs" class="viewas-btn" title="See the app as another user sees it" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
     </button>
@@ -1330,7 +1396,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </div>
         <div class="panel quick-notes" id="quickNotesPanel" style="display:none;">
           <div class="extras-head"><h4>Quick notes</h4><button type="button" class="qn-clear" id="btnClearQuickNotes" title="Clear your notes">Clear</button></div>
-          <textarea id="quickNotes" placeholder="Jot anything down while you listen. Only you see these notes; they stay on this computer."></textarea>
+          <textarea id="quickNotes"></textarea>
         </div>
         <div class="panel">
           <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
@@ -1431,7 +1497,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <button class="btn btn-ghost" id="btnAgentsClearFilter" style="flex:none;">Clear filter</button>
     </div>
-    <div class="agents-scope-note" id="agentsScopeNote">Showing all-time data across every agent.</div>
+    <div class="agents-scope-note" id="agentsScopeNote"></div>
 
     <div class="team-card monthly-card">
       <div class="monthly-head">
@@ -1561,6 +1627,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
 
       <div class="team-card">
+        <h3 id="teamFocusTitle">Focus points</h3>
+        <div class="team-focus-grid" id="teamFocus"></div>
+      </div>
+
+      <div class="team-card">
         <h3>Monthly ranking</h3>
         <div id="rankingTable"></div>
       </div>
@@ -1637,10 +1708,66 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
   </div>
 
+  <!-- =============== TASKS VIEW =============== -->
+  <div id="view-tasks">
+    <div class="team-card tasks-card">
+      <div class="tasks-head">
+        <h3>Tasks</h3>
+        <button type="button" class="btn btn-primary" id="btnAddTask">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add task
+        </button>
+      </div>
+      <div class="monthly-scroll"><table class="tasks-table" id="tasksTable"></table></div>
+      <datalist id="taskActionList"></datalist>
+    </div>
+
+    <div class="team-card tasks-card">
+      <div class="panel-head-row" id="doneTasksHead" style="cursor:pointer;">
+        <h3 style="margin:0;">Completed tasks <span class="tasks-count" id="doneTasksCount"></span></h3>
+        <button class="collapse-toggle collapsed" id="btnToggleDoneTasks" title="Show or hide completed tasks">
+          <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
+      </div>
+      <div id="doneTasksWrap" style="display:none;">
+        <div class="tasks-tally" id="doneTasksTally"></div>
+        <div class="monthly-scroll"><table class="tasks-table done" id="doneTasksTable"></table></div>
+      </div>
+    </div>
+
+    <div class="team-card tasks-card">
+      <h3>Task settings</h3>
+      <div class="tasks-settings">
+        <div>
+          <div class="agent-fail-title">Quick actions</div>
+          <div class="cfg-names" id="taskActionsList"></div>
+          <div class="add-name">
+            <input id="newTaskActionInput" placeholder="New action">
+            <button id="btnAddTaskAction">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+              Add
+            </button>
+          </div>
+        </div>
+        <div>
+          <div class="agent-fail-title">Responsible</div>
+          <div class="cfg-names" id="taskPeopleList"></div>
+          <div class="add-name">
+            <input id="newTaskPersonInput" placeholder="New person">
+            <button id="btnAddTaskPerson">
+              <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+              Add
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- =============== CONFIGURATION VIEW =============== -->
   <div id="view-config">
     <div class="cfg-toolbar">
-      <p>Edit the rubrics and their texts, the focus point list and the agent list. These changes save with <b>Save changes</b>; your own options save as soon as you tick them.</p>
+      <p></p>
       <button class="btn btn-primary" id="btnSaveCfg" style="flex:none;">
         <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         Save changes
@@ -1649,7 +1776,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="cfg-block" id="cfgFeaturesBlock">
       <h4>Options</h4>
-      <p class="cfg-hint">These two are just for you: each person turns them on or off for their own Evaluation page.</p>
       <label class="cfg-toggle"><input type="checkbox" id="cfgQuickNotes"><span><b>Quick notes panel</b> on my Evaluation page, to jot notes while I listen.</span></label>
       <label class="cfg-toggle"><input type="checkbox" id="cfgFocusPanel"><span><b>Focus points</b> on my Evaluation page.</span></label>
       <label class="cfg-toggle admin-only"><input type="checkbox" id="cfgAgentPortal"><span><b>Agents can see their own scores.</b> Each agent signs in and sees only their own evaluations, errors, focus points and feedback.</span></label>
@@ -1695,7 +1821,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="cfg-block">
       <h4>Focus points</h4>
-      <p class="cfg-hint">The list to pick from on the Evaluation page, in A–Z order. Removing one here doesn't change evaluations already saved. Click <b>Save changes</b> to keep your edits.</p>
       <div class="cfg-names" id="cfgFocusPoints"></div>
       <div class="add-name">
         <input id="newFocusInput" placeholder="New focus point">
@@ -2461,13 +2586,13 @@ function renderExtras(){
   accList.innerHTML = n
     ? ACCOMPLISHMENTS.map(id=> '<span class="x-chip acc" title="' + escapeHtml(chosenText(id, CONFIG.items[id], 'yes')) + '"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="m8 12.5 2.8 2.7L16 9.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' +
         escapeHtml(CONFIG.items[id].label) + '</span><button type="button" data-acc="' + escapeHtml(id) + '" title="Remove">\u00d7</button></span>').join('')
-    : '<div class="extras-empty">None yet. Use the green 1/N button on a met rubric to add one.</div>';
+    : '';
   const focusList = document.getElementById('focusList');
   document.getElementById('focusCount').textContent = FOCUS_POINTS.length ? String(FOCUS_POINTS.length) : '';
   focusList.innerHTML = FOCUS_POINTS.length
     ? FOCUS_POINTS.map((f, i)=> '<span class="x-chip focus"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="1.6" fill="currentColor"/></svg><span>' + escapeHtml(f) +
         '</span><button type="button" data-focus="' + i + '" title="Remove">\u00d7</button></span>').join('')
-    : '<div class="extras-empty">None yet.</div>';
+    : '';
   const sel = document.getElementById('focusSelect');
   sel.innerHTML = '<option value="">+ Add a focus point…</option>' +
     focusOptions().filter(f=> !FOCUS_POINTS.includes(f)).map(f=> '<option>' + escapeHtml(f) + '</option>').join('');
@@ -2708,6 +2833,8 @@ async function loadConfig(){
     criteriaSeed: CRITERIA_SEED,
     features: { quickNotes: false, agentPortal: false },
     focusPoints: FOCUS_POINT_OPTIONS.slice(),
+    taskActions: [],
+    taskPeople: [],
   };
 
   if(stored){
@@ -2786,6 +2913,9 @@ async function loadConfig(){
       if(Array.isArray(stored.focusPoints)){
         CONFIG.focusPoints = sortFocusPoints(stored.focusPoints.filter(f=> typeof f === 'string').map(focusName));
       }
+      ['taskActions', 'taskPeople'].forEach(k=>{
+        if(Array.isArray(stored[k])) CONFIG[k] = stored[k].filter(x=> typeof x === 'string' && x.trim());
+      });
       if(stored.features && typeof stored.features === 'object'){
         CONFIG.features.quickNotes = !!stored.features.quickNotes;
         CONFIG.features.agentPortal = !!stored.features.agentPortal;
@@ -2822,6 +2952,13 @@ async function saveConfig(){
       return true;
     }
     const { names, ...toSave } = CONFIG; // names live in the agents table, not here
+    // Task settings are edited on the Tasks tab by everyone; keep whatever is saved now.
+    try{
+      const { data } = await supabaseClient.from('app_config').select('data').eq('id', 1).maybeSingle();
+      ['taskActions', 'taskPeople'].forEach(k=>{
+        if(data && data.data && Array.isArray(data.data[k])) toSave[k] = CONFIG[k] = data.data[k];
+      });
+    }catch(e){}
     const { error } = await supabaseClient.from('app_config').upsert({
       id: 1,
       data: toSave,
@@ -4128,7 +4265,7 @@ function switchTab(view){
   if(leavingConfig && configIsDirty()) showToast('You have unsaved configuration changes. Go back to Configuration and save them.');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
   document.body.classList.toggle('on-eval', view === 'eval');
-  const views = { eval: document.getElementById('view-eval'), agents: document.getElementById('view-agents'), config: document.getElementById('view-config') };
+  const views = { eval: document.getElementById('view-eval'), agents: document.getElementById('view-agents'), tasks: document.getElementById('view-tasks'), config: document.getElementById('view-config') };
   const showEl = views[view];
   const hideEls = Object.keys(views).filter(k=>k!==view).map(k=>views[k]).filter(el=> getComputedStyle(el).display !== 'none');
 
@@ -4141,6 +4278,7 @@ function switchTab(view){
     }
     if(view==='eval'){ renderSections(); refreshEval(); }
     if(view==='agents'){ refreshAgentsView(); }
+    if(view==='tasks'){ renderTaskSettings(); loadTasks(); }
   };
 
   const revealShowEl = ()=>{
@@ -4311,6 +4449,7 @@ async function init(){
   document.getElementById('fCallDate').max = todayLocal();
 
   startPresenceHeartbeat();
+  startTaskBell();
   renderQuickNotes();
   try{
     if(!CURRENT_USER.viewAs) adoptLegacyDrafts();
@@ -5303,6 +5442,39 @@ async function renderTeamOverview(evals){
   });
 }
 
+// Focus points of the selected team (never mixed with the other team):
+// the whole team first, then one column per supervisor.
+async function renderTeamFocus(evals){
+  const root = document.getElementById('teamFocus');
+  document.getElementById('teamFocusTitle').textContent = 'Focus points · ' + CURRENT_TEAM;
+  const ids = evals.map(e=> e.id);
+  let rows = [];
+  try{
+    for(let i = 0; i < ids.length; i += 200){
+      const { data, error } = await supabaseClient.from('evaluations').select('id, agent_id, details').in('id', ids.slice(i, i + 200));
+      if(error) throw error;
+      rows = rows.concat(data || []);
+    }
+  }catch(err){ console.error('Could not load focus points', err); root.innerHTML = '<div class="fail-empty">Could not load focus points.</div>'; return; }
+  const count = list=>{
+    const c = {};
+    list.forEach(r=> focusList((r.details || {}).focusPoints).forEach(f=>{ c[f] = (c[f] || 0) + 1; }));
+    return Object.entries(c).sort((a, b)=> b[1] - a[1] || a[0].localeCompare(b[0]));
+  };
+  const listHtml = entries=> entries.length
+    ? entries.map(([f, n])=> '<div class="fail-item"><span class="name">' + FOCUS_ICON + escapeHtml(f) + '</span><span class="count">' + n + '×</span></div>').join('')
+    : '<div class="fail-empty">No focus points.</div>';
+  const supOf = id=> ((AGENTS_LIST_CACHE || []).find(a=> a.id === id) || {}).supervisor || '';
+  const sups = Array.from(new Set(teamAgents().map(a=> a.supervisor || '').concat(rows.map(r=> supOf(r.agent_id)))))
+    .sort((a, b)=> (a ? 0 : 1) - (b ? 0 : 1) || a.localeCompare(b));
+  let html = '<div class="team-focus-col whole"><div class="agent-fail-title">Whole team</div><div class="fail-list">' + listHtml(count(rows)) + '</div></div>';
+  sups.forEach(sup=>{
+    html += '<div class="team-focus-col"><div class="agent-fail-title">' + escapeHtml(sup || 'No supervisor') + '</div><div class="fail-list">' +
+      listHtml(count(rows.filter(r=> supOf(r.agent_id) === sup))) + '</div></div>';
+  });
+  root.innerHTML = html;
+}
+
 function renderRanking(evals){
   const byAgent = {};
   evals.forEach(e=>{
@@ -6253,7 +6425,7 @@ async function refreshAgentsView(){
   if(startDate) noteParts.push('from ' + startDate);
   if(endDate) noteParts.push('to ' + endDate);
   noteParts.push('across every ' + CURRENT_TEAM + ' agent (team panel below).');
-  document.getElementById('agentsScopeNote').textContent = noteParts.join(' ');
+  document.getElementById('agentsScopeNote').textContent = ''; // only errors are shown here
 
   try{
     // An agent sees only their own card, never the team table.
@@ -6265,6 +6437,7 @@ async function refreshAgentsView(){
       const gridAssignments = await fetchAssignments(gridScope.month);
       renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
       await renderTeamOverview(teamEvals);
+      await renderTeamFocus(teamEvals);
       renderRanking(teamEvals);
     }
 
@@ -6286,7 +6459,7 @@ async function refreshAgentsView(){
         document.getElementById('agentMonthlyCount').textContent = scopedAgentEvals.length + ' evaluation' + (scopedAgentEvals.length === 1 ? '' : 's') + ' in range';
       }else{
         document.getElementById('agentMonthlyAvg').textContent = '—';
-        document.getElementById('agentMonthlyCount').textContent = 'Pick a month or range above';
+        document.getElementById('agentMonthlyCount').textContent = '';
       }
 
       const details = await loadAgentPerformance(generalEvals, { startDate, endDate });
@@ -7076,6 +7249,321 @@ document.addEventListener('click', (e)=>{
   if(!e.target.closest('#viewAsMenu')) document.getElementById('viewAsMenu').classList.remove('show');
 });
 document.getElementById('btnExitViewAs').addEventListener('click', exitViewAs);
+
+/* ---------- Tasks ---------- */
+// A shared to-do list for the QA team. Pending tasks are edited in place;
+// marking one completed moves it to the Completed tasks history. Giving a task
+// to someone else rings their bell until they open it.
+let TASKS = [];
+let TASKS_AVAILABLE = true;
+const TASK_PRIORITIES = [['high', 'High'], ['medium', 'Medium'], ['low', 'Low']];
+const MONTHS_SHORT = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+const TASK_X_ICON = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+
+function taskDateLabel(d){
+  if(!d) return 'Pick date';
+  const [y, m, day] = String(d).split('-').map(Number);
+  return MONTHS_SHORT[m - 1] + ' ' + day + (y !== new Date().getFullYear() ? ', ' + y : '');
+}
+function taskStampLabel(ts){
+  if(!ts) return '';
+  const d = new Date(ts);
+  return MONTHS_SHORT[d.getMonth()] + ' ' + d.getDate() + (d.getFullYear() !== new Date().getFullYear() ? ', ' + d.getFullYear() : '');
+}
+function profileName(id){
+  const p = (PROFILES_CACHE || []).find(x=> x.id === id);
+  return p ? (p.display_name || 'QA') : '';
+}
+function taskResponsible(t){
+  return t.responsible_id ? (profileName(t.responsible_id) || t.responsible_name || 'QA') : (t.responsible_name || '');
+}
+// Both evaluators (and the admin) come from the QA profiles; extra people are added in Task settings.
+function taskPeopleOptions(){
+  const qa = (PROFILES_CACHE || []).filter(p=> p.role !== 'agent').map(p=> ({ value: 'p:' + p.id, label: p.display_name || 'QA' }));
+  const extra = (CONFIG.taskPeople || []).filter(n=> !qa.some(o=> o.label.toLowerCase() === n.toLowerCase()))
+    .map(n=> ({ value: 'n:' + n, label: n }));
+  return qa.concat(extra);
+}
+function taskResponsibleValue(t){
+  if(t.responsible_id) return 'p:' + t.responsible_id;
+  return t.responsible_name ? 'n:' + t.responsible_name : '';
+}
+
+async function loadTasks(){
+  if(!supabaseClient || isAgentUser()) return;
+  await ensureProfilesLoaded();
+  const { data, error } = await supabaseClient.from('tasks').select('*').order('created_at', { ascending: true });
+  if(error){
+    if(error.code === '42P01' || error.code === 'PGRST205') TASKS_AVAILABLE = false;
+    console.error('Could not load tasks', error);
+    document.getElementById('tasksTable').innerHTML = '<tr><td class="tasks-empty">' +
+      (TASKS_AVAILABLE ? 'Could not load the tasks. Check your connection and try again.' : 'Tasks are not set up in the database yet.') + '</td></tr>';
+    return;
+  }
+  TASKS = data || [];
+  renderTasks();
+  refreshBell();
+}
+
+function renderTasks(highlightId){
+  const list = document.getElementById('taskActionList');
+  list.innerHTML = (CONFIG.taskActions || []).map(a=> '<option value="' + escapeHtml(a) + '"></option>').join('');
+  const people = taskPeopleOptions();
+  const pending = TASKS.filter(t=> t.status !== 'completed');
+  const done = TASKS.filter(t=> t.status === 'completed')
+    .sort((a, b)=> String(b.completed_at || b.updated_at).localeCompare(String(a.completed_at || a.updated_at)));
+
+  const head = '<thead><tr><th style="width:30%">Task</th><th style="width:100px">Priority</th><th style="width:100px">Date</th>' +
+    '<th style="width:22%">Action</th><th style="width:140px">Responsible</th><th style="width:120px">Status</th><th style="width:36px"></th></tr></thead>';
+  const rows = pending.map(t=>{
+    const resp = taskResponsibleValue(t);
+    const respOpts = (resp && !people.some(o=> o.value === resp) ? [{ value: resp, label: taskResponsible(t) }] : []).concat(people);
+    return '<tr data-task="' + t.id + '"' + (t.id === highlightId ? ' class="task-new"' : '') + '>' +
+      '<td><input data-f="title" value="' + escapeHtml(t.title || '') + '" placeholder="Task name" maxlength="200"></td>' +
+      '<td><select data-f="priority" class="task-prio p-' + t.priority + '">' +
+        TASK_PRIORITIES.map(([v, l])=> '<option value="' + v + '"' + (v === t.priority ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></td>' +
+      '<td><div class="task-date-wrap"><button type="button" class="task-date" data-pick-date>' + taskDateLabel(t.due_date) + '</button>' +
+        '<input type="date" class="task-date-input" data-f="due_date" value="' + (t.due_date || '') + '" tabindex="-1"></div></td>' +
+      '<td><input data-f="action" list="taskActionList" value="' + escapeHtml(t.action || '') + '" placeholder="Type or pick an action" maxlength="300"></td>' +
+      '<td><select data-f="responsible"><option value="">Nobody</option>' +
+        respOpts.map(o=> '<option value="' + escapeHtml(o.value) + '"' + (o.value === resp ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>').join('') + '</select></td>' +
+      '<td><select data-f="status" class="task-status s-pending"><option value="pending" selected>Pending</option><option value="completed">Completed</option></select></td>' +
+      '<td><button type="button" class="task-del" data-del title="Delete task">×</button></td></tr>';
+  }).join('');
+  document.getElementById('tasksTable').innerHTML = head + '<tbody>' +
+    (rows || '<tr><td colspan="7" class="tasks-empty">No pending tasks.</td></tr>') + '</tbody>';
+
+  document.getElementById('doneTasksCount').textContent = done.length;
+  const tally = {};
+  done.forEach(t=>{ const who = taskResponsible(t) || profileName(t.completed_by) || 'Nobody'; tally[who] = (tally[who] || 0) + 1; });
+  document.getElementById('doneTasksTally').innerHTML = Object.keys(tally).sort((a, b)=> tally[b] - tally[a] || a.localeCompare(b))
+    .map(n=> '<span>' + escapeHtml(n) + '<b>' + tally[n] + '</b></span>').join('');
+  document.getElementById('doneTasksTable').innerHTML = done.length
+    ? '<thead><tr><th>Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Completed</th><th style="width:150px"></th></tr></thead><tbody>' +
+      done.map(t=> '<tr data-task="' + t.id + '"><td class="t-title">' + escapeHtml(t.title || '(untitled)') + '</td>' +
+        '<td><span class="task-prio-tag p-' + t.priority + '">' + escapeHtml((TASK_PRIORITIES.find(p=> p[0] === t.priority) || ['', t.priority])[1]) + '</span></td>' +
+        '<td>' + escapeHtml(t.due_date ? taskDateLabel(t.due_date) : '') + '</td>' +
+        '<td>' + escapeHtml(t.action || '') + '</td>' +
+        '<td>' + escapeHtml(taskResponsible(t)) + '</td>' +
+        '<td>' + escapeHtml(taskStampLabel(t.completed_at)) + (t.completed_by && t.completed_by !== t.responsible_id && profileName(t.completed_by) ? ' <small>by ' + escapeHtml(profileName(t.completed_by)) + '</small>' : '') + '</td>' +
+        '<td style="text-align:right;white-space:nowrap;"><button type="button" class="btn task-reopen" data-reopen>Back to pending</button>' +
+        '<button type="button" class="task-del" data-del title="Delete task">×</button></td></tr>').join('') + '</tbody>'
+    : '<tr><td class="tasks-empty">No completed tasks yet.</td></tr>';
+
+  if(highlightId){
+    const input = document.querySelector('#tasksTable tr[data-task="' + highlightId + '"] input[data-f="title"]');
+    if(input){ input.scrollIntoView({ block: 'nearest' }); if(!input.value) input.focus(); }
+  }
+}
+
+async function updateTask(id, patch){
+  const t = TASKS.find(x=> x.id === id);
+  if(!t) return false;
+  const { data, error } = await supabaseClient.from('tasks').update(patch).eq('id', id).select().maybeSingle();
+  if(error || !data){
+    if(!error || error.code !== 'VIEW_AS') showToast('Could not save the task. Try again.');
+    renderTasks();
+    return false;
+  }
+  Object.assign(t, data);
+  return true;
+}
+
+async function addTask(){
+  if(!supabaseClient) return;
+  await ensureProfilesLoaded();
+  const me = CURRENT_USER && !CURRENT_USER.viewAs ? CURRENT_USER : null;
+  const { data, error } = await supabaseClient.from('tasks').insert({
+    title: '', priority: 'medium', due_date: todayLocal(), status: 'pending',
+    responsible_id: me ? me.id : null, responsible_name: me ? (me.display_name || '') : '',
+  }).select().maybeSingle();
+  if(error || !data){ if(!error || error.code !== 'VIEW_AS') showToast('Could not add the task. Try again.'); return; }
+  TASKS.push(data);
+  renderTasks(data.id);
+}
+
+async function onTaskFieldChange(e){
+  const el = e.target.closest('[data-f]');
+  const row = e.target.closest('tr[data-task]');
+  if(!el || !row) return;
+  const id = row.dataset.task, f = el.dataset.f;
+  const t = TASKS.find(x=> x.id === id);
+  if(!t) return;
+  if(f === 'title' || f === 'action'){
+    const v = el.value.trim();
+    if(v === (t[f] || '')) return;
+    await updateTask(id, { [f]: v });
+  }else if(f === 'priority'){
+    el.className = 'task-prio p-' + el.value;
+    await updateTask(id, { priority: el.value });
+  }else if(f === 'due_date'){
+    if(!el.value) return;
+    row.querySelector('[data-pick-date]').textContent = taskDateLabel(el.value);
+    await updateTask(id, { due_date: el.value });
+  }else if(f === 'responsible'){
+    const v = el.value;
+    const patch = v.startsWith('p:') ? { responsible_id: v.slice(2), responsible_name: profileName(v.slice(2)) }
+      : { responsible_id: null, responsible_name: v.startsWith('n:') ? v.slice(2) : '' };
+    if(await updateTask(id, patch) && patch.responsible_id && CURRENT_USER && patch.responsible_id !== CURRENT_USER.id){
+      showToast(patch.responsible_name + ' will get a notification.');
+    }
+  }else if(f === 'status' && el.value === 'completed'){
+    row.classList.add('task-leaving');
+    if(await updateTask(id, { status: 'completed' })){
+      setTimeout(()=>{ renderTasks(); showToast('Task completed. It is now in Completed tasks.'); }, 250);
+    }
+  }
+}
+const tasksTableEl = document.getElementById('tasksTable');
+tasksTableEl.addEventListener('change', onTaskFieldChange);
+tasksTableEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
+tasksTableEl.addEventListener('focusout', (e)=>{ if(e.target.matches('input[data-f="title"], input[data-f="action"]')) onTaskFieldChange(e); });
+document.getElementById('view-tasks').addEventListener('click', async (e)=>{
+  const pick = e.target.closest('[data-pick-date]');
+  if(pick){
+    const input = pick.parentElement.querySelector('input[type="date"]');
+    try{ input.showPicker(); }catch(err){ input.focus(); input.click(); }
+    return;
+  }
+  const row = e.target.closest('tr[data-task]');
+  if(!row) return;
+  const t = TASKS.find(x=> x.id === row.dataset.task);
+  if(!t) return;
+  if(e.target.closest('[data-del]')){
+    if(!confirm('Delete the task "' + (t.title || 'untitled') + '"?')) return;
+    const { error } = await supabaseClient.from('tasks').delete().eq('id', t.id);
+    if(error){ if(error.code !== 'VIEW_AS') showToast('Could not delete the task. Try again.'); return; }
+    TASKS = TASKS.filter(x=> x.id !== t.id);
+    renderTasks();
+    refreshBell();
+  }else if(e.target.closest('[data-reopen]')){
+    if(await updateTask(t.id, { status: 'pending' })){ renderTasks(t.id); showToast('Task moved back to pending.'); }
+  }
+});
+document.getElementById('btnAddTask').addEventListener('click', addTask);
+
+function toggleDoneTasks(){
+  const wrap = document.getElementById('doneTasksWrap');
+  const open = wrap.style.display === 'none';
+  wrap.style.display = open ? '' : 'none';
+  document.getElementById('btnToggleDoneTasks').classList.toggle('collapsed', !open);
+}
+document.getElementById('doneTasksHead').addEventListener('click', toggleDoneTasks);
+
+/* Task settings: quick actions and extra responsible people, shared by everyone. */
+function renderTaskSettings(){
+  const chips = (arr, kind)=> arr.map((n, i)=> '<div class="name-chip"><span>' + escapeHtml(n) + '</span>' +
+    '<button data-task-' + kind + '="' + i + '" title="Remove">' + TASK_X_ICON + '</button></div>').join('') ||
+    '<div class="extras-empty">' + (kind === 'action' ? 'No quick actions yet.' : 'Only the QA team so far.') + '</div>';
+  document.getElementById('taskActionsList').innerHTML = chips(CONFIG.taskActions || [], 'action');
+  document.getElementById('taskPeopleList').innerHTML = chips(CONFIG.taskPeople || [], 'person');
+}
+
+async function saveTaskSetting(key, change){
+  // Start from what is saved now, so two people editing at once don't undo each other.
+  try{
+    const { data } = await supabaseClient.from('app_config').select('data').eq('id', 1).maybeSingle();
+    const saved = data && data.data && Array.isArray(data.data[key]) ? data.data[key] : null;
+    if(saved) CONFIG[key] = saved.filter(x=> typeof x === 'string' && x.trim());
+  }catch(e){}
+  const next = change((CONFIG[key] || []).slice());
+  if(!next) return;
+  const { error } = await supabaseClient.rpc('save_shared_rubrics', { patch: { [key]: next } });
+  if(error){ if(error.code !== 'VIEW_AS') showToast('Could not save the task settings. Try again.'); return; }
+  CONFIG[key] = next;
+  renderTaskSettings();
+  renderTasks();
+}
+function addTaskSettingFromInput(inputId, key){
+  const input = document.getElementById(inputId);
+  const v = input.value.trim().replace(/\s+/g, ' ');
+  if(!v) return;
+  saveTaskSetting(key, list=>{
+    if(list.some(x=> x.toLowerCase() === v.toLowerCase())){ showToast('"' + v + '" is already in the list'); return null; }
+    input.value = '';
+    return list.concat(v).sort((a, b)=> a.localeCompare(b));
+  });
+}
+document.getElementById('btnAddTaskAction').addEventListener('click', ()=> addTaskSettingFromInput('newTaskActionInput', 'taskActions'));
+document.getElementById('newTaskActionInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addTaskSettingFromInput('newTaskActionInput', 'taskActions'); });
+document.getElementById('btnAddTaskPerson').addEventListener('click', ()=> addTaskSettingFromInput('newTaskPersonInput', 'taskPeople'));
+document.getElementById('newTaskPersonInput').addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addTaskSettingFromInput('newTaskPersonInput', 'taskPeople'); });
+['taskActionsList', 'taskPeopleList'].forEach(listId=>{
+  document.getElementById(listId).addEventListener('click', (e)=>{
+    const b = e.target.closest('button[data-task-action], button[data-task-person]');
+    if(!b) return;
+    const key = b.dataset.taskAction !== undefined ? 'taskActions' : 'taskPeople';
+    const name = (CONFIG[key] || [])[Number(b.dataset.taskAction !== undefined ? b.dataset.taskAction : b.dataset.taskPerson)];
+    if(name) saveTaskSetting(key, list=> list.filter(x=> x !== name));
+  });
+});
+
+/* ---------- Bell: tasks someone else gave you ---------- */
+let BELL_ITEMS = [];
+let BELL_TIMER = null;
+async function refreshBell(){
+  if(!supabaseClient || !CURRENT_USER || isAgentUser() || !TASKS_AVAILABLE) return;
+  const { data, error } = await supabaseClient.from('tasks').select('id, title, assigned_by, updated_at')
+    .eq('responsible_id', CURRENT_USER.id).eq('seen_by_assignee', false).eq('status', 'pending')
+    .order('updated_at', { ascending: false });
+  if(error){ if(error.code === '42P01' || error.code === 'PGRST205') TASKS_AVAILABLE = false; return; }
+  BELL_ITEMS = data || [];
+  const count = document.getElementById('bellCount');
+  count.textContent = BELL_ITEMS.length > 9 ? '9+' : String(BELL_ITEMS.length);
+  count.classList.toggle('show', BELL_ITEMS.length > 0);
+  if(document.getElementById('bellMenu').classList.contains('show')) renderBellMenu();
+}
+function startTaskBell(){
+  if(isAgentUser() || BELL_TIMER) return;
+  ensureProfilesLoaded().then(refreshBell);
+  BELL_TIMER = setInterval(refreshBell, 60000);
+}
+function renderBellMenu(){
+  const menu = document.getElementById('bellMenu');
+  menu.innerHTML = '<div class="vm-title">Notifications</div>' + (BELL_ITEMS.length
+    ? BELL_ITEMS.map(n=> '<button type="button" class="vm-item" data-bell="' + n.id + '"><span>' +
+        escapeHtml(profileName(n.assigned_by) || 'Someone') + ' assigned you a task</span><small>' +
+        escapeHtml(n.title || '(untitled)') + ' · ' + escapeHtml(taskStampLabel(n.updated_at)) + '</small></button>').join('') +
+      '<button type="button" class="bell-all" data-bell-all>Mark all as read</button>'
+    : '<div class="bell-empty">You\'re all caught up.</div>');
+}
+async function markTasksSeen(ids){
+  if(!ids.length) return;
+  BELL_ITEMS = BELL_ITEMS.filter(n=> !ids.includes(n.id));
+  const count = document.getElementById('bellCount');
+  count.textContent = String(BELL_ITEMS.length);
+  count.classList.toggle('show', BELL_ITEMS.length > 0);
+  if(CURRENT_USER && CURRENT_USER.viewAs) return; // read-only session
+  const { error } = await supabaseClient.from('tasks').update({ seen_by_assignee: true }).in('id', ids);
+  if(error) console.error('Could not mark the notification as read', error);
+}
+document.getElementById('btnBell').addEventListener('click', async (e)=>{
+  e.stopPropagation();
+  const menu = document.getElementById('bellMenu');
+  if(menu.classList.contains('show')){ menu.classList.remove('show'); return; }
+  await ensureProfilesLoaded();
+  renderBellMenu();
+  menu.classList.add('show');
+  refreshBell();
+});
+document.getElementById('bellMenu').addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const menu = document.getElementById('bellMenu');
+  if(e.target.closest('[data-bell-all]')){ markTasksSeen(BELL_ITEMS.map(n=> n.id)); menu.classList.remove('show'); return; }
+  const item = e.target.closest('[data-bell]');
+  if(!item) return;
+  const id = item.dataset.bell;
+  menu.classList.remove('show');
+  markTasksSeen([id]);
+  if(!isViewVisible('view-tasks')) switchTab('tasks');
+  setTimeout(()=>{
+    const row = document.querySelector('#tasksTable tr[data-task="' + id + '"]');
+    if(row){ row.classList.remove('task-new'); void row.offsetWidth; row.classList.add('task-new'); row.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
+  }, 600);
+});
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('#bellMenu')) document.getElementById('bellMenu').classList.remove('show');
+});
 
 /* ---------- Quick notes ---------- */
 const LS_QUICK_NOTES_KEY = 'qa_quick_notes_v1';
