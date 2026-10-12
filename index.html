@@ -680,43 +680,92 @@
   .tasks-head .btn{ flex:none; padding:8px 14px; }
   .tasks-head .btn svg{ width:15px; height:15px; }
   .tasks-count{ font-size:11px; font-weight:800; color:var(--text-dim); background:var(--bg-elev-2); border:1px solid var(--border); border-radius:999px; padding:1px 8px; margin-left:6px; vertical-align:middle; }
-  .tasks-table{ width:100%; border-collapse:collapse; font-size:12.5px; min-width:820px; }
-  .tasks-table th{ text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:800; padding:8px; background:var(--bg-elev-2); border-bottom:1px solid var(--border); }
-  .tasks-table td{ padding:5px 6px; border-bottom:1px solid var(--border); vertical-align:middle; }
-  .tasks-table input, .tasks-table select, .task-date{
-    width:100%; box-sizing:border-box; padding:7px 8px; border-radius:var(--radius-sm); border:1px solid transparent; background:transparent;
-    color:var(--text); font:inherit; font-size:12.5px; outline:none; color-scheme: light dark;
+  .tasks-table{ width:100%; border-collapse:collapse; table-layout:fixed; font-size:12.5px; min-width:900px; }
+  .tasks-table col.c-title{ width:auto; }
+  .tasks-table col.c-prio{ width:130px; }
+  .tasks-table col.c-date{ width:130px; }
+  .tasks-table col.c-action{ width:24%; }
+  .tasks-table col.c-resp{ width:170px; }
+  .tasks-table col.c-status{ width:150px; }
+  .tasks-table col.c-del{ width:84px; }
+  .tasks-table col.c-reopen{ width:190px; }
+  .tasks-table th, .tasks-table td{ border:1px solid var(--border); text-align:center; vertical-align:middle; }
+  .tasks-table th{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; padding:10px 8px; background:var(--bg-elev-2); border-top:none; }
+  .tasks-table td{ padding:8px; height:36px; }
+  .tasks-table tr > :first-child{ border-left:none; }
+  .tasks-table tr > :last-child{ border-right:none; }
+  .tasks-table tbody tr:last-child td{ border-bottom:none; }
+  .tasks-table tbody tr:hover td{ background:rgba(127,127,127,.04); }
+  .tasks-table .t-left{ text-align:left; }
+  .tasks-table .t-title{ font-weight:700; color:var(--text); }
+  .t-input, .tsel{
+    width:100%; height:34px; box-sizing:border-box; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:var(--bg-elev-2); color:var(--text); font:inherit; font-size:12.5px; outline:none; transition:border-color .12s, background .12s;
   }
-  .tasks-table input:hover, .tasks-table select:hover, .task-date:hover{ border-color:var(--border); }
-  .tasks-table input:focus, .tasks-table select:focus{ border-color:var(--accent); background:var(--bg-elev-2); }
-  .tasks-table select option{ background:var(--bg-elev); color:var(--text); }
-  .task-prio{ font-weight:800; text-align:center; }
-  .task-prio.p-high{ color:var(--no); background:var(--no-soft) !important; }
-  .task-prio.p-medium{ color:var(--warn); background:var(--warn-soft) !important; }
-  .task-prio.p-low{ color:var(--yes); background:var(--yes-soft) !important; }
-  .task-date-wrap{ position:relative; }
-  .task-date{ cursor:pointer; text-align:left; font-weight:700; }
-  .task-date-input{ position:absolute; left:0; bottom:0; width:1px !important; height:1px; opacity:0; pointer-events:none; border:none !important; padding:0 !important; }
-  .task-status.s-completed{ color:var(--yes); font-weight:800; }
-  .task-status.s-pending{ color:var(--accent); font-weight:800; }
-  .task-del{ background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:16px; padding:4px 8px; border-radius:6px; }
+  .t-input{ padding:0 12px; }
+  .t-input.t-center{ text-align:center; }
+  .t-input::placeholder{ color:var(--text-faint); }
+  .t-input:hover, .tsel:hover{ border-color:var(--text-faint); }
+  .t-input:focus, .tsel.open{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
+  .tsel{ display:flex; align-items:center; justify-content:center; gap:7px; padding:0 30px; position:relative; cursor:pointer; font-weight:700; }
+  .tsel-text{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .tsel-chev{ position:absolute; right:10px; top:50%; width:14px; height:14px; margin-top:-7px; opacity:.6; transition:transform .15s; }
+  .tsel.open .tsel-chev{ transform:rotate(180deg); }
+  .tsel-ico{ width:15px; height:15px; flex:none; opacity:.7; }
+  .tsel.t-date{ padding:0 10px; }
+  .t-prio.p-high{ color:var(--no); background:var(--no-soft); border-color:transparent; }
+  .t-prio.p-medium{ color:var(--warn); background:var(--warn-soft); border-color:transparent; }
+  .t-prio.p-low{ color:var(--yes); background:var(--yes-soft); border-color:transparent; }
+  .t-dot{ width:8px; height:8px; border-radius:50%; background:currentColor; flex:none; }
+  .t-status.s-pending{ color:var(--accent); }
+  .t-avatar{ width:20px; height:20px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:10.5px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex:none; }
+  .t-nobody{ color:var(--text-faint); font-weight:600; }
+  .t-person-static{ display:inline-flex; align-items:center; gap:7px; font-weight:700; color:var(--text); }
+  .task-del{ width:30px; height:30px; display:inline-flex; align-items:center; justify-content:center; background:none; border:1px solid transparent; color:var(--text-faint); cursor:pointer; padding:0; border-radius:8px; }
+  .task-del svg{ width:14px; height:14px; }
   .task-del:hover{ color:var(--no); background:var(--no-soft); }
-  .tasks-table tr.task-new td{ animation: taskIn .5s ease; }
+  .tasks-table tr.task-new td{ animation: taskIn .9s ease; }
   @keyframes taskIn{ from{ background:var(--accent-soft); } to{ background:transparent; } }
-  .tasks-table.done td{ padding:9px 8px; color:var(--text-dim); }
-  .tasks-table.done td.t-title{ color:var(--text); font-weight:700; }
-  .tasks-tally{ display:flex; flex-wrap:wrap; gap:8px; margin:12px 0; }
-  .tasks-tally span{ font-size:12px; font-weight:700; padding:5px 12px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev-2); }
-  .tasks-tally b{ color:var(--accent); margin-left:6px; }
-  .tasks-settings{ display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:18px; }
   .tasks-table tr.task-leaving td{ opacity:0; transition:opacity .25s ease; }
-  .task-prio-tag{ font-size:11px; font-weight:800; padding:2px 9px; border-radius:999px; }
+  .tasks-table.done td{ color:var(--text-dim); }
+  .task-prio-tag{ display:inline-block; min-width:64px; font-size:11.5px; font-weight:800; padding:4px 12px; border-radius:999px; }
   .task-prio-tag.p-high{ color:var(--no); background:var(--no-soft); }
   .task-prio-tag.p-medium{ color:var(--warn); background:var(--warn-soft); }
   .task-prio-tag.p-low{ color:var(--yes); background:var(--yes-soft); }
-  .tasks-table .task-reopen{ padding:5px 10px; font-size:11.5px; flex:none; }
-  .tasks-table.done small{ color:var(--text-faint); }
-  .tasks-empty{ padding:16px 8px; color:var(--text-faint); font-size:12.5px; }
+  .t-actions{ display:flex; align-items:center; justify-content:center; gap:6px; }
+  .t-done-stamp{ display:inline-flex; align-items:center; gap:7px; color:var(--yes); font-weight:700; }
+  .task-del.t-reopen:hover{ color:var(--accent); background:var(--accent-soft); }
+  .tasks-tally{ display:flex; flex-wrap:wrap; gap:8px; margin:14px 0; }
+  .tasks-tally > span{ display:inline-flex; align-items:center; gap:8px; font-size:12px; font-weight:700; padding:4px 12px 4px 5px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev-2); }
+  .tasks-tally b{ color:var(--accent); }
+  .tasks-settings{ display:grid; grid-template-columns:repeat(auto-fit, minmax(280px, 1fr)); gap:24px; }
+  .tasks-settings .cfg-names{ min-height:36px; }
+  .task-pop{
+    display:none; position:fixed; z-index:200; background:var(--bg-elev); border:1px solid var(--border); border-radius:12px;
+    box-shadow:var(--shadow); padding:6px; max-height:320px; overflow:auto; font-size:12.5px; animation: tpIn .12s ease;
+  }
+  .task-pop.show{ display:block; }
+  @keyframes tpIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
+  .tp-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; padding:6px 8px 4px; }
+  .tp-list{ display:flex; flex-direction:column; gap:2px; }
+  .tp-item{ display:flex; align-items:center; gap:8px; width:100%; min-height:34px; padding:6px 10px; border:none; border-radius:8px; background:none; color:var(--text); font:inherit; font-weight:700; cursor:pointer; text-align:left; }
+  .tp-item:hover{ background:var(--bg-elev-2); }
+  .tp-item.on{ background:var(--accent-soft); }
+  .tp-check{ width:15px; height:15px; margin-left:auto; color:var(--accent); flex:none; }
+  .tp-item.p-high{ color:var(--no); } .tp-item.p-medium{ color:var(--warn); } .tp-item.p-low{ color:var(--yes); }
+  .tp-item.s-pending{ color:var(--accent); } .tp-item.s-completed{ color:var(--yes); }
+  .tp-cal{ width:240px; padding:4px; }
+  .tp-cal-head{ display:flex; align-items:center; justify-content:space-between; font-weight:800; margin-bottom:6px; }
+  .tp-nav{ width:30px; height:30px; border:none; border-radius:8px; background:none; color:var(--text); font-size:18px; cursor:pointer; }
+  .tp-nav:hover{ background:var(--bg-elev-2); }
+  .tp-week, .tp-days{ display:grid; grid-template-columns:repeat(7, 1fr); gap:2px; text-align:center; }
+  .tp-week span{ font-size:10.5px; font-weight:700; color:var(--text-faint); padding:4px 0; }
+  .tp-day{ height:30px; border:1px solid transparent; border-radius:8px; background:none; color:var(--text); font:inherit; font-weight:600; cursor:pointer; }
+  .tp-day:hover{ background:var(--bg-elev-2); }
+  .tp-day.today{ border-color:var(--accent); }
+  .tp-day.on{ background:var(--accent); color:#00110f; font-weight:800; }
+  .tp-today{ width:100%; margin-top:6px; height:30px; border:1px solid var(--border); border-radius:8px; background:var(--bg-elev-2); color:var(--accent); font:inherit; font-weight:700; cursor:pointer; }
+  .tasks-empty{ text-align:center !important; padding:22px 8px !important; color:var(--text-faint); font-size:12.5px; }
   .user-badge .bell-btn{ position:relative; }
   .user-badge .bell-btn:hover{ color:var(--accent); }
   .user-badge .bell-btn svg{ width:16px; height:16px; }
@@ -1719,7 +1768,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </button>
       </div>
       <div class="monthly-scroll"><table class="tasks-table" id="tasksTable"></table></div>
-      <datalist id="taskActionList"></datalist>
     </div>
 
     <div class="team-card tasks-card">
@@ -6337,11 +6385,11 @@ function renderMonthlyGrid(evals, scope, assignments){
   const acols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(slotsByAgent).map(l=> l.length));
   let ahtml = '<div class="monthly-scroll"><table class="monthly-table assign-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= acols; i++) ahtml += '<th>Eval ' + i + '</th>';
-  ahtml += '<th>Done</th><th>Open</th></tr></thead><tbody>';
+  ahtml += '<th>Done</th><th>Open</th><th>Average</th></tr></thead><tbody>';
   agents.forEach(agent=>{
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
-    ahtml += rowStart(agent, acols + 3);
+    ahtml += rowStart(agent, acols + 4);
     for(let i = 0; i < acols; i++){
       const sl = slots[i];
       if(sl && sl.type === 'eval'){
@@ -6366,9 +6414,11 @@ function renderMonthlyGrid(evals, scope, assignments){
       }
     }
     const open = slots.filter(sl=> sl.type === 'assignment').length;
-    ahtml += doneCell(list) + '<td class="' + (open ? 'cell-open' : 'cell-empty') + '">' + (open || '—') + '</td></tr>';
+    ahtml += doneCell(list) + '<td class="' + (open ? 'cell-open' : 'cell-empty') + '">' + (open || '—') + '</td>' +
+      (list.length ? '<td class="cell-avg ' + scoreClass(weightedAvg(list)) + '">' + fmtPct(weightedAvg(list)) + '</td>' : '<td class="cell-avg cell-empty">—</td>') + '</tr>';
   });
-  ahtml += '</tbody></table></div>';
+  ahtml += '</tbody><tfoot><tr><td>Team</td><td colspan="' + acols + '"></td><td>' + evals.length + '</td><td>' + (openSlots.length || '—') + '</td>' +
+    (evals.length ? '<td class="' + scoreClass(weightedAvg(evals)) + '">' + fmtPct(weightedAvg(evals)) + '</td>' : '<td class="cell-empty">—</td>') + '</tr></tfoot></table></div>';
   aroot.innerHTML = ahtml;
 
   // Drop selections whose cell is no longer an empty slot (data refreshed).
@@ -7305,49 +7355,49 @@ async function loadTasks(){
   refreshBell();
 }
 
+const TASK_CHEV = '<svg class="tsel-chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+const TASK_CAL = '<svg class="tsel-ico" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+const TASK_STATUSES = [['pending', 'Pending'], ['completed', 'Completed']];
+function taskInitial(name){ return escapeHtml((String(name || '?').trim()[0] || '?').toUpperCase()); }
+function taskPersonHtml(name){
+  return name ? '<span class="t-avatar">' + taskInitial(name) + '</span><span class="tsel-text">' + escapeHtml(name) + '</span>' : '<span class="tsel-text t-nobody">Nobody</span>';
+}
+
 function renderTasks(highlightId){
-  const list = document.getElementById('taskActionList');
-  list.innerHTML = (CONFIG.taskActions || []).map(a=> '<option value="' + escapeHtml(a) + '"></option>').join('');
-  const people = taskPeopleOptions();
   const pending = TASKS.filter(t=> t.status !== 'completed');
   const done = TASKS.filter(t=> t.status === 'completed')
     .sort((a, b)=> String(b.completed_at || b.updated_at).localeCompare(String(a.completed_at || a.updated_at)));
 
-  const head = '<thead><tr><th style="width:30%">Task</th><th style="width:100px">Priority</th><th style="width:100px">Date</th>' +
-    '<th style="width:22%">Action</th><th style="width:140px">Responsible</th><th style="width:120px">Status</th><th style="width:36px"></th></tr></thead>';
-  const rows = pending.map(t=>{
-    const resp = taskResponsibleValue(t);
-    const respOpts = (resp && !people.some(o=> o.value === resp) ? [{ value: resp, label: taskResponsible(t) }] : []).concat(people);
-    return '<tr data-task="' + t.id + '"' + (t.id === highlightId ? ' class="task-new"' : '') + '>' +
-      '<td><input data-f="title" value="' + escapeHtml(t.title || '') + '" placeholder="Task name" maxlength="200"></td>' +
-      '<td><select data-f="priority" class="task-prio p-' + t.priority + '">' +
-        TASK_PRIORITIES.map(([v, l])=> '<option value="' + v + '"' + (v === t.priority ? ' selected' : '') + '>' + l + '</option>').join('') + '</select></td>' +
-      '<td><div class="task-date-wrap"><button type="button" class="task-date" data-pick-date>' + taskDateLabel(t.due_date) + '</button>' +
-        '<input type="date" class="task-date-input" data-f="due_date" value="' + (t.due_date || '') + '" tabindex="-1"></div></td>' +
-      '<td><input data-f="action" list="taskActionList" value="' + escapeHtml(t.action || '') + '" placeholder="Type or pick an action" maxlength="300"></td>' +
-      '<td><select data-f="responsible"><option value="">Nobody</option>' +
-        respOpts.map(o=> '<option value="' + escapeHtml(o.value) + '"' + (o.value === resp ? ' selected' : '') + '>' + escapeHtml(o.label) + '</option>').join('') + '</select></td>' +
-      '<td><select data-f="status" class="task-status s-pending"><option value="pending" selected>Pending</option><option value="completed">Completed</option></select></td>' +
-      '<td><button type="button" class="task-del" data-del title="Delete task">×</button></td></tr>';
-  }).join('');
-  document.getElementById('tasksTable').innerHTML = head + '<tbody>' +
-    (rows || '<tr><td colspan="7" class="tasks-empty">No pending tasks.</td></tr>') + '</tbody>';
+  const cols = '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-status"><col class="c-del"></colgroup>';
+  const head = '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Status</th><th></th></tr></thead>';
+  const rows = pending.map(t=> '<tr data-task="' + t.id + '"' + (t.id === highlightId ? ' class="task-new"' : '') + '>' +
+    '<td class="t-left"><input class="t-input" data-f="title" value="' + escapeHtml(t.title || '') + '" placeholder="Task name" maxlength="200"></td>' +
+    '<td><button type="button" class="tsel t-prio p-' + t.priority + '" data-menu="priority"><span class="tsel-text">' +
+      escapeHtml((TASK_PRIORITIES.find(p=> p[0] === t.priority) || ['', t.priority])[1]) + '</span>' + TASK_CHEV + '</button></td>' +
+    '<td><button type="button" class="tsel t-date" data-menu="date">' + TASK_CAL + '<span class="tsel-text">' + taskDateLabel(t.due_date) + '</span></button></td>' +
+    '<td><input class="t-input t-center" data-f="action" value="' + escapeHtml(t.action || '') + '" placeholder="Type or pick" maxlength="300" autocomplete="off"></td>' +
+    '<td><button type="button" class="tsel t-person" data-menu="responsible">' + taskPersonHtml(taskResponsible(t)) + TASK_CHEV + '</button></td>' +
+    '<td><button type="button" class="tsel t-status s-pending" data-menu="status"><span class="t-dot"></span><span class="tsel-text">Pending</span>' + TASK_CHEV + '</button></td>' +
+    '<td><button type="button" class="task-del" data-del title="Delete task">' + TASK_X_ICON + '</button></td></tr>').join('');
+  document.getElementById('tasksTable').innerHTML = cols + head + '<tbody>' +
+    (rows || '<tr><td colspan="7" class="tasks-empty">No pending tasks. Click Add task to create one.</td></tr>') + '</tbody>';
 
   document.getElementById('doneTasksCount').textContent = done.length;
   const tally = {};
   done.forEach(t=>{ const who = taskResponsible(t) || profileName(t.completed_by) || 'Nobody'; tally[who] = (tally[who] || 0) + 1; });
   document.getElementById('doneTasksTally').innerHTML = Object.keys(tally).sort((a, b)=> tally[b] - tally[a] || a.localeCompare(b))
-    .map(n=> '<span>' + escapeHtml(n) + '<b>' + tally[n] + '</b></span>').join('');
+    .map(n=> '<span><span class="t-avatar">' + taskInitial(n) + '</span>' + escapeHtml(n) + '<b>' + tally[n] + '</b></span>').join('');
   document.getElementById('doneTasksTable').innerHTML = done.length
-    ? '<thead><tr><th>Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Completed</th><th style="width:150px"></th></tr></thead><tbody>' +
-      done.map(t=> '<tr data-task="' + t.id + '"><td class="t-title">' + escapeHtml(t.title || '(untitled)') + '</td>' +
+    ? '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-status"><col class="c-del"></colgroup>' +
+      '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Completed</th><th></th></tr></thead><tbody>' +
+      done.map(t=> '<tr data-task="' + t.id + '"><td class="t-left t-title">' + escapeHtml(t.title || '(untitled)') + '</td>' +
         '<td><span class="task-prio-tag p-' + t.priority + '">' + escapeHtml((TASK_PRIORITIES.find(p=> p[0] === t.priority) || ['', t.priority])[1]) + '</span></td>' +
-        '<td>' + escapeHtml(t.due_date ? taskDateLabel(t.due_date) : '') + '</td>' +
-        '<td>' + escapeHtml(t.action || '') + '</td>' +
-        '<td>' + escapeHtml(taskResponsible(t)) + '</td>' +
-        '<td>' + escapeHtml(taskStampLabel(t.completed_at)) + (t.completed_by && t.completed_by !== t.responsible_id && profileName(t.completed_by) ? ' <small>by ' + escapeHtml(profileName(t.completed_by)) + '</small>' : '') + '</td>' +
-        '<td style="text-align:right;white-space:nowrap;"><button type="button" class="btn task-reopen" data-reopen>Back to pending</button>' +
-        '<button type="button" class="task-del" data-del title="Delete task">×</button></td></tr>').join('') + '</tbody>'
+        '<td>' + escapeHtml(t.due_date ? taskDateLabel(t.due_date) : '—') + '</td>' +
+        '<td>' + escapeHtml(t.action || '—') + '</td>' +
+        '<td><span class="t-person-static">' + taskPersonHtml(taskResponsible(t)) + '</span></td>' +
+        '<td><span class="t-done-stamp"><span class="t-dot"></span>' + escapeHtml(taskStampLabel(t.completed_at)) + '</span></td>' +
+        '<td><div class="t-actions"><button type="button" class="task-del t-reopen" data-reopen title="Move back to pending"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
+        '<button type="button" class="task-del" data-del title="Delete task">' + TASK_X_ICON + '</button></div></td></tr>').join('') + '</tbody>'
     : '<tr><td class="tasks-empty">No completed tasks yet.</td></tr>';
 
   if(highlightId){
@@ -7382,51 +7432,176 @@ async function addTask(){
   renderTasks(data.id);
 }
 
-async function onTaskFieldChange(e){
-  const el = e.target.closest('[data-f]');
-  const row = e.target.closest('tr[data-task]');
-  if(!el || !row) return;
-  const id = row.dataset.task, f = el.dataset.f;
+// Applies one change from the table (typed text or a pick from a menu) and saves it.
+async function setTaskField(id, f, value){
   const t = TASKS.find(x=> x.id === id);
   if(!t) return;
+  const row = document.querySelector('#tasksTable tr[data-task="' + id + '"]');
   if(f === 'title' || f === 'action'){
-    const v = el.value.trim();
+    const v = String(value).trim();
     if(v === (t[f] || '')) return;
     await updateTask(id, { [f]: v });
   }else if(f === 'priority'){
-    el.className = 'task-prio p-' + el.value;
-    await updateTask(id, { priority: el.value });
+    if(value === t.priority) return;
+    if(await updateTask(id, { priority: value })) renderTasks();
   }else if(f === 'due_date'){
-    if(!el.value) return;
-    row.querySelector('[data-pick-date]').textContent = taskDateLabel(el.value);
-    await updateTask(id, { due_date: el.value });
+    if(!value || value === t.due_date) return;
+    if(await updateTask(id, { due_date: value })) renderTasks();
   }else if(f === 'responsible'){
-    const v = el.value;
-    const patch = v.startsWith('p:') ? { responsible_id: v.slice(2), responsible_name: profileName(v.slice(2)) }
-      : { responsible_id: null, responsible_name: v.startsWith('n:') ? v.slice(2) : '' };
-    if(await updateTask(id, patch) && patch.responsible_id && CURRENT_USER && patch.responsible_id !== CURRENT_USER.id){
-      showToast(patch.responsible_name + ' will get a notification.');
+    if(value === taskResponsibleValue(t)) return;
+    const patch = value.startsWith('p:') ? { responsible_id: value.slice(2), responsible_name: profileName(value.slice(2)) }
+      : { responsible_id: null, responsible_name: value.startsWith('n:') ? value.slice(2) : '' };
+    if(await updateTask(id, patch)){
+      renderTasks();
+      if(patch.responsible_id && CURRENT_USER && patch.responsible_id !== CURRENT_USER.id) showToast(patch.responsible_name + ' will get a notification.');
     }
-  }else if(f === 'status' && el.value === 'completed'){
-    row.classList.add('task-leaving');
+  }else if(f === 'status' && value === 'completed'){
+    if(row) row.classList.add('task-leaving');
     if(await updateTask(id, { status: 'completed' })){
       setTimeout(()=>{ renderTasks(); showToast('Task completed. It is now in Completed tasks.'); }, 250);
-    }
+    }else if(row) row.classList.remove('task-leaving');
   }
 }
-const tasksTableEl = document.getElementById('tasksTable');
-tasksTableEl.addEventListener('change', onTaskFieldChange);
-tasksTableEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
-tasksTableEl.addEventListener('focusout', (e)=>{ if(e.target.matches('input[data-f="title"], input[data-f="action"]')) onTaskFieldChange(e); });
-document.getElementById('view-tasks').addEventListener('click', async (e)=>{
-  const pick = e.target.closest('[data-pick-date]');
-  if(pick){
-    const input = pick.parentElement.querySelector('input[type="date"]');
-    try{ input.showPicker(); }catch(err){ input.focus(); input.click(); }
+
+/* One floating menu for the table: priority, responsible, status, the calendar and action suggestions. */
+const TASK_POP = document.createElement('div');
+TASK_POP.className = 'task-pop';
+TASK_POP.id = 'taskPop';
+document.body.appendChild(TASK_POP);
+let TASK_POP_STATE = null;
+
+function closeTaskPop(){
+  TASK_POP.classList.remove('show');
+  if(TASK_POP_STATE && TASK_POP_STATE.anchor) TASK_POP_STATE.anchor.classList.remove('open');
+  TASK_POP_STATE = null;
+}
+function placeTaskPop(anchor){
+  const r = anchor.getBoundingClientRect();
+  TASK_POP.style.minWidth = Math.max(r.width, 170) + 'px';
+  TASK_POP.classList.add('show');
+  const w = TASK_POP.offsetWidth, h = TASK_POP.offsetHeight;
+  let left = r.left + r.width / 2 - w / 2;
+  left = Math.max(8, Math.min(left, window.innerWidth - w - 8));
+  const below = r.bottom + 6 + h <= window.innerHeight - 8;
+  TASK_POP.style.left = left + 'px';
+  TASK_POP.style.top = (below ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
+}
+function taskOptionsHtml(opts, current){
+  return opts.map(o=> '<button type="button" class="tp-item' + (o.cls ? ' ' + o.cls : '') + (o.value === current ? ' on' : '') + '" data-value="' + escapeHtml(o.value) + '">' +
+    o.html + (o.value === current ? '<svg class="tp-check" viewBox="0 0 24 24" fill="none"><path d="M5 12.5l4.5 4.5L19 7.5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>' : '') + '</button>').join('');
+}
+function openTaskMenu(anchor, kind, id){
+  const t = TASKS.find(x=> x.id === id);
+  if(!t) return;
+  if(TASK_POP_STATE && TASK_POP_STATE.anchor === anchor){ closeTaskPop(); return; }
+  closeTaskPop();
+  let html = '';
+  if(kind === 'priority'){
+    html = taskOptionsHtml(TASK_PRIORITIES.map(([v, l])=> ({ value: v, cls: 'tp-prio p-' + v, html: '<span class="t-dot"></span>' + l })), t.priority);
+  }else if(kind === 'status'){
+    html = taskOptionsHtml(TASK_STATUSES.map(([v, l])=> ({ value: v, cls: 'tp-status s-' + v, html: '<span class="t-dot"></span>' + l })), 'pending');
+  }else if(kind === 'responsible'){
+    const people = taskPeopleOptions();
+    const cur = taskResponsibleValue(t);
+    if(cur && !people.some(o=> o.value === cur)) people.unshift({ value: cur, label: taskResponsible(t) });
+    html = taskOptionsHtml(people.map(o=> ({ value: o.value, html: taskPersonHtml(o.label) }))
+      .concat([{ value: '', cls: 'tp-muted', html: taskPersonHtml('') }]), cur);
+  }else if(kind === 'date'){
+    const base = t.due_date || todayLocal();
+    TASK_POP_STATE = { anchor, kind, id, y: Number(base.slice(0, 4)), m: Number(base.slice(5, 7)) - 1 };
+    renderTaskCalendar();
+    anchor.classList.add('open');
+    placeTaskPop(anchor);
     return;
   }
+  TASK_POP.innerHTML = '<div class="tp-list">' + html + '</div>';
+  TASK_POP_STATE = { anchor, kind, id };
+  anchor.classList.add('open');
+  placeTaskPop(anchor);
+}
+function renderTaskCalendar(){
+  const st = TASK_POP_STATE;
+  const t = TASKS.find(x=> x.id === st.id);
+  const first = new Date(st.y, st.m, 1);
+  const days = new Date(st.y, st.m + 1, 0).getDate();
+  const pad = (first.getDay() + 6) % 7; // weeks start on Monday
+  const iso = d=> st.y + '-' + String(st.m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  let cells = '';
+  for(let i = 0; i < pad; i++) cells += '<span></span>';
+  for(let d = 1; d <= days; d++){
+    const v = iso(d);
+    cells += '<button type="button" class="tp-day' + (t && v === t.due_date ? ' on' : '') + (v === todayLocal() ? ' today' : '') + '" data-day="' + v + '">' + d + '</button>';
+  }
+  TASK_POP.innerHTML = '<div class="tp-cal"><div class="tp-cal-head">' +
+    '<button type="button" class="tp-nav" data-nav="-1" title="Previous month">‹</button>' +
+    '<span>' + ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][st.m] + (st.y !== new Date().getFullYear() ? ' ' + st.y : '') + '</span>' +
+    '<button type="button" class="tp-nav" data-nav="1" title="Next month">›</button></div>' +
+    '<div class="tp-week">' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d=> '<span>' + d + '</span>').join('') + '</div>' +
+    '<div class="tp-days">' + cells + '</div>' +
+    '<button type="button" class="tp-today" data-day="' + todayLocal() + '">Today</button></div>';
+}
+function openActionSuggest(input){
+  const id = input.closest('tr[data-task]').dataset.task;
+  const q = input.value.trim().toLowerCase();
+  const list = (CONFIG.taskActions || []).filter(a=> !q || a.toLowerCase().includes(q));
+  if(!list.length){ if(TASK_POP_STATE && TASK_POP_STATE.kind === 'action') closeTaskPop(); return; }
+  if(TASK_POP_STATE && TASK_POP_STATE.anchor !== input) closeTaskPop();
+  TASK_POP.innerHTML = '<div class="tp-title">Quick actions</div><div class="tp-list">' +
+    taskOptionsHtml(list.map(a=> ({ value: a, html: '<span class="tsel-text">' + escapeHtml(a) + '</span>' })), input.value.trim()) + '</div>';
+  TASK_POP_STATE = { anchor: input, kind: 'action', id };
+  placeTaskPop(input);
+}
+
+TASK_POP.addEventListener('mousedown', (e)=> e.preventDefault()); // keep focus in the action field
+TASK_POP.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const st = TASK_POP_STATE;
+  if(!st) return;
+  const nav = e.target.closest('[data-nav]');
+  if(nav){
+    st.m += Number(nav.dataset.nav);
+    if(st.m < 0){ st.m = 11; st.y--; } else if(st.m > 11){ st.m = 0; st.y++; }
+    renderTaskCalendar();
+    placeTaskPop(st.anchor);
+    return;
+  }
+  const day = e.target.closest('[data-day]');
+  if(day){ closeTaskPop(); setTaskField(st.id, 'due_date', day.dataset.day); return; }
+  const item = e.target.closest('.tp-item');
+  if(!item) return;
+  const value = item.dataset.value;
+  if(st.kind === 'action'){
+    st.anchor.value = value;
+    closeTaskPop();
+    st.anchor.blur();
+    return;
+  }
+  closeTaskPop();
+  setTaskField(st.id, st.kind, value);
+});
+document.addEventListener('click', (e)=>{
+  if(TASK_POP_STATE && !TASK_POP.contains(e.target) && !TASK_POP_STATE.anchor.contains(e.target)) closeTaskPop();
+});
+document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && TASK_POP_STATE) closeTaskPop(); });
+window.addEventListener('resize', ()=>{ if(TASK_POP_STATE) closeTaskPop(); });
+document.addEventListener('scroll', (e)=>{ if(TASK_POP_STATE && !TASK_POP.contains(e.target)) closeTaskPop(); }, true);
+
+const tasksTableEl = document.getElementById('tasksTable');
+tasksTableEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
+tasksTableEl.addEventListener('focusin', (e)=>{ if(e.target.matches('input[data-f="action"]')) openActionSuggest(e.target); });
+tasksTableEl.addEventListener('input', (e)=>{ if(e.target.matches('input[data-f="action"]')) openActionSuggest(e.target); });
+tasksTableEl.addEventListener('focusout', (e)=>{
+  const input = e.target;
+  if(!input.matches('input[data-f="title"], input[data-f="action"]')) return;
+  if(input.dataset.f === 'action' && TASK_POP_STATE && TASK_POP_STATE.anchor === input) closeTaskPop();
+  const row = input.closest('tr[data-task]');
+  if(row) setTaskField(row.dataset.task, input.dataset.f, input.value);
+});
+document.getElementById('view-tasks').addEventListener('click', async (e)=>{
   const row = e.target.closest('tr[data-task]');
   if(!row) return;
+  const menu = e.target.closest('[data-menu]');
+  if(menu){ e.stopPropagation(); openTaskMenu(menu, menu.dataset.menu, row.dataset.task); return; }
   const t = TASKS.find(x=> x.id === row.dataset.task);
   if(!t) return;
   if(e.target.closest('[data-del]')){
