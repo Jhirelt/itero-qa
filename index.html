@@ -995,6 +995,8 @@
   .sched-banner.other{ border-color:var(--warn); background:var(--warn-soft); }
   .sched-banner.other .sched-title{ color:var(--warn); }
   .sched-banner.none .sched-title{ color:var(--text-dim); }
+  .sched-banner .sched-open{ display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:700; color:var(--warn); }
+  .sched-banner .sched-open .live-dot{ width:8px; height:8px; border-radius:50%; background:var(--warn); flex:none; animation:clearPulse 1.4s ease-in-out infinite; }
   .sched-banner .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; margin-left:4px; }
   .sched-banner .btn{ width:100%; margin-top:8px; padding:8px 10px; font-size:12.5px; }
   .sched-lock-note{
@@ -3929,6 +3931,7 @@ async function init(){
   document.getElementById('fCallDate').value = todayLocal();
   document.getElementById('fCallDate').max = todayLocal();
 
+  startPresenceHeartbeat();
   try{
     adoptLegacyDrafts();
     const rawDraft = localStorage.getItem(draftKey(LS_CURRENT_DRAFT_KEY));
@@ -5071,7 +5074,88 @@ async function loadSchedule(agentId, month){
   return {
     agentId, month, done: evals.length, position: evals.length + 1, assignment: next,
     state: !next ? 'none' : next.assignee_id === CURRENT_USER.id ? 'mine' : 'other',
+    openBy: await fetchOpenBy(agentId, month),
   };
+}
+
+/* ---------- Who has an evaluation open right now ---------- */
+// Each signed-in evaluator keeps one row saying which agent's evaluation is
+// open on their screen; it is refreshed every 30s and counts as open for 2 min.
+const PRESENCE_HEARTBEAT_MS = 30000;
+const PRESENCE_FRESH_MS = 120000;
+let PRESENCE_AVAILABLE = true;
+let PRESENCE_CURRENT = null; // { agentId, month, openedAt } I last reported
+const presenceMissing = err => err && (err.code === '42P01' || err.code === 'PGRST205');
+
+async function fetchOpenBy(agentId, month){
+  if(!PRESENCE_AVAILABLE || !supabaseClient || !CURRENT_USER) return [];
+  try{
+    const { data, error } = await supabaseClient.from('evaluation_presence')
+      .select('user_id, agent_id, month, opened_at, seen_at').eq('agent_id', agentId).eq('month', month);
+    if(error){ if(presenceMissing(error)) PRESENCE_AVAILABLE = false; else console.error('Could not check who has it open', error); return []; }
+    const now = Date.now();
+    return (data || []).filter(r=> r.user_id !== CURRENT_USER.id && now - new Date(r.seen_at).getTime() < PRESENCE_FRESH_MS);
+  }catch(e){ return []; }
+}
+
+// The agent whose evaluation is open here, or null (blank form, editing or just saved).
+function presenceTarget(){
+  if(EDITING_EXISTING) return null;
+  const agent = findAgentByName(document.getElementById('fAgent').value.trim());
+  if(!agent || !agent.id) return null;
+  return { agentId: agent.id, month: monthOf(document.getElementById('fCallDate').value) };
+}
+
+// Runs one at a time so an older update can never land after a newer one.
+let PRESENCE_CHAIN = Promise.resolve();
+function syncPresence(){
+  PRESENCE_CHAIN = PRESENCE_CHAIN.then(syncPresenceNow, syncPresenceNow);
+  return PRESENCE_CHAIN;
+}
+async function syncPresenceNow(){
+  if(!PRESENCE_AVAILABLE || !supabaseClient || !CURRENT_USER) return;
+  const t = presenceTarget();
+  try{
+    if(!t){
+      if(!PRESENCE_CURRENT) return;
+      PRESENCE_CURRENT = null;
+      const { error } = await supabaseClient.from('evaluation_presence').update({ agent_id: null, month: null, seen_at: new Date().toISOString() }).eq('user_id', CURRENT_USER.id);
+      if(presenceMissing(error)) PRESENCE_AVAILABLE = false;
+      return;
+    }
+    const same = PRESENCE_CURRENT && PRESENCE_CURRENT.agentId === t.agentId && PRESENCE_CURRENT.month === t.month;
+    const now = new Date().toISOString();
+    PRESENCE_CURRENT = { agentId: t.agentId, month: t.month, openedAt: same ? PRESENCE_CURRENT.openedAt : now };
+    const { error } = await supabaseClient.from('evaluation_presence').upsert({
+      user_id: CURRENT_USER.id, agent_id: t.agentId, month: t.month, opened_at: PRESENCE_CURRENT.openedAt, seen_at: now,
+    }, { onConflict: 'user_id' });
+    if(presenceMissing(error)) PRESENCE_AVAILABLE = false;
+    else if(error) console.error('Could not report the open evaluation', error);
+  }catch(e){ /* presence is best effort */ }
+}
+
+function startPresenceHeartbeat(){
+  setInterval(()=>{
+    syncPresence();
+    // Also notices when someone else takes or finishes the evaluation open here.
+    if(isViewVisible('view-eval') && !EDITING_EXISTING && SCHEDULE) refreshScheduleBanner();
+  }, PRESENCE_HEARTBEAT_MS);
+  // Closing the tab frees it right away (best effort; otherwise it expires on its own).
+  window.addEventListener('pagehide', ()=>{
+    if(!PRESENCE_CURRENT || !PRESENCE_AVAILABLE) return;
+    PRESENCE_CURRENT = null;
+    supabaseClient.from('evaluation_presence').update({ agent_id: null, month: null }).eq('user_id', CURRENT_USER.id).then(()=>{}, ()=>{});
+  });
+}
+
+function openByHtml(s){
+  if(!s || !s.openBy || !s.openBy.length) return '';
+  return s.openBy.map(r=>{
+    const since = new Date(r.opened_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const isAssignee = s.assignment && s.assignment.assignee_id === r.user_id;
+    return '<div class="sched-open"><span class="live-dot"></span>' + escapeHtml(profileName(r.user_id)) +
+      (isAssignee ? ' has it open right now' : ' is evaluating this agent right now') + ' (since ' + since + ').</div>';
+  }).join('');
 }
 
 async function refreshScheduleBanner(){
@@ -5091,12 +5175,17 @@ async function refreshScheduleBanner(){
     console.error('Could not load the evaluation schedule', err);
   }
   if(token !== SCHEDULE_TOKEN) return sched;  // a newer refresh replaced this one
+  const prev = SCHEDULE;
+  if(prev && sched && prev.state === 'mine' && sched.state === 'other' && prev.agentId === sched.agentId && prev.month === sched.month){
+    showToast(profileName(sched.assignment.assignee_id) + ' took this evaluation; it is now assigned to them.');
+  }
   SCHEDULE = sched;
   renderScheduleBanner();
   return sched;
 }
 
 function renderScheduleBanner(){
+  syncPresence(); // whatever the form now shows is what this person has open
   const box = document.getElementById('schedBanner');
   const lock = document.getElementById('schedLockNote');
   const sections = document.getElementById('sections');
@@ -5125,7 +5214,7 @@ function renderScheduleBanner(){
         : nth + ' has not been scheduled. You can still evaluate; it will be saved as done by you.');
   }
   box.className = 'sched-banner show ' + s.state;
-  box.innerHTML = html;
+  box.innerHTML = html + openByHtml(s);
   const take = document.getElementById('btnTakeAssignment');
   if(take) take.addEventListener('click', takeScheduledAssignment);
 }
@@ -5133,6 +5222,10 @@ function renderScheduleBanner(){
 async function takeScheduledAssignment(){
   const s = SCHEDULE;
   if(!s || !s.assignment) return;
+  // Check again right now: the assignee may have opened it since the banner was drawn.
+  const openBy = await fetchOpenBy(s.agentId, s.month);
+  const assigneeOpen = openBy.find(r=> r.user_id === s.assignment.assignee_id);
+  if(assigneeOpen && !confirm(profileName(assigneeOpen.user_id) + ' has this evaluation open right now. Take it anyway? Their screen will tell them it was reassigned.')) return;
   const btn = document.getElementById('btnTakeAssignment');
   if(btn){ btn.disabled = true; btn.textContent = 'Assigning...'; }
   try{
