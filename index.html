@@ -5455,7 +5455,7 @@ async function renderTeamFocus(evals){
       if(error) throw error;
       rows = rows.concat(data || []);
     }
-  }catch(err){ console.error('Could not load focus points', err); root.innerHTML = '<div class="fail-empty">Could not load focus points.</div>'; return; }
+  }catch(err){ if(err && err.code === '42703'){ root.innerHTML = ''; return; } console.error('Could not load focus points', err); root.innerHTML = '<div class="fail-empty">Could not load focus points.</div>'; return; }
   const count = list=>{
     const c = {};
     list.forEach(r=> focusList((r.details || {}).focusPoints).forEach(f=>{ c[f] = (c[f] || 0) + 1; }));
