@@ -775,6 +775,12 @@
   .grid-sort{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim); font-weight:700; }
   .grid-sort select{ padding:5px 8px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12px; color-scheme: light dark; }
   .monthly-head .grid-sort{ margin-left:auto; }
+  .grid-month-nav{ display:flex; align-items:center; gap:4px; }
+  .grid-month-nav select{ padding:6px 8px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; font-weight:700; color-scheme: light dark; }
+  .grid-month-nav button{ width:30px; height:30px; display:flex; align-items:center; justify-content:center; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); cursor:pointer; }
+  .grid-month-nav button:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
+  .grid-month-nav button:disabled{ opacity:.35; cursor:default; }
+  .grid-month-nav svg{ width:15px; height:15px; }
   .monthly-head .grid-sort + .bulk-start-btn{ margin-left:0; }
   .role-move{ background:none; border:none; color:var(--text-faint); cursor:pointer; padding:0 2px; font-size:12px; }
   .role-move:hover{ color:var(--accent); }
@@ -868,6 +874,16 @@
     opacity:0; transform:translateY(8px); transition:.2s; pointer-events:none; z-index:100;
   }
   .save-toast.show{ opacity:1; transform:translateY(0); }
+  /* Save evaluation floats in the corner so it is always in reach. */
+  .btn.save-fab{
+    position:fixed; right:24px; bottom:22px; z-index:90; width:auto; margin:0;
+    padding:12px 20px; font-size:14px; background:#2fae74; color:#00110f;
+    box-shadow:0 6px 20px rgba(0,0,0,.35); border-radius:999px;
+  }
+  .btn.save-fab:hover{ background:#38c283; }
+  .btn.save-fab svg{ width:17px; height:17px; }
+  body.on-eval .save-toast{ bottom:84px; }
+  #view-eval{ padding-bottom:80px; }
 
   /* ---------- Validation ---------- */
   .field input.invalid, .agent-input-big.invalid, .edit-eval-field input.invalid{ border-color:var(--no) !important; box-shadow:0 0 0 3px var(--no-soft); }
@@ -1004,6 +1020,8 @@
   .sched-banner.other{ border-color:var(--warn); background:var(--warn-soft); }
   .sched-banner.other .sched-title{ color:var(--warn); }
   .sched-banner.none .sched-title{ color:var(--text-dim); }
+  .sched-banner.full{ border-color:var(--no); background:var(--no-soft); }
+  .sched-banner.full .sched-title{ color:var(--no); }
   .sched-banner .sched-open{ display:flex; align-items:center; gap:6px; margin-top:6px; font-weight:700; color:var(--warn); }
   .sched-banner .sched-open .live-dot{ width:8px; height:8px; border-radius:50%; background:var(--warn); flex:none; animation:clearPulse 1.4s ease-in-out infinite; }
   .sched-banner .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; margin-left:4px; }
@@ -1170,7 +1188,7 @@
   .req{ color:var(--no); font-weight:800; }
 </style>
 </head>
-<body>
+<body class="on-eval">
 
 <div class="topbar">
   <div class="brand">
@@ -1336,7 +1354,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="m4 6 8 6 8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
             Send email
           </button>
-          <button class="btn btn-primary" id="btnSaveEvaluation" style="width:100%; margin-top:8px; background:#2fae74;">
+          <button class="btn btn-primary save-fab" id="btnSaveEvaluation">
             <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
             Save evaluation
           </button>
@@ -1398,6 +1416,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="monthly-head">
         <h3 id="monthlyTitle">Monthly scores</h3>
         <span class="monthly-sub" id="monthlySub"></span>
+        <div class="grid-month-nav" title="Each month starts a new table; earlier months stay saved here">
+          <button type="button" id="btnGridPrevMonth" aria-label="Previous month">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <select id="gridMonth" aria-label="Month shown in the table"></select>
+          <button type="button" id="btnGridNextMonth" aria-label="Next month">
+            <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
         <label class="grid-sort">Sort by
           <select id="gridSort">
             <option value="name">Name (A–Z)</option>
@@ -3996,6 +4023,7 @@ function switchTab(view){
   const leavingConfig = view !== 'config' && isViewVisible('view-config');
   if(leavingConfig && configIsDirty()) showToast('You have unsaved configuration changes. Go back to Configuration and save them.');
   document.querySelectorAll('.tab-btn').forEach(b=>b.classList.toggle('active', b.dataset.view===view));
+  document.body.classList.toggle('on-eval', view === 'eval');
   const views = { eval: document.getElementById('view-eval'), agents: document.getElementById('view-agents'), config: document.getElementById('view-config') };
   const showEl = views[view];
   const hideEls = Object.keys(views).filter(k=>k!==view).map(k=>views[k]).filter(el=> getComputedStyle(el).display !== 'none');
@@ -4830,7 +4858,7 @@ async function saveEvaluationToDatabase(){
       await saveEditedEvaluation(btn, check);
     }catch(err){
       console.error('Update evaluation failed', err);
-      showToast('Could not save the changes: ' + (err.message || 'unknown error'));
+      showToast('Could not save the changes: ' + (err.message || 'unknown error').replace(/MONTHLY_LIMIT:\s*/, ''));
     }finally{
       btn.disabled = false;
       btn.innerHTML = original;
@@ -4843,6 +4871,10 @@ async function saveEvaluationToDatabase(){
   // or taken this evaluation in the meantime.
   const shown = SCHEDULE;
   const schedule = await refreshScheduleBanner();
+  if(schedule && schedule.state === 'full'){
+    showToast('This agent already received their ' + MONTHLY_EVAL_TARGET + ' evaluations for ' + monthLabel(schedule.month) + '. Delete one of them to add a new one.');
+    return;
+  }
   if(schedule && schedule.state === 'other'){
     showToast('This evaluation is assigned to ' + profileName(schedule.assignment.assignee_id) + '. Press "Assign to me" first.');
     return;
@@ -4880,7 +4912,9 @@ async function saveEvaluationToDatabase(){
     }else refreshScheduleBanner();
   }catch(err){
     console.error('Save evaluation failed', err);
-    showToast('Could not save: ' + (err.message || 'unknown error'));
+    const msg = err.message || 'unknown error';
+    if(/MONTHLY_LIMIT/.test(msg)){ showToast(msg.replace(/^.*MONTHLY_LIMIT:\s*/, '').replace(/^t/, 'T')); refreshScheduleBanner(); }
+    else showToast('Could not save: ' + msg);
   }finally{
     btn.disabled = false;
     btn.innerHTML = original;
@@ -5201,27 +5235,17 @@ function evalScoreClass(score){
   return score >= 95 ? 'cell-good' : score >= 85 ? 'cell-mid' : 'cell-bad';
 }
 
-// The grid always shows one period: the month or custom range picked above,
-// or the current month when no filter is set.
-function monthlyGridScope(){
-  const { startDate, endDate } = getAgentsDateRange();
-  const month = document.getElementById('agentsMonth').value;
-  if(startDate || endDate){
-    const label = month
-      ? MONTH_NAMES[Number(month.split('-')[1]) - 1] + ' ' + month.split('-')[0]
-      : (startDate || '…') + ' → ' + (endDate || '…');
-    return { startDate, endDate, label, isFilter: true, month: month ? month + '-01' : null };
-  }
+// The table always shows one calendar month: it starts empty on the 1st and
+// earlier months stay available in the month picker on the card.
+function currentMonthValue(){
   const now = new Date();
-  const y = now.getFullYear(), m = now.getMonth() + 1;
-  const mm = String(m).padStart(2, '0');
-  return {
-    startDate: y + '-' + mm + '-01',
-    endDate: y + '-' + mm + '-' + String(new Date(y, m, 0).getDate()).padStart(2, '0'),
-    label: MONTH_NAMES[m - 1] + ' ' + y,
-    isFilter: false,
-    month: y + '-' + mm + '-01',
-  };
+  return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+}
+
+function monthlyGridScope(){
+  const value = document.getElementById('gridMonth').value || currentMonthValue();
+  const month = value + '-01';
+  return { startDate: month, endDate: monthLastDay(month), label: monthLabel(month), isFilter: false, month };
 }
 
 function openAgentFromGrid(agentId){
@@ -5397,7 +5421,7 @@ async function loadSchedule(agentId, month){
   const next = open.find(a=> a.assignee_id === CURRENT_USER.id) || open[0] || null;
   return {
     agentId, month, done: evals.length, position: evals.length + 1, assignment: next,
-    state: !next ? 'none' : next.assignee_id === CURRENT_USER.id ? 'mine' : 'other',
+    state: evals.length >= MONTHLY_EVAL_TARGET ? 'full' : !next ? 'none' : next.assignee_id === CURRENT_USER.id ? 'mine' : 'other',
     openBy: await fetchOpenBy(agentId, month),
   };
 }
@@ -5517,7 +5541,7 @@ function renderScheduleBanner(){
   const lock = document.getElementById('schedLockNote');
   const sections = document.getElementById('sections');
   const s = SCHEDULE;
-  const locked = !!s && s.state === 'other';
+  const locked = !!s && (s.state === 'other' || s.state === 'full');
   sections.classList.toggle('locked', locked);
   lock.classList.toggle('show', locked);
   if(!s){ box.className = 'sched-banner'; box.innerHTML = ''; return; }
@@ -5534,16 +5558,22 @@ function renderScheduleBanner(){
       nth + ' is scheduled for <b>' + who + '</b>. Assign it to yourself to start; the table will show you as the evaluator.' +
       '<button type="button" class="btn btn-primary" id="btnTakeAssignment">Assign to me</button>';
     lock.innerHTML = 'This evaluation is assigned to <b>' + who + '</b>. Press <b>Assign to me</b> on the right to start it.';
+  }else if(s.state === 'full'){
+    html = '<div class="sched-title">' + MONTHLY_EVAL_TARGET + ' of ' + MONTHLY_EVAL_TARGET + ' done</div>' + fullMonthMessage(s);
+    lock.innerHTML = fullMonthMessage(s);
   }else{
     html = '<div class="sched-title">Not scheduled</div>' +
-      (s.done >= MONTHLY_EVAL_TARGET
-        ? 'This agent already has their ' + MONTHLY_EVAL_TARGET + ' evaluations for ' + monthLabel(s.month) + ' (' + s.done + ' done). You can still add another one.'
-        : nth + ' has not been scheduled. You can still evaluate; it will be saved as done by you.');
+      nth + ' has not been scheduled. You can still evaluate; it will be saved as done by you.';
   }
   box.className = 'sched-banner show ' + s.state;
   box.innerHTML = html + openByHtml(s);
   const take = document.getElementById('btnTakeAssignment');
   if(take) take.addEventListener('click', takeScheduledAssignment);
+}
+
+function fullMonthMessage(s){
+  return 'This agent already received their <b>' + MONTHLY_EVAL_TARGET + ' evaluations</b> for ' + monthLabel(s.month) +
+    '. A new one can\'t be added unless you delete one of the existing ones from their profile in the Agents tab.';
 }
 
 async function takeScheduledAssignment(){
@@ -6058,7 +6088,7 @@ async function refreshAgentsView(){
     if(!isAgentUser()){
       const teamEvals = (await fetchEvaluations({ startDate, endDate })).filter(inTeam);
       const gridScope = monthlyGridScope();
-      const gridEvals = gridScope.isFilter ? teamEvals : (await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate })).filter(inTeam);
+      const gridEvals = (await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate })).filter(inTeam);
       await ensureProfilesLoaded();
       const gridAssignments = await fetchAssignments(gridScope.month);
       renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
@@ -6116,11 +6146,56 @@ function populateMonthSelect(){
     }
   }
   sel.innerHTML = opts;
+  populateGridMonthSelect();
+}
+
+// Months for the table picker: this month first, back to January of last year.
+function populateGridMonthSelect(){
+  const sel = document.getElementById('gridMonth');
+  const keep = sel.value;
+  const now = new Date();
+  let opts = '';
+  for(let y = now.getFullYear(); y >= now.getFullYear() - 1; y--){
+    for(let m = 12; m >= 1; m--){
+      if(y === now.getFullYear() && m > now.getMonth() + 1) continue;
+      const val = y + '-' + String(m).padStart(2, '0');
+      opts += '<option value="' + val + '">' + MONTH_NAMES[m - 1] + ' ' + y + (val === currentMonthValue() ? ' (current)' : '') + '</option>';
+    }
+  }
+  sel.innerHTML = opts;
+  sel.value = keep && sel.querySelector('option[value="' + keep + '"]') ? keep : currentMonthValue();
+  syncGridMonthArrows();
+}
+
+function syncGridMonthArrows(){
+  const sel = document.getElementById('gridMonth');
+  document.getElementById('btnGridPrevMonth').disabled = sel.selectedIndex >= sel.options.length - 1;
+  document.getElementById('btnGridNextMonth').disabled = sel.selectedIndex <= 0;
+}
+
+function setGridMonth(value){
+  const sel = document.getElementById('gridMonth');
+  if(!sel.querySelector('option[value="' + value + '"]')) return false;
+  sel.value = value;
+  syncGridMonthArrows();
+  return true;
 }
 populateMonthSelect();
 
+document.getElementById('gridMonth').addEventListener('change', ()=>{ syncGridMonthArrows(); refreshAgentsView(); });
+document.getElementById('btnGridPrevMonth').addEventListener('click', ()=>{
+  const sel = document.getElementById('gridMonth');
+  if(sel.selectedIndex < sel.options.length - 1){ sel.selectedIndex++; syncGridMonthArrows(); refreshAgentsView(); }
+});
+document.getElementById('btnGridNextMonth').addEventListener('click', ()=>{
+  const sel = document.getElementById('gridMonth');
+  if(sel.selectedIndex > 0){ sel.selectedIndex--; syncGridMonthArrows(); refreshAgentsView(); }
+});
+
 document.getElementById('agentsSelect').addEventListener('change', refreshAgentsView);
 document.getElementById('agentsMonth').addEventListener('change', ()=>{
+  const picked = document.getElementById('agentsMonth').value;
+  setGridMonth(picked || currentMonthValue());
   document.getElementById('agentsFrom').value = '';
   document.getElementById('agentsTo').value = '';
   document.getElementById('rangePickerLabel').textContent = 'Select dates';
@@ -6132,6 +6207,7 @@ document.getElementById('btnAgentsClearFilter').addEventListener('click', ()=>{
   document.getElementById('agentsTo').value = '';
   document.getElementById('rangePickerLabel').textContent = 'Select dates';
   document.getElementById('agentsSelect').value = '';
+  setGridMonth(currentMonthValue());
   refreshAgentsView();
 });
 
