@@ -529,10 +529,14 @@
     max-width:640px; width:100%; max-height:80vh; overflow-y:auto; padding:22px 24px; box-shadow:var(--shadow);
   }
   .modal-box h3{ margin:0 0 4px; font-size:16px; }
+  /* Stays in the corner while the box scrolls, so closing never needs a scroll back up. */
   .modal-box .modal-close{
-    float:right; background:none; border:none; color:var(--text-faint); cursor:pointer; font-size:18px; line-height:1; padding:2px;
+    float:right; position:sticky; top:-8px; z-index:6; margin:-8px -10px 0 8px;
+    display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%;
+    background:var(--bg-elev-2); border:1px solid var(--border); color:var(--text-dim); cursor:pointer; font-size:18px; line-height:1; padding:0;
+    box-shadow:0 2px 8px rgba(0,0,0,.25);
   }
-  .modal-box .modal-close:hover{ color:var(--text); }
+  .modal-box .modal-close:hover{ color:var(--text); border-color:var(--text-faint); }
   .modal-box p{ font-size:13px; color:var(--text-dim); line-height:1.6; margin:10px 0; }
   .modal-box code{ background:var(--bg-elev-2); border:1px solid var(--border); border-radius:4px; padding:1px 5px; font-size:12px; color:var(--accent); }
   .modal-box .modal-table{ width:100%; border-collapse:collapse; margin:10px 0; font-size:12.5px; }
@@ -760,7 +764,12 @@
   .dispute-row .lbl{ flex:1; }
   .dispute-row .pts{ color:var(--text-dim); font-size:11px; font-weight:700; }
   .dispute-row.changed{ background:var(--yes-soft); }
-  .dispute-note{ width:100%; min-height:80px; margin-top:6px; }
+  .dispute-note{
+    display:block; width:100%; min-height:80px; margin-top:6px; box-sizing:border-box; resize:vertical;
+    background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm);
+    color:var(--text); font:inherit; font-size:12.5px; line-height:1.45; padding:9px 10px; outline:none;
+  }
+  .dispute-note:focus{ border-color:var(--accent); box-shadow:0 0 0 3px var(--accent-soft); }
   .dispute-hist{ font-size:12px; border-left:3px solid var(--warn); padding:6px 10px; margin-bottom:8px; background:var(--bg-elev-2); border-radius:0 var(--radius-sm) var(--radius-sm) 0; }
   .dispute-hist .when{ color:var(--text-dim); font-size:11px; margin-bottom:2px; }
   .grid-sort{ display:flex; align-items:center; gap:6px; font-size:11.5px; color:var(--text-dim); font-weight:700; }
@@ -1120,6 +1129,23 @@
   .repeat-alert .ra-item{ display:flex; justify-content:space-between; gap:10px; padding:3px 0; color:var(--text); }
   .repeat-alert .ra-item + .ra-item{ border-top:1px dashed var(--border); }
   .repeat-alert .ra-why{ color:var(--text-dim); white-space:nowrap; font-size:11.5px; }
+  /* ---------- Native controls and scrollbars follow the theme ---------- */
+  html{ color-scheme: dark; }
+  html[data-theme="light"]{ color-scheme: light; }
+  ::placeholder{ color:var(--text-faint); opacity:1; }
+  *{ scrollbar-width:thin; scrollbar-color:var(--border) transparent; }
+  ::-webkit-scrollbar{ width:10px; height:10px; }
+  ::-webkit-scrollbar-track{ background:transparent; }
+  ::-webkit-scrollbar-thumb{ background:var(--border); border-radius:999px; border:2px solid transparent; background-clip:padding-box; }
+  ::-webkit-scrollbar-thumb:hover{ background:var(--text-faint); border:2px solid transparent; background-clip:padding-box; }
+  ::-webkit-scrollbar-corner{ background:transparent; }
+
+  /* ---------- Supervisor dividers in the monthly table ---------- */
+  .monthly-table tr.group-row td{
+    text-align:left; padding:7px 12px; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.6px;
+    color:var(--accent); background:var(--bg-elev-2); border-left:3px solid var(--accent); cursor:default;
+  }
+  .monthly-table tr.group-row td span{ color:var(--text-faint); font-weight:700; margin-left:8px; text-transform:none; letter-spacing:0; }
 </style>
 </head>
 <body>
@@ -3442,6 +3468,21 @@ function compareAgents(mode){
   return byName;
 }
 
+// When the table is sorted by supervisor, the first agent of each supervisor
+// opens a divider row: agent id -> { label, count }.
+function supervisorGroups(agents){
+  const out = new Map();
+  if(gridSortMode() !== 'supervisor') return out;
+  let prev;
+  agents.forEach(a=>{
+    const key = a.supervisor || '';
+    if(key === prev) return;
+    prev = key;
+    out.set(a.id, { label: key || 'No supervisor', count: agents.filter(x=> (x.supervisor || '') === key).length });
+  });
+  return out;
+}
+
 document.getElementById('gridSort').value = gridSortMode();
 document.getElementById('gridSort').addEventListener('change', (e)=>{
   try{ localStorage.setItem('qa_grid_sort', e.target.value); }catch(err){}
@@ -5760,9 +5801,12 @@ function renderMonthlyGrid(evals, scope, assignments){
   html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
 
   const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
+  const groups = supervisorGroups(agents);
   agents.forEach(agent=>{
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
+    const g = groups.get(agent.id);
+    if(g) html += '<tr class="group-row"><td colspan="' + (cols + 3) + '">' + escapeHtml(g.label) + '<span>' + g.count + ' agent' + (g.count === 1 ? '' : 's') + '</span></td></tr>';
     html += '<tr data-agent="' + escapeHtml(agent.id) + '"' + (agent.id === selectedId ? ' class="selected"' : '') + '>' +
       '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + agentNameHtml(agent) + '</button></td>';
     for(let i = 0; i < cols; i++){
@@ -5819,7 +5863,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   Array.from(BULK.picked).forEach(k=>{ if(!renderedBulkKeys.has(k)) BULK.picked.delete(k); });
   if(BULK.active) updateBulkBar();
 
-  root.querySelectorAll('tbody tr').forEach(tr=>{
+  root.querySelectorAll('tbody tr[data-agent]').forEach(tr=>{
     tr.addEventListener('click', (ev)=>{
       const bulkCell = ev.target.closest('.bulk-cell');
       if(bulkCell){
@@ -6778,7 +6822,15 @@ function buildScoresSheet(wb, evals, scope, assignments){
   });
 
   const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
+  const groups = supervisorGroups(agents);
   agents.forEach(agent=>{
+    const g = groups.get(agent.id);
+    if(g){
+      const gr = ws.addRow([g.label + ' · ' + g.count + ' agent' + (g.count === 1 ? '' : 's')]);
+      ws.mergeCells(gr.number, 1, gr.number, header.length);
+      gr.getCell(1).font = { bold: true, color: { argb: 'FF0D7C7C' } };
+      gr.getCell(1).fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FFE6F4F4' } };
+    }
     const list = byAgent[agent.id] || [];
     const role = roleOf(agent);
     const roleHex = role ? ROLE_HEX[roleColorKey(role)] : null;
