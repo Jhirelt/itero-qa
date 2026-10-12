@@ -1168,6 +1168,24 @@
   }
   .monthly-table tr.group-row td span{ color:var(--text-faint); font-weight:700; margin-left:8px; text-transform:none; letter-spacing:0; }
   /* ---------- NA / CALA team switch ---------- */
+  .view-switch{ display:inline-flex; align-items:center; gap:2px; padding:3px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev-2); }
+  .view-switch button{
+    border:none; background:transparent; color:var(--text-dim); font-size:11.5px; font-weight:800; letter-spacing:.5px;
+    padding:5px 14px; border-radius:999px; cursor:pointer; transition: background-color .25s ease, color .25s ease;
+  }
+  .view-switch button:hover{ color:var(--text); }
+  .view-switch button.on{ background:var(--accent); color:#06201f; }
+  /* Scores and Assignments sit side by side and slide sideways when switching. */
+  .grid-slider-wrap{ overflow:hidden; }
+  .grid-slider{ display:flex; width:200%; align-items:flex-start; transition: transform .42s cubic-bezier(.4, 0, .2, 1); }
+  .grid-slider.show-assign{ transform:translateX(-50%); }
+  .grid-pane{ width:50%; min-width:0; box-sizing:border-box; opacity:.25; visibility:hidden;
+    transition: opacity .42s ease, visibility 0s linear .42s; }
+  .grid-pane.active{ opacity:1; visibility:visible; transition: opacity .42s ease, visibility 0s; }
+  .grid-pane:not(.active){ max-height:0; overflow:hidden; transition: opacity .42s ease, visibility 0s linear .42s, max-height 0s linear .42s; }
+  body:not(.grid-assign) #btnBulkAssign, body:not(.grid-assign) #bulkBar{ display:none !important; }
+  body.grid-assign #btnExportExcel{ display:none; }
+  .monthly-table .cell-open{ color:var(--warn); font-weight:800; }
   .team-switch{ display:inline-flex; align-items:center; gap:2px; padding:3px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev-2); }
   .team-switch button{
     border:none; background:transparent; color:var(--text-dim); font-size:11.5px; font-weight:800; letter-spacing:.5px;
@@ -1417,6 +1435,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="team-card monthly-card">
       <div class="monthly-head">
+        <div class="view-switch" role="group" aria-label="Table">
+          <button type="button" data-grid-view="scores">Scores</button><button type="button" data-grid-view="assign">Assignments</button>
+        </div>
         <h3 id="monthlyTitle">Monthly scores</h3>
         <span class="monthly-sub" id="monthlySub"></span>
         <div class="grid-month-nav" title="Each month starts a new table; earlier months stay saved here">
@@ -1457,7 +1478,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </div>
         <button type="button" class="btn btn-ghost bulk-small" id="btnBulkCancel">Cancel</button>
       </div>
-      <div id="monthlyTable"></div>
+      <div class="grid-slider-wrap">
+        <div class="grid-slider" id="gridSlider">
+          <div class="grid-pane" id="monthlyTable" data-pane="scores"></div>
+          <div class="grid-pane" id="assignTable" data-pane="assign"></div>
+        </div>
+      </div>
     </div>
 
     <div id="agentCard" class="agent-stat-card" style="display:none;">
@@ -5931,6 +5957,7 @@ function updateBulkBar(){
 }
 
 function startBulk(){
+  if(GRID_VIEW !== 'assign') setGridView('assign');
   BULK.active = true; BULK.kind = null; BULK.picked.clear();
   const sel = document.getElementById('bulkAssignee');
   sel.innerHTML = '<option value="' + escapeHtml(CURRENT_USER.id) + '">Me (' + escapeHtml(CURRENT_USER.display_name || 'me') + ')</option>' +
@@ -6003,11 +6030,55 @@ document.getElementById('btnBulkSelectAll').addEventListener('click', ()=>{
 });
 document.getElementById('btnBulkConfirm').addEventListener('click', confirmBulkAssign);
 
+/* ---------- Scores / Assignments switch ---------- */
+const LS_GRID_VIEW_KEY = 'qa_grid_view';
+let GRID_VIEW = 'scores';
+try{ if(localStorage.getItem(LS_GRID_VIEW_KEY) === 'assign') GRID_VIEW = 'assign'; }catch(e){}
+
+function setGridView(view, instant){
+  GRID_VIEW = view === 'assign' ? 'assign' : 'scores';
+  try{ localStorage.setItem(LS_GRID_VIEW_KEY, GRID_VIEW); }catch(e){}
+  const slider = document.getElementById('gridSlider');
+  if(instant) slider.style.transition = 'none';
+  slider.classList.toggle('show-assign', GRID_VIEW === 'assign');
+  if(instant){ void slider.offsetWidth; slider.style.transition = ''; }
+  document.querySelectorAll('#gridSlider .grid-pane').forEach(p=>{
+    const on = p.dataset.pane === GRID_VIEW;
+    p.classList.toggle('active', on);
+    p.setAttribute('aria-hidden', on ? 'false' : 'true');
+  });
+  document.querySelectorAll('[data-grid-view]').forEach(b=> b.classList.toggle('on', b.dataset.gridView === GRID_VIEW));
+  document.body.classList.toggle('grid-assign', GRID_VIEW === 'assign');
+  if(GRID_VIEW !== 'assign' && BULK.active) stopBulk();
+  if(LAST_GRID) updateGridHeading(LAST_GRID.scope);
+}
+document.querySelectorAll('[data-grid-view]').forEach(b=> b.addEventListener('click', ()=> setGridView(b.dataset.gridView)));
+
+function updateGridHeading(scope){
+  const meta = LAST_GRID && LAST_GRID.meta;
+  document.getElementById('monthlyTitle').textContent = (GRID_VIEW === 'assign' ? 'Assignments' : 'Monthly scores') + ' · ' + CURRENT_TEAM + ' · ' + scope.label;
+  if(!meta){ document.getElementById('monthlySub').textContent = ''; return; }
+  document.getElementById('monthlySub').textContent = GRID_VIEW === 'assign'
+    ? (meta.canAssign
+      ? meta.openTotal + ' open assignment' + (meta.openTotal === 1 ? '' : 's') + ' · ' + meta.myOpen + ' for you · use + Assign on an empty slot'
+      : 'Assignments are not available for this period')
+    : meta.complete + ' of ' + meta.total + ' agents have their ' + MONTHLY_EVAL_TARGET + ' evaluations · click an agent to open their details';
+}
+
+function scoreCellHtml(sl, e){
+  const score = Math.round(Number(e.score));
+  const by = evaluatorLabel(e);
+  const tip = (e.call_date || '') + (e.ticket_id ? ' · Ticket ' + e.ticket_id : '') + ' · evaluated by ' + by +
+    (sl && sl.assignment ? ' · assigned ' + sl.assignment.kind : sl ? ' · not scheduled' : '') + (e.zero_triggered ? ' · automatic zero' : '') + ' · click to view';
+  return '<td class="cell-score ' + evalScoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%' +
+    '<span class="cell-by">' + escapeHtml(by) + '</span></td>';
+}
+
 function renderMonthlyGrid(evals, scope, assignments){
   assignments = assignments || [];
-  LAST_GRID = { evals, scope, assignments };
-  document.getElementById('monthlyTitle').textContent = 'Monthly scores · ' + CURRENT_TEAM + ' · ' + scope.label;
+  LAST_GRID = { evals, scope, assignments, meta: null };
   const root = document.getElementById('monthlyTable');
+  const aroot = document.getElementById('assignTable');
   const canAssign = ASSIGNMENTS_AVAILABLE && !!scope.month && !!CURRENT_USER;
   document.getElementById('btnBulkAssign').style.display = canAssign ? '' : 'none';
   document.getElementById('btnBulkAssign').textContent = BULK.active ? 'Close bulk assign' : 'Assign several';
@@ -6026,8 +6097,8 @@ function renderMonthlyGrid(evals, scope, assignments){
     (a.call_date || '').localeCompare(b.call_date || '') || (a.created_at || '').localeCompare(b.created_at || '')));
 
   if(!agents.length){
-    root.innerHTML = '<div class="agents-empty">No agents in the list yet.</div>';
-    document.getElementById('monthlySub').textContent = '';
+    root.innerHTML = aroot.innerHTML = '<div class="agents-empty">No agents in the list yet.</div>';
+    updateGridHeading(scope);
     return;
   }
 
@@ -6036,70 +6107,49 @@ function renderMonthlyGrid(evals, scope, assignments){
     slotsByAgent[a.id] = buildAgentSlots(byAgent[a.id] || [], assignments.filter(x=> x.agent_id === a.id));
   });
 
-  const maxSlots = Math.max(0, ...Object.values(slotsByAgent).map(l=> l.length));
-  const cols = Math.max(MONTHLY_EVAL_TARGET, maxSlots);
-  const complete = agents.filter(a=> (byAgent[a.id] || []).length >= MONTHLY_EVAL_TARGET).length;
-  const myOpen = CURRENT_USER ? Object.values(slotsByAgent).flat()
-    .filter(sl=> sl.type === 'assignment' && sl.assignment.assignee_id === CURRENT_USER.id).length : 0;
-  document.getElementById('monthlySub').textContent =
-    complete + ' of ' + agents.length + ' agents have their ' + MONTHLY_EVAL_TARGET + ' evaluations' +
-    (canAssign ? ' · you have ' + myOpen + ' open assignment' + (myOpen === 1 ? '' : 's') : '') +
-    ' · click an agent to open their details';
+  const openSlots = Object.values(slotsByAgent).flat().filter(sl=> sl.type === 'assignment');
+  LAST_GRID.meta = {
+    canAssign, total: agents.length,
+    complete: agents.filter(a=> (byAgent[a.id] || []).length >= MONTHLY_EVAL_TARGET).length,
+    openTotal: openSlots.length,
+    myOpen: CURRENT_USER ? openSlots.filter(sl=> sl.assignment.assignee_id === CURRENT_USER.id).length : 0,
+  };
+  updateGridHeading(scope);
 
   const selectedId = document.getElementById('agentsSelect').value;
-  let html = '<div class="monthly-scroll"><table class="monthly-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
+  const groups = supervisorGroups(agents);
+  const rowStart = (agent, span)=>{
+    const g = groups.get(agent.id);
+    return (g ? '<tr class="group-row"><td colspan="' + span + '">' + escapeHtml(g.label) + '<span>' + g.count + ' agent' + (g.count === 1 ? '' : 's') + '</span></td></tr>' : '') +
+      '<tr data-agent="' + escapeHtml(agent.id) + '"' + (agent.id === selectedId ? ' class="selected"' : '') + '>' +
+      '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + agentNameHtml(agent) + '</button></td>';
+  };
+  const doneCell = list=> '<td class="cell-progress' + (list.length >= MONTHLY_EVAL_TARGET ? ' complete' : '') + '">' +
+    Math.min(list.length, MONTHLY_EVAL_TARGET) + ' / ' + MONTHLY_EVAL_TARGET + '</td>';
+
+  // --- Scores: only finished evaluations, in call-date order.
+  const cols = Math.max(MONTHLY_EVAL_TARGET, ...agents.map(a=> (byAgent[a.id] || []).length));
+  let html = '<div class="monthly-scroll"><table class="monthly-table scores-table"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= cols; i++) html += '<th>Eval ' + i + '</th>';
   html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
-
   const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
-  const groups = supervisorGroups(agents);
   agents.forEach(agent=>{
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
-    const g = groups.get(agent.id);
-    if(g) html += '<tr class="group-row"><td colspan="' + (cols + 3) + '">' + escapeHtml(g.label) + '<span>' + g.count + ' agent' + (g.count === 1 ? '' : 's') + '</span></td></tr>';
-    html += '<tr data-agent="' + escapeHtml(agent.id) + '"' + (agent.id === selectedId ? ' class="selected"' : '') + '>' +
-      '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + agentNameHtml(agent) + '</button></td>';
+    html += rowStart(agent, cols + 3);
     for(let i = 0; i < cols; i++){
-      const sl = slots[i];
-      if(sl && sl.type === 'eval'){
-        const e = sl.eval;
-        const score = Math.round(Number(e.score));
-        const by = evaluatorLabel(e);
-        const tip = (e.call_date || '') + (e.ticket_id ? ' · Ticket ' + e.ticket_id : '') + ' · evaluated by ' + by +
-          (sl.assignment ? ' · assigned ' + sl.assignment.kind : ' · not scheduled') + (e.zero_triggered ? ' · automatic zero' : '') + ' · click to view';
-        html += '<td class="cell-score ' + evalScoreClass(score) + (e.zero_triggered ? ' cell-zero' : '') + '" data-eval="' + escapeHtml(e.id) + '" title="' + escapeHtml(tip) + '">' + score + '%' +
-          '<span class="cell-by">' + escapeHtml(by) + '</span></td>';
+      const e = list[i];
+      if(e){
+        html += scoreCellHtml(slots.find(sl=> sl.type === 'eval' && sl.eval.id === e.id), e);
         colTotals[i].earned += Number(e.points_earned || 0);
         colTotals[i].possible += Number(e.points_possible || 0);
         colTotals[i].n++;
-      }else if(sl && sl.type === 'assignment'){
-        const a = sl.assignment;
-        const mine = CURRENT_USER && a.assignee_id === CURRENT_USER.id;
-        const who = mine ? 'You' : profileName(a.assignee_id);
-        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + profileName(a.assignee_id) + ' by ' + profileName(a.assigned_by);
-        html += '<td class="cell-assigned' + (mine ? ' mine' : '') + '" title="' + escapeHtml(tip) + '">' +
-          '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
-          (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
-          '</td>';
-      }else if(canAssign && picking && i < MONTHLY_EVAL_TARGET){
-        const key = agent.id + '|' + i;
-        renderedBulkKeys.add(key);
-        html += '<td class="cell-empty bulk-cell' + (BULK.picked.has(key) ? ' picked' : '') + '" data-bulk-key="' + escapeHtml(key) + '" title="Select to assign"><span class="bulk-box"></span></td>';
-      }else if(canAssign && i < MONTHLY_EVAL_TARGET){
-        html += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '">+ Assign</button></td>';
-      }else{
-        html += '<td class="cell-empty">—</td>';
-      }
+      }else html += '<td class="cell-empty">—</td>';
     }
-    const done = Math.min(list.length, MONTHLY_EVAL_TARGET);
-    html += '<td class="cell-progress' + (list.length >= MONTHLY_EVAL_TARGET ? ' complete' : '') + '">' + done + ' / ' + MONTHLY_EVAL_TARGET + '</td>';
-    if(list.length){
-      const avg = weightedAvg(list);
-      html += '<td class="cell-avg ' + scoreClass(avg) + '">' + fmtPct(avg) + '</td>';
-    }else{
-      html += '<td class="cell-avg cell-empty">—</td>';
-    }
+    html += doneCell(list);
+    html += list.length
+      ? '<td class="cell-avg ' + scoreClass(weightedAvg(list)) + '">' + fmtPct(weightedAvg(list)) + '</td>'
+      : '<td class="cell-avg cell-empty">—</td>';
     html += '</tr>';
   });
   html += '</tbody><tfoot><tr><td>Team</td>';
@@ -6110,11 +6160,50 @@ function renderMonthlyGrid(evals, scope, assignments){
   html += evals.length ? '<td class="' + scoreClass(weightedAvg(evals)) + '">' + fmtPct(weightedAvg(evals)) + '</td>' : '<td class="cell-empty">—</td>';
   html += '</tr></tfoot></table></div>';
   root.innerHTML = html;
+
+  // --- Assignments: each slot of the month, who has it, and empty slots to assign.
+  const acols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(slotsByAgent).map(l=> l.length));
+  let ahtml = '<div class="monthly-scroll"><table class="monthly-table assign-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
+  for(let i = 1; i <= acols; i++) ahtml += '<th>Eval ' + i + '</th>';
+  ahtml += '<th>Done</th><th>Open</th></tr></thead><tbody>';
+  agents.forEach(agent=>{
+    const list = byAgent[agent.id] || [];
+    const slots = slotsByAgent[agent.id];
+    ahtml += rowStart(agent, acols + 3);
+    for(let i = 0; i < acols; i++){
+      const sl = slots[i];
+      if(sl && sl.type === 'eval'){
+        ahtml += scoreCellHtml(sl, sl.eval);
+      }else if(sl && sl.type === 'assignment'){
+        const a = sl.assignment;
+        const mine = CURRENT_USER && a.assignee_id === CURRENT_USER.id;
+        const who = mine ? 'You' : profileName(a.assignee_id);
+        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + profileName(a.assignee_id) + ' by ' + profileName(a.assigned_by);
+        ahtml += '<td class="cell-assigned' + (mine ? ' mine' : '') + '" title="' + escapeHtml(tip) + '">' +
+          '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
+          (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
+          '</td>';
+      }else if(canAssign && picking && i < MONTHLY_EVAL_TARGET){
+        const key = agent.id + '|' + i;
+        renderedBulkKeys.add(key);
+        ahtml += '<td class="cell-empty bulk-cell' + (BULK.picked.has(key) ? ' picked' : '') + '" data-bulk-key="' + escapeHtml(key) + '" title="Select to assign"><span class="bulk-box"></span></td>';
+      }else if(canAssign && i < MONTHLY_EVAL_TARGET){
+        ahtml += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '">+ Assign</button></td>';
+      }else{
+        ahtml += '<td class="cell-empty">—</td>';
+      }
+    }
+    const open = slots.filter(sl=> sl.type === 'assignment').length;
+    ahtml += doneCell(list) + '<td class="' + (open ? 'cell-open' : 'cell-empty') + '">' + (open || '—') + '</td></tr>';
+  });
+  ahtml += '</tbody></table></div>';
+  aroot.innerHTML = ahtml;
+
   // Drop selections whose cell is no longer an empty slot (data refreshed).
   Array.from(BULK.picked).forEach(k=>{ if(!renderedBulkKeys.has(k)) BULK.picked.delete(k); });
   if(BULK.active) updateBulkBar();
 
-  root.querySelectorAll('tbody tr[data-agent]').forEach(tr=>{
+  [root, aroot].forEach(r=> r.querySelectorAll('tbody tr[data-agent]').forEach(tr=>{
     tr.addEventListener('click', (ev)=>{
       const bulkCell = ev.target.closest('.bulk-cell');
       if(bulkCell){
@@ -6138,8 +6227,9 @@ function renderMonthlyGrid(evals, scope, assignments){
       if(cell){ openViewEvalModal(cell.dataset.eval, false); return; }
       openAgentFromGrid(tr.dataset.agent);
     });
-  });
+  }));
 }
+setGridView(GRID_VIEW, true);
 
 document.getElementById('btnCloseAssign').addEventListener('click', closeAssignModal);
 document.getElementById('assignOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'assignOverlay') closeAssignModal(); });
