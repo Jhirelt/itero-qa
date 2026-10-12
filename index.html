@@ -1088,7 +1088,7 @@
 
   /* ---------- Agent portal (an agent sees only their own data) ---------- */
   body.is-agent #tabEvalBtn, body.is-agent #tabConfigBtn,
-  body.is-agent .agents-filter-row > .agents-filter-field:first-child,
+  body.is-agent .agents-filter-row > .agents-filter-field:nth-child(-n+2), body.is-agent .team-switch-row,
   body.is-agent .monthly-card, body.is-agent #teamHeadRow, body.is-agent #teamDataWrap,
   body.is-agent .agent-meta-row, body.is-agent #agentsScopeNote{ display:none !important; }
   .agent-meta-text{ display:none; font-size:12.5px; color:var(--text-dim); margin:2px 0 14px; }
@@ -1146,6 +1146,18 @@
     color:var(--accent); background:var(--bg-elev-2); border-left:3px solid var(--accent); cursor:default;
   }
   .monthly-table tr.group-row td span{ color:var(--text-faint); font-weight:700; margin-left:8px; text-transform:none; letter-spacing:0; }
+  /* ---------- NA / CALA team switch ---------- */
+  .team-switch{ display:inline-flex; align-items:center; gap:2px; padding:3px; border-radius:999px; border:1px solid var(--border); background:var(--bg-elev-2); }
+  .team-switch button{
+    border:none; background:transparent; color:var(--text-dim); font-size:11.5px; font-weight:800; letter-spacing:.5px;
+    padding:5px 14px; border-radius:999px; cursor:pointer; transition: background-color .25s ease, color .25s ease;
+  }
+  .team-switch button:hover{ color:var(--text); }
+  .team-switch button.on{ background:var(--accent); color:#06201f; }
+  .team-filter-field .team-switch{ height:40px; box-sizing:border-box; padding:4px; }
+  .team-filter-field .team-switch button{ padding:6px 16px; }
+  .team-switch-row{ display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
+  .name-chip .team-tag{ font-size:9.5px; font-weight:800; color:var(--accent); border:1px solid var(--accent-dim); border-radius:999px; padding:0 6px; margin-right:6px; }
 </style>
 </head>
 <body>
@@ -1250,6 +1262,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
       <div class="side">
         <div class="panel agent-panel">
+          <div class="team-switch-row"><span>Team</span><div class="team-switch" role="group" aria-label="Team"><button type="button" data-team="NA">NA</button><button type="button" data-team="CALA">CALA</button></div></div>
           <div class="agent-input-wrap">
             <input id="fAgent" autocomplete="off" placeholder="Agent's name" class="agent-input-big">
             <div class="autocomplete-list" id="agentList"></div>
@@ -1322,6 +1335,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <!-- =============== AGENTS VIEW =============== -->
   <div id="view-agents" class="view-hidden" style="display:none;">
     <div class="agents-filter-row">
+      <div class="agents-filter-field team-filter-field">
+        <label>Team</label>
+        <div class="team-switch" role="group" aria-label="Team"><button type="button" data-team="NA">NA</button><button type="button" data-team="CALA">CALA</button></div>
+      </div>
       <div class="agents-filter-field">
         <label for="agentsSelect">Agent</label>
         <select id="agentsSelect">
@@ -1412,6 +1429,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="agent-meta-row">
         <label>Supervisor<select id="agentSupervisor"></select></label>
         <label>Role<select id="agentRole"></select></label>
+        <label>Team<select id="agentTeam"><option value="NA">NA</option><option value="CALA">CALA</option></select></label>
       </div>
       <div class="agent-stat-row">
         <div class="agent-stat-box">
@@ -3008,8 +3026,9 @@ function setupAutocomplete(){
   }
   function matchesFor(q){
     q = q.trim().toLowerCase();
-    if(!q) return CONFIG.names.slice();
-    return CONFIG.names.filter(n=>n.toLowerCase().startsWith(q) || n.toLowerCase().split(' ').some(p=>p.startsWith(q)));
+    const names = teamNames();
+    if(!q) return names;
+    return names.filter(n=>n.toLowerCase().startsWith(q) || n.toLowerCase().split(' ').some(p=>p.startsWith(q)));
   }
   input.addEventListener('input', ()=>{ hiIndex=-1; render(matchesFor(input.value)); refreshEval(); scheduleBannerSoon(); });
   input.addEventListener('focus', ()=>{ if(!input.readOnly) render(matchesFor(input.value)); });
@@ -3044,7 +3063,7 @@ function renderConfigNames(){
   list.forEach(agent=>{
     const chip = document.createElement('div');
     chip.className = 'name-chip';
-    chip.innerHTML = `<span>${escapeHtml(agent.name)}</span><button title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>`;
+    chip.innerHTML = `<span>${agent.id ? '<span class="team-tag">' + teamOf(agent) + '</span>' : ''}${escapeHtml(agent.name)}</span><button title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button>`;
     chip.querySelector('button').addEventListener('click', ()=> removeAgentFromDatabase(agent));
     wrap.appendChild(chip);
   });
@@ -3530,8 +3549,10 @@ function renderAgentMeta(agent){
   sup.innerHTML = selectOptions(CONFIG.supervisors, agent && agent.supervisor, 'No supervisor');
   role.innerHTML = selectOptions(CONFIG.roles.map(r=> r.name), agent && agent.role, 'No role');
   const editable = isAdminUser() && !!agent && !!agent.id && AGENT_META_AVAILABLE;
-  sup.disabled = role.disabled = !editable;
-  sup.title = role.title = editable ? '' : 'Only admins can change this';
+  const team = document.getElementById('agentTeam');
+  team.value = teamOf(agent);
+  sup.disabled = role.disabled = team.disabled = !editable;
+  sup.title = role.title = team.title = editable ? '' : 'Only admins can change this';
   document.getElementById('agentCardName').innerHTML = agent ? agentNameHtml(agent) : 'Agent';
   document.getElementById('agentMetaText').textContent = agent
     ? [agent.role ? 'Role: ' + agent.role : null, agent.supervisor ? 'Supervisor: ' + agent.supervisor : null].filter(Boolean).join(' · ')
@@ -3550,6 +3571,12 @@ async function saveAgentMeta(field, value){
     return;
   }
   agent[field] = value || null;
+  if(field === 'team'){
+    // Follow the agent to their new team so the profile stays open.
+    showToast(agent.name + ' moved to ' + value);
+    setTeam(value, agent.id);
+    return;
+  }
   showToast((field === 'role' ? 'Role' : 'Supervisor') + ' saved for ' + agent.name);
   renderAgentMeta(agent);
   if(LAST_GRID) rerenderGrid();
@@ -3557,6 +3584,7 @@ async function saveAgentMeta(field, value){
 
 document.getElementById('agentSupervisor').addEventListener('change', (e)=> saveAgentMeta('supervisor', e.target.value));
 document.getElementById('agentRole').addEventListener('change', (e)=> saveAgentMeta('role', e.target.value));
+document.getElementById('agentTeam').addEventListener('change', (e)=> saveAgentMeta('team', e.target.value));
 
 async function syncConfigNamesFromDatabase(){
   if(!supabaseClient) return;
@@ -4278,15 +4306,18 @@ async function init(){
     const btn = document.getElementById('btnAddName');
     btn.disabled = true;
     try{
-      const { data, error } = await supabaseClient.from('agents').insert({ name: v }).select('id,name').single();
+      // New agents join the team picked on the switch.
+      let { data, error } = await supabaseClient.from('agents').insert({ name: v, team: CURRENT_TEAM }).select('id,name,supervisor,role,team').single();
+      if(error && error.code === '42703') ({ data, error } = await supabaseClient.from('agents').insert({ name: v }).select('id,name').single());
       if(error) throw error;
       AGENTS_LIST_CACHE = AGENTS_LIST_CACHE || [];
       AGENTS_LIST_CACHE.push(data);
       AGENTS_LIST_CACHE.sort((a, b)=> a.name.localeCompare(b.name));
       CONFIG.names = AGENTS_LIST_CACHE.map(a=> a.name);
       renderConfigNames();
+      renderAgentsSelect();
       input.value = '';
-      showToast(v + ' added');
+      showToast(v + ' added to ' + teamOf(data));
     }catch(err){
       console.error('Could not add agent', err);
       showToast('Could not add: ' + (err.message || 'unknown error'));
@@ -4876,10 +4907,59 @@ document.getElementById('btnSaveEvaluation').addEventListener('click', saveEvalu
 let AGENTS_LIST_CACHE = null;
 let AGENT_META_AVAILABLE = true;
 
+/* ---------- Teams (NA / CALA) ---------- */
+// Each agent belongs to one team. The switch shows one team at a time, and
+// lists, tables and averages never mix the two.
+let CURRENT_TEAM = (()=>{ try{ return localStorage.getItem('qa_team') === 'CALA' ? 'CALA' : 'NA'; }catch(e){ return 'NA'; } })();
+function teamOf(agent){ return agent && agent.team === 'CALA' ? 'CALA' : 'NA'; }
+function agentTeamById(id){ return teamOf((AGENTS_LIST_CACHE || []).find(a=> a.id === id)); }
+function inTeam(e){ return agentTeamById(e.agent_id) === CURRENT_TEAM; }
+function teamAgents(){ return (AGENTS_LIST_CACHE || []).filter(a=> teamOf(a) === CURRENT_TEAM); }
+function teamNames(){
+  return (AGENTS_LIST_CACHE && AGENTS_LIST_CACHE.length) ? teamAgents().map(a=> a.name) : CONFIG.names.slice();
+}
+
+function renderTeamSwitches(){
+  document.querySelectorAll('.team-switch button').forEach(b=>{
+    const on = b.dataset.team === CURRENT_TEAM;
+    b.classList.toggle('on', on);
+    b.setAttribute('aria-pressed', on ? 'true' : 'false');
+  });  const nameInput = document.getElementById('newNameInput');
+  if(nameInput) nameInput.placeholder = 'Agent name (joins ' + CURRENT_TEAM + ')';
+}
+
+function setTeam(team, keepAgentId){
+  if(team !== 'NA' && team !== 'CALA') return;
+  CURRENT_TEAM = team;
+  try{ localStorage.setItem('qa_team', team); }catch(e){}
+  renderTeamSwitches();
+  renderAgentsSelect();
+  if(keepAgentId) document.getElementById('agentsSelect').value = keepAgentId;
+  if(isViewVisible('view-agents')) refreshAgentsView();
+  const input = document.getElementById('fAgent');
+  if(document.activeElement === input) input.dispatchEvent(new Event('focus'));
+}
+document.querySelectorAll('.team-switch button').forEach(b=> b.addEventListener('click', ()=> setTeam(b.dataset.team)));
+renderTeamSwitches();
+
+function renderAgentsSelect(){
+  const sel = document.getElementById('agentsSelect');
+  if(!sel) return;
+  const current = sel.value;
+  const list = isAgentUser() ? (AGENTS_LIST_CACHE || []) : teamAgents();
+  sel.innerHTML = '<option value="">Team overview (all ' + CURRENT_TEAM + ' agents)</option>' +
+    list.map(a=>'<option value="' + a.id + '">' + escapeHtml(a.name) + '</option>').join('');
+  sel.value = list.some(a=> a.id === current) ? current : '';
+}
+
 async function ensureAgentsListLoaded(){
-  if(AGENTS_LIST_CACHE) return AGENTS_LIST_CACHE;
+  if(AGENTS_LIST_CACHE){ renderAgentsSelect(); return AGENTS_LIST_CACHE; }
   try{
-    let { data, error } = await supabaseClient.from('agents').select('id,name,supervisor,role').order('name');
+    let { data, error } = await supabaseClient.from('agents').select('id,name,supervisor,role,team').order('name');
+    if(error && error.code === '42703'){
+      // Database without the team column yet.
+      ({ data, error } = await supabaseClient.from('agents').select('id,name,supervisor,role').order('name'));
+    }
     if(error && error.code === '42703'){
       // Database without the supervisor / role columns yet.
       AGENT_META_AVAILABLE = false;
@@ -4891,13 +4971,7 @@ async function ensureAgentsListLoaded(){
     console.error('Could not load agents', e);
     AGENTS_LIST_CACHE = [];
   }
-  const sel = document.getElementById('agentsSelect');
-  if(sel){
-    const current = sel.value;
-    sel.innerHTML = '<option value="">Team overview (all agents)</option>' +
-      AGENTS_LIST_CACHE.map(a=>'<option value="' + a.id + '">' + escapeHtml(a.name) + '</option>').join('');
-    sel.value = current;
-  }
+  renderAgentsSelect();
   return AGENTS_LIST_CACHE;
 }
 
@@ -5755,7 +5829,7 @@ document.getElementById('btnBulkConfirm').addEventListener('click', confirmBulkA
 function renderMonthlyGrid(evals, scope, assignments){
   assignments = assignments || [];
   LAST_GRID = { evals, scope, assignments };
-  document.getElementById('monthlyTitle').textContent = 'Monthly scores · ' + scope.label;
+  document.getElementById('monthlyTitle').textContent = 'Monthly scores · ' + CURRENT_TEAM + ' · ' + scope.label;
   const root = document.getElementById('monthlyTable');
   const canAssign = ASSIGNMENTS_AVAILABLE && !!scope.month && !!CURRENT_USER;
   document.getElementById('btnBulkAssign').style.display = canAssign ? '' : 'none';
@@ -5764,7 +5838,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   const picking = BULK.active && !!BULK.kind;
   const renderedBulkKeys = new Set();
 
-  const agents = (AGENTS_LIST_CACHE || []).slice();
+  const agents = teamAgents();
   const byAgent = {};
   evals.forEach(e=>{
     (byAgent[e.agent_id] = byAgent[e.agent_id] || []).push(e);
@@ -5911,15 +5985,15 @@ async function refreshAgentsView(){
   const noteParts = [hasFilter ? 'Showing data' : 'Showing all-time data'];
   if(startDate) noteParts.push('from ' + startDate);
   if(endDate) noteParts.push('to ' + endDate);
-  noteParts.push('across every agent (team panel below).');
+  noteParts.push('across every ' + CURRENT_TEAM + ' agent (team panel below).');
   document.getElementById('agentsScopeNote').textContent = noteParts.join(' ');
 
   try{
     // An agent sees only their own card, never the team table.
     if(!isAgentUser()){
-      const teamEvals = await fetchEvaluations({ startDate, endDate });
+      const teamEvals = (await fetchEvaluations({ startDate, endDate })).filter(inTeam);
       const gridScope = monthlyGridScope();
-      const gridEvals = gridScope.isFilter ? teamEvals : await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate });
+      const gridEvals = gridScope.isFilter ? teamEvals : (await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate })).filter(inTeam);
       await ensureProfilesLoaded();
       const gridAssignments = await fetchAssignments(gridScope.month);
       renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
@@ -6776,7 +6850,7 @@ async function exportScoresToExcel(){
     buildEvaluationsSheet(wb, evals, deductions);
     const buf = await wb.xlsx.writeBuffer();
     downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
-      'QA-scores-' + fileSlug(scope.label) + '.xlsx');
+      'QA-scores-' + CURRENT_TEAM + '-' + fileSlug(scope.label) + '.xlsx');
     showToast('Excel file downloaded');
   }catch(e){
     console.error('Excel export failed', e);
@@ -6792,7 +6866,7 @@ function styleScoreCell(cell, cls){
 }
 
 function gridAgents(evals){
-  const agents = (AGENTS_LIST_CACHE || []).slice();
+  const agents = teamAgents();
   evals.forEach(e=>{ if(!agents.some(a=> a.id === e.agent_id)) agents.push({ id: e.agent_id, name: e.agents ? e.agents.name : 'Unknown' }); });
   return agents.sort(compareAgents(gridSortMode()));
 }
@@ -6809,7 +6883,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
   const header = ['Agent', 'Role', 'Supervisor'];
   for(let i = 1; i <= cols; i++) header.push('Eval ' + i, 'Evaluated by', 'Date');
   header.push('Done', 'Average');
-  ws.getCell(1, 1).value = 'Monthly scores · ' + scope.label;
+  ws.getCell(1, 1).value = 'Monthly scores · ' + CURRENT_TEAM + ' · ' + scope.label;
   ws.getCell(1, 1).font = { bold: true, size: 14 };
   ws.getCell(2, 1).value = 'Exported ' + new Date().toLocaleString();
   ws.getCell(2, 1).font = { italic: true, color: { argb: 'FF666666' } };
