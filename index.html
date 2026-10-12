@@ -1053,6 +1053,73 @@
     .side{ position:static; }
     .items{ grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
   }
+  /* ---------- View as another user ---------- */
+  .user-badge{ position:relative; }
+  .user-badge .viewas-btn:hover{ color:var(--accent); }
+  .viewas-menu{
+    display:none; position:absolute; top:calc(100% + 8px); right:0; z-index:60; min-width:230px;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius-sm); box-shadow:var(--shadow); padding:8px;
+  }
+  .viewas-menu.show{ display:block; }
+  .viewas-menu .vm-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; margin:2px 4px 6px; }
+  .user-badge .viewas-menu button.vm-item{
+    display:flex; width:100%; height:auto; border-radius:var(--radius-sm); justify-content:space-between; align-items:center; gap:8px;
+    padding:7px 8px; font-size:12.5px; color:var(--text); text-align:left;
+  }
+  .user-badge .viewas-menu button.vm-item:hover{ background:var(--bg-elev-2); color:var(--accent); }
+  .viewas-menu .vm-item small{ color:var(--text-faint); font-size:10.5px; text-transform:uppercase; }
+  .viewas-menu select{ width:100%; margin-top:4px; padding:6px 8px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; color-scheme: light dark; }
+  .viewas-banner{
+    display:none; align-items:center; gap:10px; justify-content:center; flex-wrap:wrap;
+    background:var(--warn-soft); border-bottom:1px solid var(--warn); color:var(--text); font-size:12.5px; padding:8px 16px;
+  }
+  .viewas-banner.show{ display:flex; }
+  .viewas-banner svg{ color:var(--warn); flex:none; }
+  .viewas-banner .btn{ padding:4px 12px; font-size:12px; }
+
+  /* ---------- Agent portal (an agent sees only their own data) ---------- */
+  body.is-agent #tabEvalBtn, body.is-agent #tabConfigBtn,
+  body.is-agent .agents-filter-row > .agents-filter-field:first-child,
+  body.is-agent .monthly-card, body.is-agent #teamHeadRow, body.is-agent #teamDataWrap,
+  body.is-agent .agent-meta-row, body.is-agent #agentsScopeNote{ display:none !important; }
+  .agent-meta-text{ display:none; font-size:12.5px; color:var(--text-dim); margin:2px 0 14px; }
+  body.is-agent .agent-meta-text{ display:block; }
+  .agent-card-head{ display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; }
+  .agent-card-head h3{ margin:0; }
+  .agent-card-head .btn{ flex:none; padding:6px 12px; font-size:12px; }
+  .agent-card-head .btn svg, .monthly-head #btnExportExcel svg{ width:15px; height:15px; }
+  .monthly-head .bulk-start-btn + .bulk-start-btn{ margin-left:0; }
+  .login-switch{ display:block; width:100%; margin-top:12px; background:none; border:none; color:var(--accent); font-size:12.5px; cursor:pointer; }
+  .login-switch:hover{ text-decoration:underline; }
+  .login-note{ display:none; font-size:12px; color:var(--text-dim); background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:8px 10px; margin-top:12px; }
+  .login-note.show{ display:block; }
+
+  /* ---------- Configuration options ---------- */
+  .cfg-toggle{ display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text); margin:8px 0; cursor:pointer; line-height:1.45; }
+  .cfg-toggle input{ margin-top:3px; width:16px; height:16px; accent-color:var(--accent); flex:none; }
+  .cfg-agent-access{ margin:6px 0 0 26px; }
+  .cfg-agent-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
+  .cfg-agent-row span{ flex:1 1 200px; font-size:12.5px; }
+  .cfg-agent-row input{ flex:1 1 240px; padding:6px 9px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; }
+  .cfg-agent-row input.saved{ border-color:var(--yes); }
+  .cfg-agent-row input.invalid{ border-color:var(--no); }
+  .cfg-agent-row em{ font-style:normal; font-size:11px; color:var(--yes); min-width:70px; }
+
+  /* ---------- Quick notes ---------- */
+  .quick-notes textarea{ width:100%; min-height:110px; resize:vertical; box-sizing:border-box; padding:9px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font:inherit; font-size:12.5px; line-height:1.45; outline:none; }
+  .quick-notes textarea:focus{ border-color:var(--accent); }
+  .qn-clear{ background:none; border:none; color:var(--text-faint); font-size:11.5px; cursor:pointer; padding:0; }
+  .qn-clear:hover{ color:var(--no); }
+
+  /* ---------- Repeated error alerts ---------- */
+  .repeat-alert{ display:none; margin-top:10px; border:1px solid var(--no); background:var(--no-soft); border-radius:var(--radius-sm); padding:9px 11px; font-size:12px; }
+  .repeat-alert.show{ display:block; }
+  #agentRepeatAlert{ margin:0 0 14px; }
+  .repeat-alert .ra-title{ display:flex; align-items:center; gap:6px; font-weight:800; color:var(--no); margin-bottom:5px; }
+  .repeat-alert .ra-title svg{ width:15px; height:15px; flex:none; }
+  .repeat-alert .ra-item{ display:flex; justify-content:space-between; gap:10px; padding:3px 0; color:var(--text); }
+  .repeat-alert .ra-item + .ra-item{ border-top:1px dashed var(--border); }
+  .repeat-alert .ra-why{ color:var(--text-dim); white-space:nowrap; font-size:11.5px; }
 </style>
 </head>
 <body>
@@ -1068,7 +1135,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
 
   <div class="tabs" id="mainTabs">
-    <button class="tab-btn active" data-view="eval">Evaluation</button>
+    <button class="tab-btn active" data-view="eval" id="tabEvalBtn">Evaluation</button>
     <button class="tab-btn" data-view="agents">Agents</button>
     <button class="tab-btn" data-view="config" id="tabConfigBtn">Configuration</button>
   </div>
@@ -1076,6 +1143,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div class="user-badge" id="userBadge" style="display:none;">
     <span class="name" id="userBadgeName"></span>
     <span class="role" id="userBadgeRole"></span>
+    <button type="button" id="btnViewAs" class="viewas-btn" title="See the app as another user sees it" style="display:none;">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+    </button>
+    <div class="viewas-menu" id="viewAsMenu"></div>
     <button id="btnLogout" title="Log out">
       <svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </button>
@@ -1087,6 +1158,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
 </div>
 
+<div class="viewas-banner" id="viewAsBanner">
+  <svg viewBox="0 0 24 24" fill="none" width="16" height="16"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
+  <span id="viewAsText"></span>
+  <button type="button" class="btn btn-ghost" id="btnExitViewAs">Back to my view</button>
+</div>
 <div class="wrap">
 
   <!-- =============== EVALUATION VIEW =============== -->
@@ -1159,6 +1235,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           </div>
           <div class="field-error" id="errCallDate"></div>
           <div class="sched-banner" id="schedBanner"></div>
+          <div class="repeat-alert" id="evalRepeatAlert"></div>
+        </div>
+        <div class="panel quick-notes" id="quickNotesPanel" style="display:none;">
+          <div class="extras-head"><h4>Quick notes</h4><button type="button" class="qn-clear" id="btnClearQuickNotes" title="Clear your notes">Clear</button></div>
+          <textarea id="quickNotes" placeholder="Jot anything down while you listen. Only you see these notes; they stay on this computer."></textarea>
         </div>
         <div class="panel">
           <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
@@ -1269,6 +1350,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           </select>
         </label>
         <button type="button" class="btn btn-ghost bulk-start-btn" id="btnBulkAssign" style="display:none;">Assign several</button>
+        <button type="button" class="btn btn-ghost bulk-start-btn" id="btnExportExcel" title="Download this table as an Excel file">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Export to Excel
+        </button>
       </div>
       <div class="bulk-bar" id="bulkBar" style="display:none;">
         <div class="bulk-step" id="bulkStepKind">
@@ -1290,7 +1375,14 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
 
     <div id="agentCard" class="agent-stat-card" style="display:none;">
-      <h3 id="agentCardName">Agent</h3>
+      <div class="agent-card-head">
+        <h3 id="agentCardName">Agent</h3>
+        <button type="button" class="btn btn-ghost" id="btnAgentPdf" title="Download a PDF with all of this agent's data">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M14 3H6a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9l-6-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M14 3v6h6M12 12v6m0 0-2.5-2.5M12 18l2.5-2.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Download PDF
+        </button>
+      </div>
+      <div class="agent-meta-text" id="agentMetaText"></div>
       <div class="agent-meta-row">
         <label>Supervisor<select id="agentSupervisor"></select></label>
         <label>Role<select id="agentRole"></select></label>
@@ -1321,6 +1413,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </div>
         <div class="rs-labels"><span id="perfRangeFromLbl"></span><span id="perfRangeSummary"></span><span id="perfRangeToLbl"></span></div>
       </div>
+      <div class="repeat-alert" id="agentRepeatAlert"></div>
       <div class="perf-cols">
         <div>
           <div class="agent-fail-title">Top 3 most repeated errors</div>
@@ -1439,6 +1532,16 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         Save changes
       </button>
+    </div>
+
+    <div class="cfg-block" id="cfgFeaturesBlock">
+      <h4>Options</h4>
+      <label class="cfg-toggle"><input type="checkbox" id="cfgQuickNotes"><span><b>Quick notes panel</b> on the Evaluation page, for evaluators to jot notes while they listen.</span></label>
+      <label class="cfg-toggle"><input type="checkbox" id="cfgAgentPortal"><span><b>Agents can see their own scores.</b> Each agent signs in and sees only their own evaluations, errors, focus points and feedback.</span></label>
+      <div id="cfgAgentAccess" class="cfg-agent-access" style="display:none;">
+        <p class="hint">Write the email each agent will sign in with. The agent opens the app, clicks <b>First time? Create your account</b>, and uses that email. Emails save as you type.</p>
+        <div id="cfgAgentEmails"></div>
+      </div>
     </div>
 
     <div class="cfg-block" id="cfgSummaryBlock">
@@ -1589,6 +1692,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <button type="submit" class="btn btn-primary" id="btnLogin">Sign in</button>
     </form>
+    <button type="button" class="login-switch" id="btnLoginMode">First time? Create your account</button>
+    <div class="login-note" id="loginNote"></div>
   </div>
 </div>
 
@@ -2420,6 +2525,7 @@ async function loadConfig(){
     supervisors: DEFAULT_SUPERVISORS.slice(),
     roles: DEFAULT_ROLES.map(r=> Object.assign({}, r)),
     criteriaSeed: CRITERIA_SEED,
+    features: { quickNotes: false, agentPortal: false },
   };
 
   if(stored){
@@ -2493,6 +2599,10 @@ async function loadConfig(){
       if(Array.isArray(stored.roles)){
         CONFIG.roles = stored.roles.filter(r=> r && typeof r.name === 'string' && r.name.trim())
           .map(r=> ({ name: r.name.trim(), color: roleColorKey(r) }));
+      }
+      if(stored.features && typeof stored.features === 'object'){
+        CONFIG.features.quickNotes = !!stored.features.quickNotes;
+        CONFIG.features.agentPortal = !!stored.features.agentPortal;
       }
       if(typeof stored.activeScenarioId === 'string' && CONFIG.scenarios.items[stored.activeScenarioId]){
         CONFIG.activeScenarioId = stored.activeScenarioId;
@@ -3382,6 +3492,9 @@ function renderAgentMeta(agent){
   sup.disabled = role.disabled = !editable;
   sup.title = role.title = editable ? '' : 'Only admins can change this';
   document.getElementById('agentCardName').innerHTML = agent ? agentNameHtml(agent) : 'Agent';
+  document.getElementById('agentMetaText').textContent = agent
+    ? [agent.role ? 'Role: ' + agent.role : null, agent.supervisor ? 'Supervisor: ' + agent.supervisor : null].filter(Boolean).join(' · ')
+    : '';
 }
 
 async function saveAgentMeta(field, value){
@@ -3755,7 +3868,7 @@ function switchTab(view){
 
   const populate = ()=>{
     if(view==='config'){
-      renderConfigNames(); renderConfigPeople(); renderConfigSections();
+      renderConfigOptions(); renderConfigNames(); renderConfigPeople(); renderConfigSections();
       document.getElementById('cfgSummaryTemplate').value = CONFIG.summaryTemplate;
       document.getElementById('cfgItemTemplate').value = CONFIG.itemTemplate;
       refreshScenarioUI();
@@ -3932,8 +4045,9 @@ async function init(){
   document.getElementById('fCallDate').max = todayLocal();
 
   startPresenceHeartbeat();
+  renderQuickNotes();
   try{
-    adoptLegacyDrafts();
+    if(!CURRENT_USER.viewAs) adoptLegacyDrafts();
     const rawDraft = localStorage.getItem(draftKey(LS_CURRENT_DRAFT_KEY));
     if(rawDraft){
       const draft = JSON.parse(rawDraft);
@@ -4277,6 +4391,7 @@ async function init(){
   renderSections();
   refreshEval();
   renderOngoingList();
+  if(isAgentUser()) switchTab('agents');
 }
 
 /* ============================================================
@@ -4318,26 +4433,53 @@ function applyRoleToUI(){
   // Configuration changes the rubric for everyone, so only admins see it.
   document.getElementById('tabConfigBtn').style.display = isAdmin ? '' : 'none';
   if(!isAdmin && isViewVisible('view-config')) switchTab('eval');
+  // Agents only get their own page on the Agents tab.
+  const isAgent = role === 'agent';
+  document.body.classList.toggle('is-agent', isAgent);
+  document.getElementById('tabEvalBtn').style.display = isAgent ? 'none' : '';
+  document.getElementById('btnViewAs').style.display = (isAdmin || REAL_USER) ? '' : 'none';
 
   document.getElementById('userBadgeName').textContent = CURRENT_USER.display_name || CURRENT_USER.email;
-  document.getElementById('userBadgeRole').textContent = CURRENT_USER.role;
+  document.getElementById('userBadgeRole').textContent = CURRENT_USER.role + (REAL_USER ? ' · view' : '');
   document.getElementById('userBadge').style.display = 'flex';
 }
 
 async function loadProfileAndStart(user){
-  let profile = null;
+  let profile = null, lookupFailed = false;
   try{
-    const { data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).single();
-    if(error) console.error('Profile lookup returned an error (role will default to evaluator):', error);
+    const { data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).maybeSingle();
+    if(error){ lookupFailed = true; console.error('Profile lookup returned an error (role will default to evaluator):', error); }
     else profile = data;
-  }catch(e){ console.error('Could not load profile (role will default to evaluator):', e); }
+  }catch(e){ lookupFailed = true; console.error('Could not load profile (role will default to evaluator):', e); }
 
-  CURRENT_USER = {
-    id: user.id,
-    email: user.email,
-    role: profile ? profile.role : 'evaluator',
-    display_name: profile ? profile.display_name : user.email,
-  };
+  if(!profile && !lookupFailed){
+    // No QA profile: an agent signing in to see their own scores, or no access.
+    let agentId = null, agentName = null;
+    try{
+      const { data, error } = await supabaseClient.rpc('claim_agent_login');
+      if(error) console.error('Agent sign-in check failed', error);
+      else agentId = data;
+      if(agentId){
+        const res = await supabaseClient.from('agents').select('name').eq('id', agentId).maybeSingle();
+        if(res.data) agentName = res.data.name;
+      }
+    }catch(e){ console.error('Agent sign-in check failed', e); }
+    if(!agentId){
+      await supabaseClient.auth.signOut();
+      setAppVisible(false);
+      showLoginError('This account has no access yet. Ask your QA admin to add your email to your agent profile.');
+      return;
+    }
+    CURRENT_USER = { id: user.id, email: user.email, role: 'agent', agent_id: agentId, display_name: agentName || user.email };
+  }else{
+    CURRENT_USER = {
+      id: user.id,
+      email: user.email,
+      role: profile ? profile.role : 'evaluator',
+      display_name: profile ? profile.display_name : user.email,
+    };
+    applyViewAs();
+  }
 
   applyRoleToUI();
   setAppVisible(true);
@@ -4367,8 +4509,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
   const email = document.getElementById('loginEmail').value.trim();
   const password = document.getElementById('loginPassword').value;
   btn.disabled = true;
-  btn.textContent = 'Signing in...';
+  btn.textContent = LOGIN_SIGNUP ? 'Creating account...' : 'Signing in...';
   try{
+    if(LOGIN_SIGNUP){ await createAgentAccount(email, password); return; }
     const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
     if(error){ showLoginError(error.message || 'Could not sign in.'); return; }
     await loadProfileAndStart(data.user);
@@ -4377,11 +4520,12 @@ document.getElementById('loginForm').addEventListener('submit', async (e)=>{
     showLoginError('Could not reach the server. Check your connection and try again.');
   }finally{
     btn.disabled = false;
-    btn.textContent = 'Sign in';
+    btn.textContent = LOGIN_SIGNUP ? 'Create account' : 'Sign in';
   }
 });
 
 document.getElementById('btnLogout').addEventListener('click', async ()=>{
+  try{ sessionStorage.removeItem(VIEW_AS_KEY); }catch(e){}
   if(supabaseClient) await supabaseClient.auth.signOut();
   window.location.reload();
 });
@@ -5112,8 +5256,10 @@ function syncPresence(){
   PRESENCE_CHAIN = PRESENCE_CHAIN.then(syncPresenceNow, syncPresenceNow);
   return PRESENCE_CHAIN;
 }
+// Only real QA staff report what they have open (not agents, not "view as").
+function presenceWritable(){ return !!CURRENT_USER && !CURRENT_USER.viewAs && CURRENT_USER.role !== 'agent'; }
 async function syncPresenceNow(){
-  if(!PRESENCE_AVAILABLE || !supabaseClient || !CURRENT_USER) return;
+  if(!PRESENCE_AVAILABLE || !supabaseClient || !presenceWritable()) return;
   const t = presenceTarget();
   try{
     if(!t){
@@ -5142,7 +5288,7 @@ function startPresenceHeartbeat(){
   }, PRESENCE_HEARTBEAT_MS);
   // Closing the tab frees it right away (best effort; otherwise it expires on its own).
   window.addEventListener('pagehide', ()=>{
-    if(!PRESENCE_CURRENT || !PRESENCE_AVAILABLE) return;
+    if(!PRESENCE_CURRENT || !PRESENCE_AVAILABLE || !presenceWritable()) return;
     PRESENCE_CURRENT = null;
     supabaseClient.from('evaluation_presence').update({ agent_id: null, month: null }).eq('user_id', CURRENT_USER.id).then(()=>{}, ()=>{});
   });
@@ -5160,6 +5306,7 @@ function openByHtml(s){
 
 async function refreshScheduleBanner(){
   clearTimeout(SCHEDULE_TIMER);
+  refreshEvalRepeatAlert();
   const token = ++SCHEDULE_TOKEN;
   if(!supabaseClient || !CURRENT_USER || EDITING_EXISTING){ SCHEDULE = null; renderScheduleBanner(); return null; }
   await ensureAgentsListLoaded();
@@ -5433,6 +5580,7 @@ async function saveEditedEvaluation(btn, check){
   if(error) throw error;
   showToast('Changes saved for ' + check.agent.name);
   clearCurrentDraftFromLocal();
+  refreshEvalRepeatAlert(true);
   // Right after saving, fixes stay on the Evaluation tab and keep updating the same record.
   if(EDITING_EXISTING.justSaved){ EDITING_EXISTING.callDate = check.callDate; return; }
   stopEditingEvaluation();
@@ -5449,6 +5597,7 @@ function adoptSavedEvaluation(id, agentName, callDate, ticket){
   document.getElementById('editingBanner').classList.add('show', 'just-saved');
   document.getElementById('btnCancelEditing').textContent = 'New evaluation';
   syncSaveButtonLabel();
+  refreshEvalRepeatAlert(true);
 }
 
 document.getElementById('btnCloseViewEval').addEventListener('click', closeViewEvalModal);
@@ -5709,8 +5858,9 @@ async function refreshAgentsView(){
     return;
   }
   await ensureAgentsListLoaded();
+  if(isAgentUser()) document.getElementById('agentsSelect').value = CURRENT_USER.agent_id;
 
-  const selectedAgentId = document.getElementById('agentsSelect').value || null;
+  const selectedAgentId = isAgentUser() ? CURRENT_USER.agent_id : (document.getElementById('agentsSelect').value || null);
   const { startDate, endDate } = getAgentsDateRange();
   const hasFilter = !!(startDate || endDate);
 
@@ -5721,14 +5871,17 @@ async function refreshAgentsView(){
   document.getElementById('agentsScopeNote').textContent = noteParts.join(' ');
 
   try{
-    const teamEvals = await fetchEvaluations({ startDate, endDate });
-    const gridScope = monthlyGridScope();
-    const gridEvals = gridScope.isFilter ? teamEvals : await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate });
-    await ensureProfilesLoaded();
-    const gridAssignments = await fetchAssignments(gridScope.month);
-    renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
-    await renderTeamOverview(teamEvals);
-    renderRanking(teamEvals);
+    // An agent sees only their own card, never the team table.
+    if(!isAgentUser()){
+      const teamEvals = await fetchEvaluations({ startDate, endDate });
+      const gridScope = monthlyGridScope();
+      const gridEvals = gridScope.isFilter ? teamEvals : await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate });
+      await ensureProfilesLoaded();
+      const gridAssignments = await fetchAssignments(gridScope.month);
+      renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
+      await renderTeamOverview(teamEvals);
+      renderRanking(teamEvals);
+    }
 
     if(selectedAgentId){
       const agentMeta = AGENTS_LIST_CACHE.find(a=> a.id === selectedAgentId);
@@ -5753,6 +5906,9 @@ async function refreshAgentsView(){
 
       const details = await loadAgentPerformance(generalEvals, { startDate, endDate });
       renderEvalList(scopedAgentEvals, details);
+      const alertMonth = document.getElementById('agentsMonth').value ? document.getElementById('agentsMonth').value + '-01' : monthOf(todayLocal());
+      renderRepeatAlert(document.getElementById('agentRepeatAlert'),
+        findRepeatedErrors(PERF.evals, PERF.deductions, alertMonth), alertMonth, 'Repeated errors');
     }else{
       document.getElementById('agentCard').style.display = 'none';
     }
@@ -6100,7 +6256,8 @@ const LS_CURRENT_DRAFT_KEY = 'qa_current_draft_v1';
 const LS_ONGOING_DRAFTS_KEY = 'qa_ongoing_drafts_v1';
 // Drafts belong to whoever is signed in, so two evaluators sharing a computer
 // never pick up each other's half-done evaluations.
-function draftKey(base){ return CURRENT_USER && CURRENT_USER.id ? base + ':' + CURRENT_USER.id : base; }
+// Viewing as someone else keeps its drafts apart from that person's own.
+function draftKey(base){ return CURRENT_USER && CURRENT_USER.id ? base + ':' + (CURRENT_USER.viewAs ? 'view-as:' : '') + CURRENT_USER.id : base; }
 // Drafts saved before they were per person go to the first one who signs in.
 function adoptLegacyDrafts(){
   try{
@@ -6248,6 +6405,680 @@ document.getElementById('btnToggleOngoing').addEventListener('click', ()=>{
   document.getElementById('btnToggleOngoing').classList.toggle('open');
   renderOngoingList();
 });
+
+/* ---------- Agent portal ---------- */
+// With the option on, an agent signs in with the email an admin wrote on their
+// agent row and sees only their own evaluations (the database enforces it).
+function isAgentUser(){ return !!CURRENT_USER && CURRENT_USER.role === 'agent'; }
+function featureOn(name){ return !!(CONFIG && CONFIG.features && CONFIG.features[name]); }
+
+// Saves only the options, so other unsaved Configuration edits stay unsaved.
+async function saveFeatureFlags(){
+  if(!supabaseClient || !isAdminUser()) return false;
+  try{
+    const { data, error: readError } = await supabaseClient.from('app_config').select('data').eq('id', 1).maybeSingle();
+    if(readError) throw readError;
+    const merged = Object.assign({}, (data && data.data) || {}, { features: Object.assign({}, CONFIG.features) });
+    const { error } = await supabaseClient.from('app_config').upsert({
+      id: 1, data: merged, updated_by: CURRENT_USER.id, updated_at: new Date().toISOString(),
+    });
+    if(error) throw error;
+    return true;
+  }catch(e){ console.error('Could not save the options', e); return false; }
+}
+
+function renderConfigOptions(){
+  document.getElementById('cfgQuickNotes').checked = featureOn('quickNotes');
+  document.getElementById('cfgAgentPortal').checked = featureOn('agentPortal');
+  renderAgentAccess();
+}
+
+async function renderAgentAccess(){
+  const wrap = document.getElementById('cfgAgentAccess');
+  const list = document.getElementById('cfgAgentEmails');
+  wrap.style.display = featureOn('agentPortal') ? '' : 'none';
+  if(!featureOn('agentPortal')) return;
+  list.innerHTML = '<div class="fail-empty">Loading agents...</div>';
+  const { data, error } = await supabaseClient.from('agents').select('id, name, login_email').order('name');
+  if(error){
+    list.innerHTML = '<div class="fail-empty">Could not load agents: ' + escapeHtml(error.message || 'unknown error') + '</div>';
+    return;
+  }
+  list.innerHTML = (data || []).map(a=>
+    '<div class="cfg-agent-row"><span>' + escapeHtml(a.name) + '</span>' +
+    '<input type="email" data-agent="' + escapeHtml(a.id) + '" placeholder="agent@company.com" value="' + escapeHtml(a.login_email || '') + '"><em></em></div>'
+  ).join('') || '<div class="fail-empty">No agents yet.</div>';
+  list.querySelectorAll('input[data-agent]').forEach(inp=>{
+    let timer = null;
+    inp.addEventListener('input', ()=>{
+      clearTimeout(timer);
+      inp.classList.remove('saved', 'invalid');
+      inp.nextElementSibling.textContent = '';
+      timer = setTimeout(()=> saveAgentLoginEmail(inp), 700);
+    });
+  });
+}
+
+async function saveAgentLoginEmail(inp){
+  const email = inp.value.trim();
+  const note = inp.nextElementSibling;
+  if(email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+    inp.classList.add('invalid'); note.textContent = 'Check the email'; note.style.color = 'var(--no)';
+    return;
+  }
+  const { error } = await supabaseClient.from('agents').update({ login_email: email || null }).eq('id', inp.dataset.agent);
+  if(error){
+    inp.classList.add('invalid');
+    note.style.color = 'var(--no)';
+    note.textContent = error.code === '23505' ? 'Another agent has it' : 'Not saved';
+    return;
+  }
+  inp.classList.add('saved'); note.style.color = ''; note.textContent = 'Saved';
+}
+
+document.getElementById('cfgQuickNotes').addEventListener('change', async (e)=>{
+  CONFIG.features.quickNotes = e.target.checked;
+  const ok = await saveFeatureFlags();
+  if(!ok){ CONFIG.features.quickNotes = !e.target.checked; e.target.checked = !e.target.checked; showToast('Could not save the option'); return; }
+  renderQuickNotes();
+  showToast(e.target.checked ? 'Quick notes panel turned on' : 'Quick notes panel turned off');
+});
+document.getElementById('cfgAgentPortal').addEventListener('change', async (e)=>{
+  CONFIG.features.agentPortal = e.target.checked;
+  const ok = await saveFeatureFlags();
+  if(!ok){ CONFIG.features.agentPortal = !e.target.checked; e.target.checked = !e.target.checked; showToast('Could not save the option'); return; }
+  renderAgentAccess();
+  showToast(e.target.checked ? 'Agents can now sign in and see their own scores' : 'Agents can no longer see their scores');
+});
+
+// Sign-in screen: agents create their own password the first time.
+let LOGIN_SIGNUP = false;
+document.getElementById('btnLoginMode').addEventListener('click', ()=>{
+  LOGIN_SIGNUP = !LOGIN_SIGNUP;
+  hideLoginError();
+  document.getElementById('loginNote').classList.remove('show');
+  document.querySelector('#loginOverlay h2').textContent = LOGIN_SIGNUP ? 'Create your account' : 'Sign in to QA Evaluation';
+  document.getElementById('btnLogin').textContent = LOGIN_SIGNUP ? 'Create account' : 'Sign in';
+  document.getElementById('loginPassword').autocomplete = LOGIN_SIGNUP ? 'new-password' : 'current-password';
+  document.getElementById('btnLoginMode').textContent = LOGIN_SIGNUP ? 'I already have an account' : 'First time? Create your account';
+});
+
+async function createAgentAccount(email, password){
+  if(password.length < 8){ showLoginError('Use at least 8 characters for your password.'); return; }
+  const { data, error } = await supabaseClient.auth.signUp({ email, password });
+  if(error){
+    showLoginError(/not allowed|disabled/i.test(error.message || '')
+      ? 'Creating accounts is turned off. Ask your QA admin.'
+      : (error.message || 'Could not create the account.'));
+    return;
+  }
+  if(data && data.session && data.user){ await loadProfileAndStart(data.user); return; }
+  const note = document.getElementById('loginNote');
+  note.textContent = 'Account created. Check your email to confirm it, then come back and sign in.';
+  note.classList.add('show');
+}
+
+/* ---------- View as another user (admins) ---------- */
+// Shows the app exactly as an evaluator or agent sees it: their role, their
+// assignments, their screens. The database still knows you as yourself, so the
+// session is read-only and nothing done here is saved.
+const VIEW_AS_KEY = 'qa_view_as_v1';
+let REAL_USER = null;
+
+function readOnlyClient(client, who){
+  const msg = 'Read-only: you are viewing the app as ' + who + '. Nothing was saved.';
+  const deny = ()=>{
+    showToast(msg);
+    const result = Promise.resolve({ data: null, error: { message: msg, code: 'VIEW_AS' } });
+    const chain = new Proxy(function(){}, {
+      get: (t, k)=> k === 'then' ? result.then.bind(result)
+        : k === 'catch' ? result.catch.bind(result)
+        : k === 'finally' ? result.finally.bind(result)
+        : ()=> chain,
+    });
+    return chain;
+  };
+  return new Proxy(client, {
+    get(target, key){
+      if(key === 'rpc') return deny;
+      if(key === 'from') return (table)=>{
+        const builder = target.from(table);
+        return new Proxy(builder, {
+          get(b, k){
+            if(k === 'insert' || k === 'update' || k === 'upsert' || k === 'delete') return deny;
+            const v = b[k];
+            return typeof v === 'function' ? v.bind(b) : v;
+          },
+        });
+      };
+      const v = target[key];
+      return typeof v === 'function' ? v.bind(target) : v;
+    },
+  });
+}
+
+function applyViewAs(){
+  let va = null;
+  try{ va = JSON.parse(sessionStorage.getItem(VIEW_AS_KEY) || 'null'); }catch(e){}
+  if(!va || !isAdminUser()) return;
+  REAL_USER = CURRENT_USER;
+  CURRENT_USER = va.role === 'agent'
+    ? { id: 'view-as-agent-' + va.agent_id, email: '', role: 'agent', agent_id: va.agent_id, display_name: va.display_name, viewAs: true }
+    : { id: va.id, email: '', role: va.role, display_name: va.display_name, viewAs: true };
+  supabaseClient = readOnlyClient(supabaseClient, va.display_name);
+  document.getElementById('viewAsText').innerHTML = 'You are seeing the app as <b>' + escapeHtml(va.display_name) + '</b> (' +
+    escapeHtml(va.role) + '). Read-only: nothing you do here is saved, and the database still knows you as ' + escapeHtml(REAL_USER.display_name || REAL_USER.email) + '.';
+  document.getElementById('viewAsBanner').classList.add('show');
+}
+
+function startViewAs(target){
+  try{ saveCurrentDraftToLocal(); }catch(e){}
+  try{ sessionStorage.setItem(VIEW_AS_KEY, JSON.stringify(target)); }catch(e){ showToast('Could not switch the view'); return; }
+  window.location.reload();
+}
+function exitViewAs(){
+  try{ sessionStorage.removeItem(VIEW_AS_KEY); }catch(e){}
+  window.location.reload();
+}
+
+async function toggleViewAsMenu(){
+  const menu = document.getElementById('viewAsMenu');
+  if(menu.classList.contains('show')){ menu.classList.remove('show'); return; }
+  const [profiles, agents] = await Promise.all([ensureProfilesLoaded(), ensureAgentsListLoaded()]);
+  const me = REAL_USER || CURRENT_USER;
+  const people = profiles.filter(p=> p.id !== me.id);
+  menu.innerHTML = '<div class="vm-title">See the app as</div>' +
+    (REAL_USER ? '<button type="button" class="vm-item" data-exit="1"><span>Myself</span><small>' + escapeHtml(me.role) + '</small></button>' : '') +
+    people.map(p=> '<button type="button" class="vm-item" data-id="' + escapeHtml(p.id) + '"><span>' + escapeHtml(p.display_name || 'QA') + '</span><small>' + escapeHtml(p.role) + '</small></button>').join('') +
+    '<div class="vm-title" style="margin-top:8px;">An agent</div>' +
+    '<select id="viewAsAgent"><option value="">Pick an agent…</option>' +
+    agents.map(a=> '<option value="' + escapeHtml(a.id) + '">' + escapeHtml(a.name) + '</option>').join('') + '</select>';
+  menu.classList.add('show');
+  menu.querySelectorAll('.vm-item').forEach(b=> b.addEventListener('click', ()=>{
+    if(b.dataset.exit){ exitViewAs(); return; }
+    const p = people.find(x=> x.id === b.dataset.id);
+    if(p) startViewAs({ id: p.id, role: p.role, display_name: p.display_name || 'QA' });
+  }));
+  document.getElementById('viewAsAgent').addEventListener('change', (e)=>{
+    const a = agents.find(x=> x.id === e.target.value);
+    if(a) startViewAs({ role: 'agent', agent_id: a.id, display_name: a.name });
+  });
+}
+document.getElementById('btnViewAs').addEventListener('click', (e)=>{ e.stopPropagation(); toggleViewAsMenu(); });
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('#viewAsMenu')) document.getElementById('viewAsMenu').classList.remove('show');
+});
+document.getElementById('btnExitViewAs').addEventListener('click', exitViewAs);
+
+/* ---------- Quick notes ---------- */
+const LS_QUICK_NOTES_KEY = 'qa_quick_notes_v1';
+function renderQuickNotes(){
+  const on = featureOn('quickNotes') && !isAgentUser();
+  document.getElementById('quickNotesPanel').style.display = on ? '' : 'none';
+  if(!on) return;
+  try{ document.getElementById('quickNotes').value = localStorage.getItem(draftKey(LS_QUICK_NOTES_KEY)) || ''; }catch(e){}
+}
+document.getElementById('quickNotes').addEventListener('input', (e)=>{
+  try{ localStorage.setItem(draftKey(LS_QUICK_NOTES_KEY), e.target.value); }catch(err){}
+});
+document.getElementById('btnClearQuickNotes').addEventListener('click', ()=>{
+  const ta = document.getElementById('quickNotes');
+  if(ta.value.trim() && !confirm('Clear your quick notes?')) return;
+  ta.value = '';
+  try{ localStorage.removeItem(draftKey(LS_QUICK_NOTES_KEY)); }catch(e){}
+});
+
+/* ---------- Repeated errors ---------- */
+// A rubric the agent keeps failing: in their latest evaluations one after the
+// other, or two or more times within the same month.
+function findRepeatedErrors(evals, deductions, month){
+  const sorted = sortEvalsChrono(evals.filter(e=> e.call_date));
+  const failed = {};
+  deductions.forEach(d=> (failed[d.evaluation_id] = failed[d.evaluation_id] || new Set()).add(d.rubric_label));
+  const out = {};
+  const entry = label => (out[label] = out[label] || { label, streak: 0, monthCount: 0 });
+  // Run of consecutive evaluations, counted back from the latest one.
+  const latest = sorted.length ? (failed[sorted[sorted.length - 1].id] || new Set()) : new Set();
+  latest.forEach(label=>{
+    let n = 0;
+    for(let i = sorted.length - 1; i >= 0 && (failed[sorted[i].id] || new Set()).has(label); i--) n++;
+    if(n >= 2) entry(label).streak = n;
+  });
+  if(month){
+    const counts = {};
+    sorted.filter(e=> monthOf(e.call_date) === month).forEach(e=>
+      (failed[e.id] || new Set()).forEach(label=>{ counts[label] = (counts[label] || 0) + 1; }));
+    Object.entries(counts).forEach(([label, n])=>{ if(n >= 2) entry(label).monthCount = n; });
+  }
+  return Object.values(out).sort((a, b)=> Math.max(b.streak, b.monthCount) - Math.max(a.streak, a.monthCount) || a.label.localeCompare(b.label));
+}
+
+function repeatedWhy(r, month){
+  const parts = [];
+  if(r.streak) parts.push(r.streak + ' evaluations in a row');
+  if(r.monthCount) parts.push(r.monthCount + '× in ' + MONTH_NAMES[Number(month.slice(5, 7)) - 1]);
+  return parts.join(' · ');
+}
+
+const ALERT_ICON = '<svg viewBox="0 0 24 24" fill="none"><path d="M12 9v4.5M12 16.5h.01M10.3 3.9 2.7 17.3a1.8 1.8 0 0 0 1.56 2.7h15.48a1.8 1.8 0 0 0 1.56-2.7L13.7 3.9a1.8 1.8 0 0 0-3.4 0Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+
+function renderRepeatAlert(box, list, month, title){
+  box.classList.toggle('show', list.length > 0);
+  box.innerHTML = list.length
+    ? '<div class="ra-title">' + ALERT_ICON + escapeHtml(title) + '</div>' +
+      list.map(r=> '<div class="ra-item"><span>' + escapeHtml(r.label) + '</span><span class="ra-why">' + escapeHtml(repeatedWhy(r, month)) + '</span></div>').join('')
+    : '';
+}
+
+let REPEAT_EVAL = { key: null, at: 0, token: 0 };
+async function refreshEvalRepeatAlert(force){
+  const box = document.getElementById('evalRepeatAlert');
+  const agent = supabaseClient && findAgentByName(document.getElementById('fAgent').value.trim());
+  if(!agent || !agent.id){ REPEAT_EVAL.key = null; renderRepeatAlert(box, [], null, ''); return; }
+  const month = monthOf(document.getElementById('fCallDate').value);
+  const key = agent.id + '|' + month;
+  if(!force && key === REPEAT_EVAL.key && Date.now() - REPEAT_EVAL.at < 60000) return;
+  REPEAT_EVAL.key = key;
+  REPEAT_EVAL.at = Date.now();
+  const token = ++REPEAT_EVAL.token;
+  try{
+    const evals = await fetchEvaluations({ agentId: agent.id });
+    const deductions = await fetchDeductionsFor(evals.map(e=> e.id));
+    if(token !== REPEAT_EVAL.token) return;
+    renderRepeatAlert(box, findRepeatedErrors(evals, deductions, month), month, agent.name + ' keeps failing');
+  }catch(e){ console.error('Could not check repeated errors', e); }
+}
+
+/* ---------- Excel export of the monthly scores table ---------- */
+async function loadLibrary(ready, urls){
+  if(ready()) return;
+  for(const u of urls){
+    try{ await loadScriptOnce(u); if(ready()) return; }catch(e){ console.warn(e); }
+  }
+  throw new Error('Could not load the export tool. Check your connection and try again.');
+}
+
+const XL_SCORE = {
+  'cell-good': { fill: 'FFC6EFCE', font: 'FF006100' },
+  'cell-mid': { fill: 'FFFFEB9C', font: 'FF9C5700' },
+  'cell-bad': { fill: 'FFFFC7CE', font: 'FF9C0006' },
+};
+const ROLE_HEX = { purple: '7C3AED', blue: '2563EB', teal: '0D9488', green: '16A34A', amber: 'B45309', orange: 'C2410C', red: 'DC2626', pink: 'DB2777' };
+
+function downloadBlob(blob, filename){
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=> URL.revokeObjectURL(url), 4000);
+}
+
+function fileSlug(s){ return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Za-z0-9]+/g, '-').replace(/^-|-$/g, ''); }
+
+async function exportScoresToExcel(){
+  if(!LAST_GRID){ showToast('Open the Agents tab first'); return; }
+  const btn = document.getElementById('btnExportExcel');
+  btn.disabled = true;
+  try{
+    await loadLibrary(()=> !!window.ExcelJS, [
+      'https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js',
+      'https://cdn.jsdelivr.net/npm/exceljs@4.4.0/dist/exceljs.min.js',
+    ]);
+    const { evals, scope, assignments } = LAST_GRID;
+    const deductions = await fetchDeductionsFor(evals.map(e=> e.id));
+    const wb = new window.ExcelJS.Workbook();
+    wb.creator = 'QA Evaluation';
+    buildScoresSheet(wb, evals, scope, assignments);
+    buildEvaluationsSheet(wb, evals, deductions);
+    const buf = await wb.xlsx.writeBuffer();
+    downloadBlob(new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }),
+      'QA-scores-' + fileSlug(scope.label) + '.xlsx');
+    showToast('Excel file downloaded');
+  }catch(e){
+    console.error('Excel export failed', e);
+    showToast(e.message || 'Could not create the Excel file');
+  }finally{ btn.disabled = false; }
+}
+
+function styleScoreCell(cell, cls){
+  const c = XL_SCORE[cls];
+  if(!c) return;
+  cell.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: c.fill } };
+  cell.font = Object.assign({}, cell.font || {}, { color: { argb: c.font }, bold: true });
+}
+
+function gridAgents(evals){
+  const agents = (AGENTS_LIST_CACHE || []).slice();
+  evals.forEach(e=>{ if(!agents.some(a=> a.id === e.agent_id)) agents.push({ id: e.agent_id, name: e.agents ? e.agents.name : 'Unknown' }); });
+  return agents.sort(compareAgents(gridSortMode()));
+}
+
+function buildScoresSheet(wb, evals, scope, assignments){
+  const ws = wb.addWorksheet('Scores', { views: [{ state: 'frozen', xSplit: 1, ySplit: 3 }] });
+  const agents = gridAgents(evals);
+  const byAgent = {};
+  sortEvalsChrono(evals).forEach(e=> (byAgent[e.agent_id] = byAgent[e.agent_id] || []).push(e));
+  const slotsByAgent = {};
+  agents.forEach(a=>{ slotsByAgent[a.id] = buildAgentSlots(byAgent[a.id] || [], assignments.filter(x=> x.agent_id === a.id)); });
+  const cols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(slotsByAgent).map(l=> l.length));
+
+  const header = ['Agent', 'Role', 'Supervisor'];
+  for(let i = 1; i <= cols; i++) header.push('Eval ' + i, 'Evaluated by', 'Date');
+  header.push('Done', 'Average');
+  ws.getCell(1, 1).value = 'Monthly scores · ' + scope.label;
+  ws.getCell(1, 1).font = { bold: true, size: 14 };
+  ws.getCell(2, 1).value = 'Exported ' + new Date().toLocaleString();
+  ws.getCell(2, 1).font = { italic: true, color: { argb: 'FF666666' } };
+  const headRow = ws.getRow(3);
+  headRow.values = header;
+  headRow.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  headRow.eachCell(c=>{
+    c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F3B45' } };
+    c.alignment = { horizontal: 'center', vertical: 'middle' };
+  });
+
+  const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
+  agents.forEach(agent=>{
+    const list = byAgent[agent.id] || [];
+    const role = roleOf(agent);
+    const roleHex = role ? ROLE_HEX[roleColorKey(role)] : null;
+    const values = [agent.name, role ? role.name : '', agent.supervisor || ''];
+    const scoreCells = [];
+    slotsByAgent[agent.id].slice(0, cols).forEach((sl, i)=>{
+      if(sl.type === 'eval'){
+        const e = sl.eval;
+        values.push(Number(e.score) / 100, evaluatorLabel(e), e.call_date || '');
+        scoreCells.push({ col: 4 + i * 3, cls: evalScoreClass(Math.round(Number(e.score))) });
+        colTotals[i].earned += Number(e.points_earned || 0);
+        colTotals[i].possible += Number(e.points_possible || 0);
+        colTotals[i].n++;
+      }else{
+        const a = sl.assignment;
+        values.push('Assigned · ' + kindLabel(a.kind), profileName(a.assignee_id), '');
+      }
+    });
+    while(values.length < 3 + cols * 3) values.push('');
+    values.push(Math.min(list.length, MONTHLY_EVAL_TARGET) + ' / ' + MONTHLY_EVAL_TARGET, list.length ? weightedAvg(list) / 100 : '');
+    const row = ws.addRow(values);
+    if(roleHex){
+      row.getCell(1).font = { bold: true, color: { argb: 'FF' + roleHex } };
+      row.getCell(2).font = { bold: true, color: { argb: 'FF' + roleHex } };
+    }
+    scoreCells.forEach(sc=>{ row.getCell(sc.col).numFmt = '0%'; styleScoreCell(row.getCell(sc.col), sc.cls); });
+    for(let i = 0; i < cols; i++){
+      const c = row.getCell(4 + i * 3);
+      if(typeof c.value === 'string' && c.value) c.font = { italic: true, color: { argb: 'FF808080' } };
+    }
+    const avgCell = row.getCell(header.length);
+    if(list.length){ avgCell.numFmt = '0%'; styleScoreCell(avgCell, scoreClass(weightedAvg(list))); }
+  });
+
+  const team = ['Team total', '', ''];
+  colTotals.forEach(t=> team.push(t.n ? t.earned / t.possible : '', t.n ? t.n + ' evaluation' + (t.n === 1 ? '' : 's') : '', ''));
+  team.push(evals.length + ' evaluation' + (evals.length === 1 ? '' : 's'), evals.length ? weightedAvg(evals) / 100 : '');
+  const teamRow = ws.addRow(team);
+  teamRow.font = { bold: true };
+  teamRow.eachCell(c=>{ c.border = { top: { style: 'medium' } }; });
+  colTotals.forEach((t, i)=>{
+    if(!t.n || !t.possible) return;
+    const c = teamRow.getCell(4 + i * 3);
+    c.numFmt = '0%';
+    styleScoreCell(c, scoreClass(t.earned / t.possible * 100));
+  });
+  if(evals.length){ const c = teamRow.getCell(header.length); c.numFmt = '0%'; styleScoreCell(c, scoreClass(weightedAvg(evals))); }
+
+  ws.getColumn(1).width = 32; ws.getColumn(2).width = 11; ws.getColumn(3).width = 18;
+  for(let i = 0; i < cols; i++){ ws.getColumn(4 + i * 3).width = 13; ws.getColumn(5 + i * 3).width = 16; ws.getColumn(6 + i * 3).width = 12; }
+  ws.getColumn(header.length - 1).width = 13; ws.getColumn(header.length).width = 11;
+  for(let r = 3; r <= ws.rowCount; r++){
+    ws.getRow(r).eachCell({ includeEmpty: true }, (c, col)=>{
+      if(col > 3) c.alignment = { horizontal: 'center', vertical: 'middle' };
+      c.border = Object.assign({}, c.border || {}, { left: { style: 'thin', color: { argb: 'FFD0D0D0' } }, right: { style: 'thin', color: { argb: 'FFD0D0D0' } }, bottom: { style: 'thin', color: { argb: 'FFD0D0D0' } } });
+    });
+  }
+}
+
+function buildEvaluationsSheet(wb, evals, deductions){
+  const ws = wb.addWorksheet('Evaluations', { views: [{ state: 'frozen', ySplit: 1 }] });
+  const agentsById = {};
+  (AGENTS_LIST_CACHE || []).forEach(a=>{ agentsById[a.id] = a; });
+  ws.columns = [
+    { header: 'Agent', key: 'agent', width: 32 }, { header: 'Role', key: 'role', width: 11 },
+    { header: 'Supervisor', key: 'sup', width: 18 }, { header: 'Call date', key: 'date', width: 12 },
+    { header: 'Evaluated by', key: 'by', width: 16 }, { header: 'Saved on', key: 'saved', width: 18 },
+    { header: 'Type', key: 'kind', width: 9 }, { header: 'Ticket', key: 'ticket', width: 14 },
+    { header: 'Call reason', key: 'reason', width: 28 }, { header: 'Score', key: 'score', width: 9 },
+    { header: 'Automatic zero', key: 'zero', width: 14 }, { header: 'Failed points', key: 'failed', width: 60 },
+  ];
+  const head = ws.getRow(1);
+  head.font = { bold: true, color: { argb: 'FFFFFFFF' } };
+  head.eachCell(c=>{ c.fill = { type: 'pattern', pattern: 'solid', fgColor: { argb: 'FF2F3B45' } }; });
+  const order = gridAgents(evals).map(a=> a.id);
+  const sorted = sortEvalsChrono(evals).sort((a, b)=> order.indexOf(a.agent_id) - order.indexOf(b.agent_id));
+  sorted.forEach(e=>{
+    const agent = agentsById[e.agent_id] || { name: e.agents ? e.agents.name : 'Unknown' };
+    const role = roleOf(agent);
+    const failed = deductions.filter(d=> d.evaluation_id === e.id)
+      .map(d=> d.rubric_label + (Number(d.points_lost) ? ' (-' + d.points_lost + ')' : ' (auto-zero)'));
+    const row = ws.addRow({
+      agent: agent.name, role: role ? role.name : '', sup: agent.supervisor || '', date: e.call_date || '',
+      by: evaluatorLabel(e), saved: e.created_at ? new Date(e.created_at).toLocaleString() : '',
+      kind: kindLabel(e.kind), ticket: e.ticket_id || '', reason: e.call_reason || '',
+      score: Number(e.score) / 100, zero: e.zero_triggered ? 'Yes' : '', failed: failed.join('; '),
+    });
+    const hex = role ? ROLE_HEX[roleColorKey(role)] : null;
+    if(hex){ row.getCell('agent').font = { bold: true, color: { argb: 'FF' + hex } }; row.getCell('role').font = { bold: true, color: { argb: 'FF' + hex } }; }
+    row.getCell('score').numFmt = '0%';
+    styleScoreCell(row.getCell('score'), evalScoreClass(Math.round(Number(e.score))));
+    row.getCell('failed').alignment = { wrapText: true, vertical: 'top' };
+  });
+}
+
+document.getElementById('btnExportExcel').addEventListener('click', exportScoresToExcel);
+
+/* ---------- PDF report for one agent ---------- */
+const BOLD_DIGIT = 0x1D7CE, BOLD_UPPER = 0x1D400, BOLD_LOWER = 0x1D41A;
+// Standard PDF fonts only cover Latin-1: undo the summary's bold letters and
+// drop emoji so the text stays readable.
+function pdfText(s){
+  return Array.from(String(s == null ? '' : s)).map(ch=>{
+    const c = ch.codePointAt(0);
+    if(c >= BOLD_UPPER && c < BOLD_UPPER + 26) return String.fromCharCode(65 + c - BOLD_UPPER);
+    if(c >= BOLD_LOWER && c < BOLD_LOWER + 26) return String.fromCharCode(97 + c - BOLD_LOWER);
+    if(c >= BOLD_DIGIT && c < BOLD_DIGIT + 10) return String.fromCharCode(48 + c - BOLD_DIGIT);
+    if(ch === '→') return '->';
+    if(ch === '•' || ch === '–' || ch === '—') return '-';
+    if(ch === '’' || ch === '‘') return "'";
+    if(ch === '“' || ch === '”') return '"';
+    if(ch === '…') return '...';
+    return c <= 0xFF ? ch : '';
+  }).join('').replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+const PDF_SCORE_RGB = { 'cell-good': [22, 163, 74], 'cell-mid': [180, 83, 9], 'cell-bad': [220, 38, 38] };
+
+async function downloadAgentPdf(){
+  if(!PERF){ showToast('Open an agent first'); return; }
+  const btn = document.getElementById('btnAgentPdf');
+  btn.disabled = true;
+  try{
+    await loadLibrary(()=> !!(window.jspdf && window.jspdf.jsPDF), [
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+      'https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js',
+    ]);
+    await loadLibrary(()=> !!(window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.autoTable), [
+      'https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js',
+      'https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js',
+    ]);
+    const agentId = document.getElementById('agentsSelect').value || (CURRENT_USER && CURRENT_USER.agent_id);
+    const agent = (AGENTS_LIST_CACHE || []).find(a=> a.id === agentId) || { name: 'Agent' };
+    const doc = buildAgentPdf(agent, perfInRange().slice().reverse(), PERF.deductions, PERF.details);
+    doc.save('QA-' + fileSlug(agent.name) + '-' + todayLocal() + '.pdf');
+    showToast('PDF downloaded');
+  }catch(e){
+    console.error('PDF export failed', e);
+    showToast(e.message || 'Could not create the PDF');
+  }finally{ btn.disabled = false; }
+}
+
+function buildAgentPdf(agent, evals, allDeductions, details){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ unit: 'pt', format: 'letter' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight(), M = 40;
+  let y = M;
+  const ids = new Set(evals.map(e=> e.id));
+  const deductions = allDeductions.filter(d=> ids.has(d.evaluation_id));
+  const ensure = (need)=>{ if(y + need > H - M){ doc.addPage(); y = M; } };
+  const heading = (text)=>{
+    ensure(40);
+    y += 10;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(30, 30, 30);
+    doc.text(pdfText(text), M, y); y += 8;
+    doc.setDrawColor(80, 187, 187); doc.setLineWidth(1.2); doc.line(M, y, W - M, y); y += 14;
+  };
+  const para = (text, opts)=>{
+    opts = opts || {};
+    doc.setFont('helvetica', opts.bold ? 'bold' : 'normal'); doc.setFontSize(opts.size || 10);
+    doc.setTextColor.apply(doc, opts.color || [40, 40, 40]);
+    doc.splitTextToSize(pdfText(text), W - M * 2 - (opts.indent || 0)).forEach(line=>{
+      ensure(14); doc.text(line, M + (opts.indent || 0), y); y += (opts.size || 10) * 1.35;
+    });
+  };
+  const table = (head, body, opts)=>{
+    doc.autoTable(Object.assign({
+      startY: y, head: [head.map(pdfText)], body: body.map(r=> r.map(c=> typeof c === 'string' ? pdfText(c) : c)),
+      margin: { left: M, right: M }, styles: { fontSize: 9, cellPadding: 4, overflow: 'linebreak' },
+      headStyles: { fillColor: [47, 59, 69], textColor: 255 }, theme: 'grid',
+    }, opts || {}));
+    y = doc.lastAutoTable.finalY + 12;
+  };
+  const scoreCell = (score, cls)=> ({ content: Math.round(score) + '%', styles: { textColor: PDF_SCORE_RGB[cls], fontStyle: 'bold' } });
+
+  // Header
+  doc.setFont('helvetica', 'bold'); doc.setFontSize(18); doc.setTextColor(20, 20, 20);
+  doc.text(pdfText(agent.name), M, y + 6); y += 26;
+  const role = roleOf(agent);
+  const range = evals.length ? fmtDay(PERF.from) + ' - ' + fmtDay(PERF.to) : 'No evaluations in range';
+  para([role ? 'Role: ' + role.name : null, agent.supervisor ? 'Supervisor: ' + agent.supervisor : null].filter(Boolean).join('   ·   ') || 'No role or supervisor set', { color: [90, 90, 90] });
+  para('Period: ' + range + '   ·   Generated ' + new Date().toLocaleString(), { color: [90, 90, 90], size: 9 });
+  y += 6;
+
+  // Summary
+  const avg = weightedAvg(evals);
+  table(['Evaluations', 'Average', 'Best', 'Lowest', 'Automatic zeros', 'Disputed'], [[
+    String(evals.length),
+    evals.length ? scoreCell(avg, scoreClass(avg)) : '-',
+    evals.length ? scoreCell(Math.max(...evals.map(e=> Number(e.score))), evalScoreClass(Math.round(Math.max(...evals.map(e=> Number(e.score)))))) : '-',
+    evals.length ? scoreCell(Math.min(...evals.map(e=> Number(e.score))), evalScoreClass(Math.round(Math.min(...evals.map(e=> Number(e.score)))))) : '-',
+    String(evals.filter(e=> e.zero_triggered).length),
+    String(evals.filter(e=> details[e.id] && details[e.id].disputes && details[e.id].disputes.length).length),
+  ]], { styles: { fontSize: 10, halign: 'center', cellPadding: 5 } });
+
+  // Repeated errors
+  const month = monthOf(evals.length ? evals[0].call_date : todayLocal());
+  const repeated = findRepeatedErrors(evals, deductions, month);
+  if(repeated.length){
+    heading('Repeated errors');
+    table(['Rubric', 'Why it is flagged'], repeated.map(r=> [r.label, repeatedWhy(r, month)]),
+      { headStyles: { fillColor: [220, 38, 38], textColor: 255 } });
+  }
+
+  // Failed points across the period
+  heading('Failed points');
+  const fails = {};
+  deductions.forEach(d=>{
+    const f = fails[d.rubric_label] = fails[d.rubric_label] || { n: 0, pts: 0, zero: false };
+    f.n++; f.pts += Number(d.points_lost || 0); if(!Number(d.points_lost)) f.zero = true;
+  });
+  const failRows = Object.entries(fails).sort((a, b)=> b[1].n - a[1].n || b[1].pts - a[1].pts)
+    .map(([label, f])=> [label, f.n + '×', f.zero && !f.pts ? 'Auto-zero' : '-' + f.pts + ' pts']);
+  if(failRows.length) table(['Rubric', 'Times failed', 'Points lost'], failRows, { columnStyles: { 1: { halign: 'center', cellWidth: 80 }, 2: { halign: 'center', cellWidth: 80 } } });
+  else para('No failed points in this period.', { color: [90, 90, 90] });
+
+  // Focus points
+  heading('Focus points');
+  const focus = {};
+  evals.forEach(e=> (((details[e.id] || {}).focusPoints) || []).forEach(f=>{ focus[f] = (focus[f] || 0) + 1; }));
+  const focusRows = Object.entries(focus).sort((a, b)=> b[1] - a[1]).map(([f, n])=> [f, n + '×']);
+  if(focusRows.length) table(['Focus point', 'Times'], focusRows, { columnStyles: { 1: { halign: 'center', cellWidth: 80 } } });
+  else para('No focus points in this period.', { color: [90, 90, 90] });
+
+  // All evaluations at a glance
+  heading('Evaluations');
+  if(evals.length){
+    table(['Call date', 'Score', 'Evaluated by', 'Type', 'Ticket', 'Failed'], evals.map(e=> [
+      e.call_date || '', scoreCell(Number(e.score), evalScoreClass(Math.round(Number(e.score)))), evaluatorLabel(e),
+      kindLabel(e.kind) || '-', e.ticket_id || '-', String(deductions.filter(d=> d.evaluation_id === e.id).length),
+    ]), { columnStyles: { 1: { halign: 'center' }, 5: { halign: 'center' } } });
+  }else para('No evaluations in this period.', { color: [90, 90, 90] });
+
+  // Each evaluation in full
+  evals.forEach(e=>{
+    const d = details[e.id] || {};
+    const score = Number(e.score);
+    doc.addPage(); y = M;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(14); doc.setTextColor(20, 20, 20);
+    doc.text(pdfText('Evaluation · ' + (e.call_date ? fmtDay(dayNum(e.call_date)) : 'No date')), M, y + 4);
+    doc.setTextColor.apply(doc, PDF_SCORE_RGB[evalScoreClass(Math.round(score))]);
+    doc.text(Math.round(score) + '%', W - M, y + 4, { align: 'right' });
+    y += 22;
+    para([
+      'Evaluated by ' + evaluatorLabel(e), kindLabel(e.kind) || null, e.ticket_id ? 'Ticket ' + e.ticket_id : null,
+      e.call_reason ? 'Reason: ' + e.call_reason : null, e.zero_triggered ? 'AUTOMATIC ZERO' : null,
+    ].filter(Boolean).join('   ·   '), { color: [90, 90, 90], size: 9 });
+    y += 4;
+
+    const items = Array.isArray(d.items) ? d.items : [];
+    const failedItems = items.filter(it=> it.result === 'no');
+    const evalDeds = deductions.filter(x=> x.evaluation_id === e.id);
+    heading('Failed points');
+    if(failedItems.length){
+      table(['Rubric', 'Section', 'Points', 'Note'], failedItems.map(it=> [it.label, it.sectionTitle || it.section || '', it.zero ? 'Auto-zero' : '-' + it.pts, it.text || '']),
+        { columnStyles: { 0: { cellWidth: 140 }, 1: { cellWidth: 90 }, 2: { halign: 'center', cellWidth: 55 } } });
+    }else if(evalDeds.length){
+      table(['Rubric', 'Points'], evalDeds.map(x=> [x.rubric_label, Number(x.points_lost) ? '-' + x.points_lost : 'Auto-zero']), { columnStyles: { 1: { halign: 'center', cellWidth: 70 } } });
+    }else para('No failed points.', { color: [90, 90, 90] });
+
+    const feedbackItems = items.filter(it=> it.result === 'feedback');
+    if(feedbackItems.length){
+      heading('Feedback');
+      table(['Rubric', 'Feedback'], feedbackItems.map(it=> [it.label, it.text || '']), { columnStyles: { 0: { cellWidth: 160 } } });
+    }
+    if(Array.isArray(d.focusPoints) && d.focusPoints.length){
+      heading('Focus points');
+      d.focusPoints.forEach(f=> para('- ' + f, { indent: 6 }));
+    }
+    if(Array.isArray(d.accomplishments) && d.accomplishments.length){
+      const acc = d.accomplishments.map(id=> (items.find(x=> x.id === id) || {}).label).filter(Boolean);
+      if(acc.length){ heading('Accomplishments'); acc.forEach(a=> para('- ' + a, { indent: 6 })); }
+    }
+    if(Array.isArray(d.disputes) && d.disputes.length){
+      heading('Disputes');
+      d.disputes.forEach(x=>{
+        para(new Date(x.at).toLocaleString() + ' · ' + (x.by || 'QA') + ' · ' +
+          (x.after !== x.before ? Math.round(x.before) + '% -> ' + Math.round(x.after) + '%' : 'no points returned'), { bold: true, size: 9.5 });
+        if(x.changes && x.changes.length) para(x.changes.map(c=> c.label + ': ' + c.from + ' -> ' + c.to).join('; '), { size: 9.5, indent: 6 });
+        if(x.note) para(x.note, { size: 9.5, indent: 6 });
+        y += 4;
+      });
+    }
+    if(d.summary){
+      heading('Feedback summary');
+      para(d.summary, { size: 9.5 });
+    }
+  });
+
+  const pages = doc.internal.getNumberOfPages();
+  for(let i = 1; i <= pages; i++){
+    doc.setPage(i);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8); doc.setTextColor(140, 140, 140);
+    doc.text(pdfText(agent.name + ' · QA report'), M, H - 20);
+    doc.text('Page ' + i + ' of ' + pages, W - M, H - 20, { align: 'right' });
+  }
+  return doc;
+}
+
+document.getElementById('btnAgentPdf').addEventListener('click', downloadAgentPdf);
 
 async function bootAuth(){
   setAppVisible(false);
