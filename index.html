@@ -718,6 +718,8 @@
   .t-prio.p-low{ color:var(--yes); background:var(--yes-soft); border-color:transparent; }
   .t-dot{ width:8px; height:8px; border-radius:50%; background:currentColor; flex:none; }
   .t-status.s-pending{ color:var(--accent); }
+  .t-status.s-on_hold{ color:var(--warn); background:var(--warn-soft); border-color:transparent; }
+  .tasks-table tr.task-hold .t-input{ color:var(--text-dim); }
   .t-avatar{ width:20px; height:20px; border-radius:50%; background:var(--accent-soft); color:var(--accent); font-size:10.5px; font-weight:800; display:inline-flex; align-items:center; justify-content:center; flex:none; }
   .t-nobody{ color:var(--text-faint); font-weight:600; }
   .t-person-static{ display:inline-flex; align-items:center; gap:7px; font-weight:700; color:var(--text); }
@@ -753,7 +755,7 @@
   .tp-item.on{ background:var(--accent-soft); }
   .tp-check{ width:15px; height:15px; margin-left:auto; color:var(--accent); flex:none; }
   .tp-item.p-high{ color:var(--no); } .tp-item.p-medium{ color:var(--warn); } .tp-item.p-low{ color:var(--yes); }
-  .tp-item.s-pending{ color:var(--accent); } .tp-item.s-completed{ color:var(--yes); }
+  .tp-item.s-pending{ color:var(--accent); } .tp-item.s-on_hold{ color:var(--warn); } .tp-item.s-completed{ color:var(--yes); }
   .tp-cal{ width:240px; padding:4px; }
   .tp-cal-head{ display:flex; align-items:center; justify-content:space-between; font-weight:800; margin-bottom:6px; }
   .tp-nav{ width:30px; height:30px; border:none; border-radius:8px; background:none; color:var(--text); font-size:18px; cursor:pointer; }
@@ -1948,6 +1950,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <button class="btn btn-primary" id="btnSaveScenarios" style="flex:none; margin-top:14px;">
         <svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11l3 3v13H5V4Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M8 4v5h7V4M8 14h8v6H8v-6Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
         Save scenarios
+      </button>
+    </div>
+
+    <div class="cfg-block admin-only" id="cfgTestDataBlock" style="display:none;">
+      <h4>Test data</h4>
+      <div class="hint" id="cfgTestDataText"></div>
+      <button type="button" class="btn-clear-all" id="btnRemoveTestData" style="margin-top:10px;">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Remove test data
       </button>
     </div>
   </div>
@@ -4319,7 +4330,7 @@ function switchTab(view){
 
   const populate = ()=>{
     if(view==='config'){
-      renderConfigOptions(); renderConfigNames(); renderConfigPeople(); renderConfigFocusPoints(); renderConfigSections();
+      renderConfigOptions(); renderConfigNames(); renderConfigPeople(); renderConfigFocusPoints(); renderConfigSections(); renderTestDataBlock();
       document.getElementById('cfgSummaryTemplate').value = CONFIG.summaryTemplate;
       document.getElementById('cfgItemTemplate').value = CONFIG.itemTemplate;
       refreshScenarioUI();
@@ -7357,27 +7368,28 @@ async function loadTasks(){
 
 const TASK_CHEV = '<svg class="tsel-chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 const TASK_CAL = '<svg class="tsel-ico" viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
-const TASK_STATUSES = [['pending', 'Pending'], ['completed', 'Completed']];
+const TASK_STATUSES = [['pending', 'Pending'], ['on_hold', 'On hold'], ['completed', 'Completed']];
 function taskInitial(name){ return escapeHtml((String(name || '?').trim()[0] || '?').toUpperCase()); }
 function taskPersonHtml(name){
   return name ? '<span class="t-avatar">' + taskInitial(name) + '</span><span class="tsel-text">' + escapeHtml(name) + '</span>' : '<span class="tsel-text t-nobody">Nobody</span>';
 }
 
 function renderTasks(highlightId){
+  if(TASK_POP_STATE) closeTaskPop(); // its field is about to be replaced
   const pending = TASKS.filter(t=> t.status !== 'completed');
   const done = TASKS.filter(t=> t.status === 'completed')
     .sort((a, b)=> String(b.completed_at || b.updated_at).localeCompare(String(a.completed_at || a.updated_at)));
 
   const cols = '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-status"><col class="c-del"></colgroup>';
   const head = '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Status</th><th></th></tr></thead>';
-  const rows = pending.map(t=> '<tr data-task="' + t.id + '"' + (t.id === highlightId ? ' class="task-new"' : '') + '>' +
+  const rows = pending.map(t=> '<tr data-task="' + t.id + '" class="' + (t.id === highlightId ? 'task-new' : '') + (t.on_hold ? ' task-hold' : '') + '">' +
     '<td class="t-left"><input class="t-input" data-f="title" value="' + escapeHtml(t.title || '') + '" placeholder="Task name" maxlength="200"></td>' +
     '<td><button type="button" class="tsel t-prio p-' + t.priority + '" data-menu="priority"><span class="tsel-text">' +
       escapeHtml((TASK_PRIORITIES.find(p=> p[0] === t.priority) || ['', t.priority])[1]) + '</span>' + TASK_CHEV + '</button></td>' +
     '<td><button type="button" class="tsel t-date" data-menu="date">' + TASK_CAL + '<span class="tsel-text">' + taskDateLabel(t.due_date) + '</span></button></td>' +
     '<td><input class="t-input t-center" data-f="action" value="' + escapeHtml(t.action || '') + '" placeholder="Type or pick" maxlength="300" autocomplete="off"></td>' +
     '<td><button type="button" class="tsel t-person" data-menu="responsible">' + taskPersonHtml(taskResponsible(t)) + TASK_CHEV + '</button></td>' +
-    '<td><button type="button" class="tsel t-status s-pending" data-menu="status"><span class="t-dot"></span><span class="tsel-text">Pending</span>' + TASK_CHEV + '</button></td>' +
+    '<td><button type="button" class="tsel t-status ' + (t.on_hold ? 's-on_hold' : 's-pending') + '" data-menu="status"><span class="t-dot"></span><span class="tsel-text">' + (t.on_hold ? 'On hold' : 'Pending') + '</span>' + TASK_CHEV + '</button></td>' +
     '<td><button type="button" class="task-del" data-del title="Delete task">' + TASK_X_ICON + '</button></td></tr>').join('');
   document.getElementById('tasksTable').innerHTML = cols + head + '<tbody>' +
     (rows || '<tr><td colspan="7" class="tasks-empty">No pending tasks. Click Add task to create one.</td></tr>') + '</tbody>';
@@ -7455,9 +7467,12 @@ async function setTaskField(id, f, value){
       renderTasks();
       if(patch.responsible_id && CURRENT_USER && patch.responsible_id !== CURRENT_USER.id) showToast(patch.responsible_name + ' will get a notification.');
     }
+  }else if(f === 'status' && (value === 'on_hold' || value === 'pending')){
+    if((value === 'on_hold') === !!t.on_hold) return;
+    if(await updateTask(id, { on_hold: value === 'on_hold' })) renderTasks();
   }else if(f === 'status' && value === 'completed'){
     if(row) row.classList.add('task-leaving');
-    if(await updateTask(id, { status: 'completed' })){
+    if(await updateTask(id, { status: 'completed', on_hold: false })){
       setTimeout(()=>{ renderTasks(); showToast('Task completed. It is now in Completed tasks.'); }, 250);
     }else if(row) row.classList.remove('task-leaving');
   }
@@ -7499,7 +7514,7 @@ function openTaskMenu(anchor, kind, id){
   if(kind === 'priority'){
     html = taskOptionsHtml(TASK_PRIORITIES.map(([v, l])=> ({ value: v, cls: 'tp-prio p-' + v, html: '<span class="t-dot"></span>' + l })), t.priority);
   }else if(kind === 'status'){
-    html = taskOptionsHtml(TASK_STATUSES.map(([v, l])=> ({ value: v, cls: 'tp-status s-' + v, html: '<span class="t-dot"></span>' + l })), 'pending');
+    html = taskOptionsHtml(TASK_STATUSES.map(([v, l])=> ({ value: v, cls: 'tp-status s-' + v, html: '<span class="t-dot"></span>' + l })), t.on_hold ? 'on_hold' : 'pending');
   }else if(kind === 'responsible'){
     const people = taskPeopleOptions();
     const cur = taskResponsibleValue(t);
@@ -7584,7 +7599,13 @@ document.addEventListener('click', (e)=>{
 });
 document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape' && TASK_POP_STATE) closeTaskPop(); });
 window.addEventListener('resize', ()=>{ if(TASK_POP_STATE) closeTaskPop(); });
-document.addEventListener('scroll', (e)=>{ if(TASK_POP_STATE && !TASK_POP.contains(e.target)) closeTaskPop(); }, true);
+// Scrolling keeps the menu attached to its field; it closes once the field leaves the screen.
+document.addEventListener('scroll', (e)=>{
+  if(!TASK_POP_STATE || TASK_POP.contains(e.target)) return;
+  const anchor = TASK_POP_STATE.anchor;
+  const r = anchor.getBoundingClientRect();
+  if(!anchor.isConnected || r.bottom < 0 || r.top > window.innerHeight) closeTaskPop(); else placeTaskPop(anchor);
+}, true);
 
 const tasksTableEl = document.getElementById('tasksTable');
 tasksTableEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
@@ -7612,7 +7633,7 @@ document.getElementById('view-tasks').addEventListener('click', async (e)=>{
     renderTasks();
     refreshBell();
   }else if(e.target.closest('[data-reopen]')){
-    if(await updateTask(t.id, { status: 'pending' })){ renderTasks(t.id); showToast('Task moved back to pending.'); }
+    if(await updateTask(t.id, { status: 'pending', on_hold: false })){ renderTasks(t.id); showToast('Task moved back to pending.'); }
   }
 });
 document.getElementById('btnAddTask').addEventListener('click', addTask);
@@ -7738,6 +7759,46 @@ document.getElementById('bellMenu').addEventListener('click', (e)=>{
 });
 document.addEventListener('click', (e)=>{
   if(!e.target.closest('#bellMenu')) document.getElementById('bellMenu').classList.remove('show');
+});
+
+/* ---------- Test data (admin) ---------- */
+// Rows created by a test run carry is_test = true; this removes exactly those.
+const TEST_TABLES = [['evaluations', 'evaluations'], ['evaluation_assignments', 'assignments'], ['tasks', 'tasks']];
+async function countTestData(){
+  const counts = {};
+  for(const [table] of TEST_TABLES){
+    const { data, error } = await supabaseClient.from(table).select('id').eq('is_test', true);
+    counts[table] = error ? 0 : (data || []).length;
+  }
+  return counts;
+}
+async function renderTestDataBlock(){
+  const block = document.getElementById('cfgTestDataBlock');
+  if(!supabaseClient || !isAdminUser()){ block.style.display = 'none'; return; }
+  const counts = await countTestData();
+  const total = Object.values(counts).reduce((a, b)=> a + b, 0);
+  block.style.display = total ? '' : 'none';
+  document.getElementById('cfgTestDataText').textContent = 'The app has data from a test run: ' +
+    TEST_TABLES.map(([t, label])=> counts[t] + ' ' + label).join(', ') + '. Removing it leaves your real data untouched.';
+}
+document.getElementById('btnRemoveTestData').addEventListener('click', async ()=>{
+  if(!confirm('Remove all test data? Real evaluations, assignments and tasks are kept.')) return;
+  const btn = document.getElementById('btnRemoveTestData');
+  btn.disabled = true;
+  try{
+    for(const [table] of TEST_TABLES){
+      const { error } = await supabaseClient.from(table).delete().eq('is_test', true);
+      if(error) throw error;
+    }
+    showToast('Test data removed.');
+    TASKS = [];
+  }catch(e){
+    if(!e || e.code !== 'VIEW_AS') showToast('Could not remove all the test data. Try again.');
+    console.error('Could not remove test data', e);
+  }finally{
+    btn.disabled = false;
+    renderTestDataBlock();
+  }
 });
 
 /* ---------- Quick notes ---------- */
