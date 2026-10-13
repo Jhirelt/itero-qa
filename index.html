@@ -1236,6 +1236,15 @@
   .cfg-toggle{ display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text); margin:8px 0; cursor:pointer; line-height:1.45; }
   .cfg-toggle input{ margin-top:3px; width:16px; height:16px; accent-color:var(--accent); flex:none; }
   .cfg-agent-access{ margin:6px 0 0 26px; }
+  .staff-add{ flex-wrap:wrap; }
+  .staff-add input{ flex:1 1 160px; min-width:0; }
+  .staff-role-switch{ display:flex; border:1px solid var(--border); border-radius:999px; overflow:hidden; flex:none; }
+  .add-name .staff-role-switch button{ background:none; border:none; border-radius:0; color:var(--text-dim); padding:6px 12px; font-size:12px; font-weight:700; cursor:pointer; }
+  .add-name .staff-role-switch button:hover{ background:var(--bg-elev-2); color:var(--text); }
+  .add-name .staff-role-switch button.on{ background:var(--accent-soft); color:var(--accent); }
+  .name-chip .staff-role{ font-size:9.5px; font-weight:800; text-transform:uppercase; color:var(--accent); border:1px solid var(--accent-dim); border-radius:999px; padding:0 6px; }
+  .name-chip.pending{ border-style:dashed; color:var(--text-dim); }
+  .name-chip .staff-mail{ color:var(--text-faint); font-size:11.5px; }
   .cfg-agent-row{ display:flex; align-items:center; gap:10px; margin-bottom:6px; }
   .cfg-agent-row span{ flex:1 1 200px; font-size:12.5px; }
   .cfg-agent-row input{ flex:1 1 240px; padding:6px 9px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font-size:12.5px; }
@@ -1953,6 +1962,25 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </button>
     </div>
 
+    <div class="cfg-block admin-only" id="cfgStaffBlock">
+      <h4>Evaluators</h4>
+      <p class="hint">Add a person with the email they will sign in with. They open the app, click <b>First time? Create your account</b> with that email (or just sign in, if they already have an account), and they get in with this name and role.</p>
+      <div class="cfg-names" id="cfgStaffList"></div>
+      <div class="cfg-names" id="cfgStaffPending"></div>
+      <div class="add-name staff-add">
+        <input id="newStaffName" placeholder="Name (e.g. Maria)">
+        <input id="newStaffEmail" type="email" placeholder="Email">
+        <div class="staff-role-switch" id="newStaffRole" data-role="evaluator">
+          <button type="button" data-role="evaluator" class="on">Evaluator</button>
+          <button type="button" data-role="admin">Admin</button>
+        </div>
+        <button id="btnAddStaff" title="Add this person">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>
+          Add
+        </button>
+      </div>
+    </div>
+
     <div class="cfg-block admin-only" id="cfgTestDataBlock" style="display:none;">
       <h4>Test data</h4>
       <div class="hint" id="cfgTestDataText"></div>
@@ -1981,7 +2009,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <tr><td><code>{{feedback}}</code></td><td>A "Feedback" heading plus every rubric flagged ⚠, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
       <tr><td><code>{{accomplishments}}</code></td><td>An "Accomplishments" heading plus the met rubrics picked as accomplishments (up to 3), grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
       <tr><td><code>{{focus}}</code></td><td>A "Focus points" heading plus the focus points picked for the evaluation. If the template doesn't use it, they go right after the accomplishments.</td></tr>
-      <tr><td><code>{{score}}</code> <code>{{earned}}</code> <code>{{possible}}</code></td><td>The score out of 100, and the raw points earned / possible</td></tr>
+      <tr><td><code>{{score}}</code> <code>{{earned}}</code> <code>{{possible}}</code></td><td>The score (100 minus points lost), and the raw points earned / possible</td></tr>
       <tr><td><code>{{zeroline}}</code></td><td>The automatic-zero warning line, only when triggered</td></tr>
     </table>
     <p>In the <b>item line format</b> box: <code>{{icon}}</code> is ✓ / ✕ / ⚠, <code>{{label}}</code> is the short rubric name, <code>{{text}}</code> is its met/not‑met/reason text, and <code>{{pts}}</code> already includes its own suffix — "(-Npts)" for deductions or "(Auto‑Zero)" for zero call drivers, and nothing for accomplishments and feedback.</p>
@@ -2629,9 +2657,11 @@ function chosenText(id, cfg, kind){
   return opts[i] || opts[0] || '';
 }
 
+let TEXT_PICK_ANCHOR = null;
 function closeTextPicker(){
   const pop = document.getElementById('txtPickPopover');
   if(pop) pop.remove();
+  TEXT_PICK_ANCHOR = null;
 }
 
 // Accomplishments and focus points panel next to the summary.
@@ -2676,7 +2706,7 @@ document.getElementById('focusSelect').addEventListener('change', (e)=>{
 });
 
 function placePopover(pop, btn){
-  document.body.appendChild(pop);
+  if(pop.parentNode !== document.body) document.body.appendChild(pop);
   const r = btn.getBoundingClientRect();
   const w = Math.min(380, window.innerWidth - 24);
   pop.style.width = w + 'px';
@@ -2697,6 +2727,8 @@ function removeAccomplishment(id){
 // Met rubric: the button adds it to the accomplishments (asking which text when
 // there are several). Not met / feedback: it picks which text goes in the summary.
 function openTextPicker(btn){
+  // Tapping the same button again closes the open picker.
+  if(TEXT_PICK_ANCHOR === btn && document.getElementById('txtPickPopover')){ closeTextPicker(); return; }
   closeTextPicker();
   const id = btn.dataset.id, cfg = CONFIG.items[id], val = ANSWERS[id];
   if(!cfg || !val) return;
@@ -2728,6 +2760,7 @@ function openTextPicker(btn){
       '<span class="num">' + (i + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('') +
     (added ? '<button type="button" class="txt-pick-remove">Remove from accomplishments</button>' : '');
   placePopover(pop, btn);
+  TEXT_PICK_ANCHOR = btn;
   pop.querySelectorAll('.txt-pick-opt').forEach(o=> o.addEventListener('click', (e)=>{
     e.stopPropagation();
     if(kind === 'yes') setAccomplishment(id, Number(o.dataset.idx));
@@ -2739,7 +2772,17 @@ function openTextPicker(btn){
   if(rm) rm.addEventListener('click', (e)=>{ e.stopPropagation(); removeAccomplishment(id); closeTextPicker(); refreshEval(); });
 }
 document.addEventListener('click', (e)=>{ if(!e.target.closest('#txtPickPopover')) closeTextPicker(); });
-window.addEventListener('scroll', closeTextPicker, true);
+// Scrolling keeps the picker open and moves it with its button; it only closes
+// on a choice, a second tap on the button, or a click outside.
+function followTextPicker(e){
+  const pop = document.getElementById('txtPickPopover');
+  if(!pop) return;
+  if(e && e.target && e.target.nodeType === 1 && pop.contains(e.target)) return;
+  if(!TEXT_PICK_ANCHOR || !TEXT_PICK_ANCHOR.isConnected){ closeTextPicker(); return; }
+  placePopover(pop, TEXT_PICK_ANCHOR);
+}
+window.addEventListener('scroll', followTextPicker, true);
+window.addEventListener('resize', followTextPicker);
 
 let SUMMARY_MANUAL = false;
 let LAST_AUTO_SUMMARY = '';
@@ -3236,7 +3279,7 @@ function refreshEval(){
       // 'feedback' or unanswered items stay outside the pool entirely
     });
   });
-  let score = possible > 0 ? Math.round((earned / possible) * 100) : 100;
+  let score = scoreFromLost(possible - earned);
   if(zeroTriggered) score = 0;
 
   LAST_STATE = { score, earned, possible, zeroTriggered, zeroReasons: zeroReasons.slice() };
@@ -3728,13 +3771,18 @@ function withEvalState(answers, choices, accomplishments, fn){
   try{ return fn(); }finally{ [ANSWERS, CHOICES, ACCOMPLISHMENTS] = saved; }
 }
 
+// Score = 100 minus the points lost in failed rubrics (simple subtraction, never below 0).
+function scoreFromLost(lost){
+  return Math.max(0, Math.round(100 - (Number(lost) || 0)));
+}
+
 function scoreFromSections(sections){
   let earned = 0, possible = 0, zero = false;
   sections.forEach(sec=>{
     if(sec.isZeroSection){ if(sec.zeroList.length) zero = true; return; }
     earned += sec.earned; possible += sec.possible;
   });
-  const score = zero ? 0 : (possible > 0 ? Math.round(earned / possible * 100) : 100);
+  const score = zero ? 0 : scoreFromLost(possible - earned);
   return { score, earned, possible, zero };
 }
 
@@ -4330,7 +4378,7 @@ function switchTab(view){
 
   const populate = ()=>{
     if(view==='config'){
-      renderConfigOptions(); renderConfigNames(); renderConfigPeople(); renderConfigFocusPoints(); renderConfigSections(); renderTestDataBlock();
+      renderConfigOptions(); renderConfigNames(); renderConfigPeople(); renderConfigFocusPoints(); renderConfigSections(); renderTestDataBlock(); renderStaffBlock();
       document.getElementById('cfgSummaryTemplate').value = CONFIG.summaryTemplate;
       document.getElementById('cfgItemTemplate').value = CONFIG.itemTemplate;
       refreshScenarioUI();
@@ -4452,7 +4500,7 @@ function buildOutcomeHTML(targetId){
       '<div class="oc-score-ring" style="--ring-pct:' + Math.max(0, Math.min(100, ringPct)) + '; --ring-color:' + ringColor + ';">' +
         '<div class="oc-score-ring-inner"><b>' + score + '</b><span>/ 100</span></div>' +
       '</div>' +
-      '<div class="oc-score-points">' + LAST_STATE.earned + ' / ' + LAST_STATE.possible + ' pts</div>' +
+      '<div class="oc-score-points">' + ((LAST_STATE.possible - LAST_STATE.earned) > 0 ? '-' + (LAST_STATE.possible - LAST_STATE.earned) + ' pts' : 'No points lost') + '</div>' +
     '</div>' +
   '</div>';
 
@@ -4922,6 +4970,18 @@ async function loadProfileAndStart(user){
   }catch(e){ lookupFailed = true; console.error('Could not load profile (role will default to evaluator):', e); }
 
   if(!profile && !lookupFailed){
+    // No QA profile yet: an evaluator an admin added in Configuration gets one now.
+    try{
+      const { data: role, error } = await supabaseClient.rpc('claim_staff_invite');
+      if(error){ if(error.code !== 'PGRST202' && error.code !== '42883') console.error('Staff sign-in check failed', error); }
+      else if(role){
+        const res = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', user.id).maybeSingle();
+        if(res.data) profile = res.data;
+      }
+    }catch(e){ console.error('Staff sign-in check failed', e); }
+  }
+
+  if(!profile && !lookupFailed){
     // No QA profile: an agent signing in to see their own scores, or no access.
     let agentId = null, agentName = null;
     try{
@@ -4936,7 +4996,7 @@ async function loadProfileAndStart(user){
     if(!agentId){
       await supabaseClient.auth.signOut();
       setAppVisible(false);
-      showLoginError('This account has no access yet. Ask your QA admin to add your email to your agent profile.');
+      showLoginError('This account has no access yet. Ask your QA admin to add your email in Configuration.');
       return;
     }
     CURRENT_USER = { id: user.id, email: user.email, role: 'agent', agent_id: agentId, display_name: agentName || user.email };
@@ -5274,7 +5334,7 @@ function buildEmailBody(){
   if(!anyDeduction) lines.push('(None marked.)', '');
 
   lines.push('____________________________');
-  lines.push('Score: ' + LAST_STATE.score + ' / 100  (' + LAST_STATE.earned + ' / ' + LAST_STATE.possible + ' pts evaluated/obtained)');
+  lines.push('Score: ' + LAST_STATE.score + ' / 100  (100 - ' + (LAST_STATE.possible - LAST_STATE.earned) + ' pts lost)');
   if(LAST_STATE.zeroTriggered) lines.push('AUTOMATIC ZERO — zero call driver triggered.');
 
   return lines.join('\n');
@@ -5382,10 +5442,10 @@ async function ensureAgentsListLoaded(){
 
 function fmtPct(n){ return (isFinite(n) ? Math.round(n) : 0) + '%'; }
 
+// Average of the evaluation scores (each one is already 100 minus points lost).
 function weightedAvg(evals){
-  const possible = evals.reduce((s,e)=> s + Number(e.points_possible || 0), 0);
-  const earned = evals.reduce((s,e)=> s + Number(e.points_earned || 0), 0);
-  return possible > 0 ? (earned / possible) * 100 : 0;
+  if(!evals.length) return 0;
+  return evals.reduce((s,e)=> s + Number(e.score || 0), 0) / evals.length;
 }
 
 function getAgentsDateRange(){
@@ -5538,13 +5598,12 @@ function renderRanking(evals){
   const byAgent = {};
   evals.forEach(e=>{
     const name = e.agents ? e.agents.name : 'Unknown';
-    if(!byAgent[name]) byAgent[name] = { earned: 0, possible: 0, count: 0 };
-    byAgent[name].earned += Number(e.points_earned || 0);
-    byAgent[name].possible += Number(e.points_possible || 0);
+    if(!byAgent[name]) byAgent[name] = { total: 0, count: 0 };
+    byAgent[name].total += Number(e.score || 0);
     byAgent[name].count += 1;
   });
   const rows = Object.entries(byAgent).map(([name, v])=> ({
-    name, count: v.count, avg: v.possible > 0 ? (v.earned / v.possible) * 100 : 0,
+    name, count: v.count, avg: v.count ? v.total / v.count : 0,
   })).sort((a, b)=> b.avg - a.avg);
 
   const root = document.getElementById('rankingTable');
@@ -6363,7 +6422,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   let html = '<div class="monthly-scroll"><table class="monthly-table scores-table"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= cols; i++) html += '<th>Eval ' + i + '</th>';
   html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
-  const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
+  const colTotals = Array.from({ length: cols }, ()=> ({ total: 0, n: 0 }));
   agents.forEach(agent=>{
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
@@ -6372,8 +6431,7 @@ function renderMonthlyGrid(evals, scope, assignments){
       const e = list[i];
       if(e){
         html += scoreCellHtml(slots.find(sl=> sl.type === 'eval' && sl.eval.id === e.id), e);
-        colTotals[i].earned += Number(e.points_earned || 0);
-        colTotals[i].possible += Number(e.points_possible || 0);
+        colTotals[i].total += Number(e.score || 0);
         colTotals[i].n++;
       }else html += '<td class="cell-empty">—</td>';
     }
@@ -6385,7 +6443,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   });
   html += '</tbody><tfoot><tr><td>Team</td>';
   colTotals.forEach(t=>{
-    html += t.n ? '<td class="' + scoreClass(t.possible ? t.earned / t.possible * 100 : 0) + '">' + fmtPct(t.possible ? t.earned / t.possible * 100 : 0) + '</td>' : '<td class="cell-empty">—</td>';
+    html += t.n ? '<td class="' + scoreClass(t.total / t.n) + '">' + fmtPct(t.total / t.n) + '</td>' : '<td class="cell-empty">—</td>';
   });
   html += '<td>' + evals.length + '</td>';
   html += evals.length ? '<td class="' + scoreClass(weightedAvg(evals)) + '">' + fmtPct(weightedAvg(evals)) + '</td>' : '<td class="cell-empty">—</td>';
@@ -6792,7 +6850,7 @@ async function openEditEvalModal(ev){
 
 async function refreshEditEvalFailList(){
   document.getElementById('editEvalScorePreview').textContent =
-    Math.round(EDITING_EVAL_ROW.score) + '% (' + EDITING_EVAL_ROW.points_earned + ' / ' + EDITING_EVAL_ROW.points_possible + ' pts)';
+    Math.round(EDITING_EVAL_ROW.score) + '% (-' + (Number(EDITING_EVAL_ROW.points_possible || 0) - Number(EDITING_EVAL_ROW.points_earned || 0)) + ' pts)';
 
   try{
     const { data, error } = await supabaseClient.from('evaluation_deductions')
@@ -6851,7 +6909,7 @@ async function removeDeductionFromEvaluation(deductionId, deduction){
 
     const newScore = stillZeroTriggered
       ? 0
-      : (EDITING_EVAL_ROW.points_possible > 0 ? Math.round((newEarned / EDITING_EVAL_ROW.points_possible) * 100) : 100);
+      : scoreFromLost(Number(EDITING_EVAL_ROW.points_possible || 0) - Number(newEarned || 0));
 
     const { error: evalUpdErr } = await supabaseClient.from('evaluations').update({
       points_earned: newEarned,
@@ -7772,6 +7830,75 @@ async function countTestData(){
   }
   return counts;
 }
+/* ---------- Evaluators (admins add QA staff) ---------- */
+let STAFF_INVITES_AVAILABLE = true;
+async function renderStaffBlock(){
+  const block = document.getElementById('cfgStaffBlock');
+  if(!block) return;
+  if(!supabaseClient || !isAdminUser()){ block.style.display = 'none'; return; }
+  block.style.display = '';
+  const x = '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>';
+  PROFILES_CACHE = null;
+  const staff = await ensureProfilesLoaded();
+  document.getElementById('cfgStaffList').innerHTML = staff.map(p=> '<div class="name-chip"><span>' + escapeHtml(p.display_name) + '</span>' +
+    '<span class="staff-role">' + escapeHtml(p.role) + '</span></div>').join('') || '<div class="extras-empty">No evaluators yet.</div>';
+  let pending = [];
+  if(STAFF_INVITES_AVAILABLE){
+    const { data, error } = await supabaseClient.from('staff_invites').select('email, display_name, role').is('claimed_at', null).order('created_at');
+    if(error){
+      if(error.code === '42P01' || error.code === 'PGRST205'){ STAFF_INVITES_AVAILABLE = false; block.style.display = 'none'; return; }
+      console.error('Could not load pending evaluators', error);
+    }else pending = data || [];
+  }
+  document.getElementById('cfgStaffPending').innerHTML = pending.map(p=> '<div class="name-chip pending" title="Waiting for their first sign-in"><span>' + escapeHtml(p.display_name) + '</span>' +
+    '<span class="staff-mail">' + escapeHtml(p.email) + ' · waiting</span><span class="staff-role">' + escapeHtml(p.role) + '</span>' +
+    '<button type="button" data-cancel-invite="' + escapeHtml(p.email) + '" title="Cancel">' + x + '</button></div>').join('');
+}
+document.getElementById('newStaffRole').addEventListener('click', (e)=>{
+  const b = e.target.closest('button[data-role]');
+  if(!b) return;
+  const wrap = e.currentTarget;
+  wrap.dataset.role = b.dataset.role;
+  wrap.querySelectorAll('button').forEach(x=> x.classList.toggle('on', x === b));
+});
+async function addStaffFromInputs(){
+  const nameEl = document.getElementById('newStaffName'), mailEl = document.getElementById('newStaffEmail');
+  const name = nameEl.value.trim(), email = mailEl.value.trim().toLowerCase();
+  const role = document.getElementById('newStaffRole').dataset.role === 'admin' ? 'admin' : 'evaluator';
+  if(!name){ showToast('Write the person\'s name'); nameEl.focus(); return; }
+  if(!/^[^\s@]+@[^\s@]+$/.test(email)){ showToast('Write a valid email'); mailEl.focus(); return; }
+  const staff = await ensureProfilesLoaded();
+  if(staff.some(p=> (p.display_name || '').trim().toLowerCase() === name.toLowerCase())){
+    if(!confirm('There is already someone called "' + name + '". Add another person with the same name?')) return;
+  }
+  const btn = document.getElementById('btnAddStaff');
+  btn.disabled = true;
+  try{
+    const { data: old } = await supabaseClient.from('staff_invites').select('claimed_at').eq('email', email).maybeSingle();
+    if(old && old.claimed_at){ showToast('That email already has access'); return; }
+    const { error } = await supabaseClient.from('staff_invites').upsert({ email, display_name: name, role, claimed_at: null, claimed_by: null }, { onConflict: 'email' });
+    if(error) throw error;
+    nameEl.value = ''; mailEl.value = '';
+    showToast(name + ' added. They can now create their account with ' + email);
+  }catch(e){
+    if(!e || e.code !== 'VIEW_AS') showToast('Could not add: ' + ((e && e.message) || 'unknown error'));
+    console.error('Could not add evaluator', e);
+  }finally{
+    btn.disabled = false;
+    renderStaffBlock();
+  }
+}
+document.getElementById('btnAddStaff').addEventListener('click', addStaffFromInputs);
+['newStaffName', 'newStaffEmail'].forEach(id=> document.getElementById(id).addEventListener('keydown', (e)=>{ if(e.key === 'Enter') addStaffFromInputs(); }));
+document.getElementById('cfgStaffPending').addEventListener('click', async (e)=>{
+  const b = e.target.closest('button[data-cancel-invite]');
+  if(!b) return;
+  if(!confirm('Cancel access for ' + b.dataset.cancelInvite + '?')) return;
+  const { error } = await supabaseClient.from('staff_invites').delete().eq('email', b.dataset.cancelInvite).is('claimed_at', null);
+  if(error){ if(error.code !== 'VIEW_AS') showToast('Could not cancel. Try again.'); console.error(error); }
+  renderStaffBlock();
+});
+
 async function renderTestDataBlock(){
   const block = document.getElementById('cfgTestDataBlock');
   if(!supabaseClient || !isAdminUser()){ block.style.display = 'none'; return; }
@@ -7969,7 +8096,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
     c.alignment = { horizontal: 'center', vertical: 'middle' };
   });
 
-  const colTotals = Array.from({ length: cols }, ()=> ({ earned: 0, possible: 0, n: 0 }));
+  const colTotals = Array.from({ length: cols }, ()=> ({ total: 0, n: 0 }));
   const groups = supervisorGroups(agents);
   agents.forEach(agent=>{
     const g = groups.get(agent.id);
@@ -7989,8 +8116,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
         const e = sl.eval;
         values.push(Number(e.score) / 100, evaluatorLabel(e), e.call_date || '');
         scoreCells.push({ col: 4 + i * 3, cls: evalScoreClass(Math.round(Number(e.score))) });
-        colTotals[i].earned += Number(e.points_earned || 0);
-        colTotals[i].possible += Number(e.points_possible || 0);
+        colTotals[i].total += Number(e.score || 0);
         colTotals[i].n++;
       }else{
         const a = sl.assignment;
@@ -8014,16 +8140,16 @@ function buildScoresSheet(wb, evals, scope, assignments){
   });
 
   const team = ['Team total', '', ''];
-  colTotals.forEach(t=> team.push(t.n ? t.earned / t.possible : '', t.n ? t.n + ' evaluation' + (t.n === 1 ? '' : 's') : '', ''));
+  colTotals.forEach(t=> team.push(t.n ? t.total / t.n / 100 : '', t.n ? t.n + ' evaluation' + (t.n === 1 ? '' : 's') : '', ''));
   team.push(evals.length + ' evaluation' + (evals.length === 1 ? '' : 's'), evals.length ? weightedAvg(evals) / 100 : '');
   const teamRow = ws.addRow(team);
   teamRow.font = { bold: true };
   teamRow.eachCell(c=>{ c.border = { top: { style: 'medium' } }; });
   colTotals.forEach((t, i)=>{
-    if(!t.n || !t.possible) return;
+    if(!t.n) return;
     const c = teamRow.getCell(4 + i * 3);
     c.numFmt = '0%';
-    styleScoreCell(c, scoreClass(t.earned / t.possible * 100));
+    styleScoreCell(c, scoreClass(t.n ? t.total / t.n : 0));
   });
   if(evals.length){ const c = teamRow.getCell(header.length); c.numFmt = '0%'; styleScoreCell(c, scoreClass(weightedAvg(evals))); }
 
