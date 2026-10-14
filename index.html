@@ -774,6 +774,66 @@
   .bell-count{ position:absolute; top:-3px; right:-4px; min-width:16px; height:16px; padding:0 4px; box-sizing:border-box; border-radius:999px; background:var(--no); color:#fff; font-size:10px; font-weight:800; line-height:16px; text-align:center; display:none; }
   .bell-count.show{ display:block; }
   .bell-menu{ min-width:280px; }
+  .brand{ cursor:pointer; }
+  .brand:hover .brand-text b{ color:var(--accent); }
+  .user-badge .ideas-btn{ position:relative; }
+  .user-badge .ideas-btn:hover{ color:var(--accent); }
+  .user-badge .ideas-btn svg{ width:16px; height:16px; }
+  body.is-agent #btnIdeas{ display:none !important; }
+  .ideas-menu{ width:320px; max-width:calc(100vw - 24px); }
+  .ideas-menu textarea{ width:100%; min-height:90px; resize:vertical; box-sizing:border-box; margin:2px 0 8px; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font:inherit; font-size:12.5px; }
+  .user-badge .ideas-menu button.ideas-send{ width:100%; height:32px; border-radius:var(--radius-sm); background:var(--accent); color:#00110f; font-weight:800; font-size:12.5px; }
+  .user-badge .ideas-menu button.ideas-send:hover{ background:var(--accent); color:#00110f; filter:brightness(1.08); }
+  .user-badge .ideas-menu button.ideas-send:disabled{ opacity:.5; cursor:default; }
+  .ideas-list{ max-height:320px; overflow:auto; margin-top:8px; display:flex; flex-direction:column; gap:6px; }
+  .idea{ border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-elev-2); padding:8px 10px; font-size:12.5px; color:var(--text); }
+  .idea.done{ opacity:.6; }
+  .idea .idea-head{ display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text-faint); margin-bottom:4px; }
+  .idea .idea-head b{ color:var(--text); font-size:12px; }
+  .idea .idea-head .sp{ flex:1; }
+  .idea .idea-msg{ white-space:pre-wrap; word-break:break-word; line-height:1.45; }
+  .idea .idea-tag{ font-size:9.5px; font-weight:800; text-transform:uppercase; border-radius:999px; padding:0 6px; border:1px solid var(--accent-dim); color:var(--accent); }
+  .user-badge .idea button{ width:auto; height:22px; padding:0 8px; border-radius:999px; font-size:11px; font-weight:700; border:1px solid var(--border); color:var(--text-dim); }
+  .user-badge .idea button:hover{ color:var(--accent); border-color:var(--accent-dim); background:none; }
+  .user-badge .idea button.idea-del:hover{ color:var(--no); border-color:var(--no); }
+  .ideas-empty{ font-size:12px; color:var(--text-faint); padding:6px 4px; }
+
+  /* ---------- App tour ---------- */
+  .tour-prompt{
+    position:fixed; right:20px; bottom:20px; z-index:150; display:none; align-items:center; gap:10px;
+    background:var(--bg-elev); border:1px solid var(--accent-dim); border-radius:999px; box-shadow:var(--shadow);
+    padding:8px 8px 8px 16px; font-size:13px; color:var(--text); animation:tourIn .25s ease;
+  }
+  .tour-prompt.show{ display:flex; }
+  .tour-prompt b{ color:var(--accent); }
+  .tour-prompt .tp-go{ border:none; border-radius:999px; background:var(--accent); color:#00110f; font:inherit; font-weight:800; font-size:12.5px; padding:7px 14px; cursor:pointer; }
+  .tour-prompt .tp-x{ border:none; background:none; color:var(--text-faint); width:26px; height:26px; border-radius:50%; cursor:pointer; font-size:16px; line-height:1; }
+  .tour-prompt .tp-x:hover{ background:var(--bg-elev-2); color:var(--text); }
+  @keyframes tourIn{ from{ opacity:0; transform:translateY(8px); } to{ opacity:1; transform:none; } }
+  .tour-start-box{ max-width:420px; }
+  .tour-start-box .tour-check{ display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-dim); margin:14px 0 18px; cursor:pointer; }
+  .tour-start-box .tour-check input{ width:16px; height:16px; accent-color:var(--accent); }
+  .tour-start-actions{ display:flex; justify-content:flex-end; gap:8px; }
+  .tour-layer{ position:fixed; inset:0; z-index:300; display:none; }
+  .tour-layer.show{ display:block; }
+  .tour-spot{
+    position:fixed; z-index:301; border-radius:10px; pointer-events:none; border:2px solid var(--accent);
+    box-shadow:0 0 0 9999px rgba(0,0,0,.6); transition:all .25s ease;
+  }
+  .tour-card{
+    position:fixed; z-index:302; width:320px; max-width:calc(100vw - 24px); box-sizing:border-box;
+    background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow);
+    padding:14px 16px; transition:top .25s ease, left .25s ease;
+  }
+  .tour-card .tc-step{ font-size:10.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--accent); }
+  .tour-card h4{ margin:4px 0 6px; font-size:15px; color:var(--text); }
+  .tour-card p{ margin:0; font-size:12.8px; line-height:1.55; color:var(--text-dim); }
+  .tour-card .tc-actions{ display:flex; align-items:center; gap:8px; margin-top:14px; }
+  .tour-card .tc-actions .sp{ flex:1; }
+  .tour-card button{ border-radius:var(--radius-sm); font:inherit; font-size:12.5px; font-weight:700; padding:6px 12px; cursor:pointer; border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); }
+  .tour-card button.tc-next{ background:var(--accent); border-color:var(--accent); color:#00110f; }
+  .tour-card button.tc-skip{ border:none; background:none; color:var(--text-faint); padding:6px 4px; }
+  .tour-card button:disabled{ opacity:.4; cursor:default; }
   .user-badge #bellMenu button.vm-item{ flex-direction:column; align-items:flex-start; gap:2px; }
   .user-badge #bellMenu .vm-item{ text-align:left; }
   .user-badge #bellMenu .vm-item small{ text-transform:none; letter-spacing:0; font-size:11.5px; }
@@ -1356,6 +1416,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <span class="bell-count" id="bellCount"></span>
     </button>
     <div class="viewas-menu bell-menu" id="bellMenu"></div>
+    <button type="button" id="btnIdeas" class="ideas-btn" title="Suggest a change to the app">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-3.6 10.8c.6.5 1 1.2 1.1 2V16h5v-.2c.1-.8.5-1.5 1.1-2A6 6 0 0 0 12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span class="bell-count" id="ideasCount"></span>
+    </button>
+    <div class="viewas-menu ideas-menu" id="ideasMenu"></div>
     <button type="button" id="btnViewAs" class="viewas-btn" title="See the app as another user sees it" style="display:none;">
       <svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg>
     </button>
@@ -1837,6 +1902,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <h4>Options</h4>
       <label class="cfg-toggle"><input type="checkbox" id="cfgQuickNotes"><span><b>Quick notes panel</b> on my Evaluation page, to jot notes while I listen.</span></label>
       <label class="cfg-toggle"><input type="checkbox" id="cfgFocusPanel"><span><b>Focus points</b> on my Evaluation page.</span></label>
+      <label class="cfg-toggle"><input type="checkbox" id="cfgTourPrompt"><span><b>App tour.</b> Show the "Take tour?" notice so I can walk through the app again.</span></label>
       <label class="cfg-toggle admin-only"><input type="checkbox" id="cfgAgentPortal"><span><b>Agents can see their own scores.</b> Each agent signs in and sees only their own evaluations, errors, focus points and feedback.</span></label>
       <div id="cfgAgentAccess" class="cfg-agent-access admin-only" style="display:none;">
         <p class="hint">Write the email each agent will sign in with. The agent opens the app, clicks <b>First time? Create your account</b>, and uses that email. Emails save as you type.</p>
@@ -1994,6 +2060,28 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 </div>
 
 <div class="save-toast" id="saveToast">Saved</div>
+
+<div class="tour-prompt" id="tourPrompt">
+  <span>New here? <b>Take tour?</b></span>
+  <button type="button" class="tp-go" id="btnTourPrompt">Take tour</button>
+  <button type="button" class="tp-x" id="btnTourPromptClose" title="Not now">&times;</button>
+</div>
+
+<div class="modal-overlay" id="tourStartOverlay">
+  <div class="modal-box tour-start-box">
+    <h3>Let's take a tour</h3>
+    <p>We'll walk through each page of the app and show what every part is and how it works. It takes about a minute, and you can leave at any time.</p>
+    <label class="tour-check"><input type="checkbox" id="tourDontShow"> Don't show this again</label>
+    <div class="tour-start-actions">
+      <button type="button" class="btn btn-ghost" id="btnTourNotNow">Not now</button>
+      <button type="button" class="btn btn-primary" id="btnTourStart">Start tour</button>
+    </div>
+  </div>
+</div>
+
+<div class="tour-layer" id="tourLayer"></div>
+<div class="tour-spot" id="tourSpot" style="display:none;"></div>
+<div class="tour-card" id="tourCard" style="display:none;"></div>
 
 <div class="modal-overlay" id="summaryHelpOverlay">
   <div class="modal-box">
@@ -3799,8 +3887,13 @@ function sectionAndDeductionRows(sections){
 
 let DISPUTE = null;   // { row, answers, original }
 
-function disputeHistoryHtml(d){
+// Disputes an admin made are not shown to evaluators.
+function visibleDisputes(d){
   const list = (d && Array.isArray(d.disputes)) ? d.disputes : [];
+  return isAdminUser() ? list : list.filter(x=> !x.byAdmin);
+}
+function disputeHistoryHtml(d){
+  const list = visibleDisputes(d);
   return list.map(x=> '<div class="dispute-hist"><div class="when">' + escapeHtml(new Date(x.at).toLocaleString()) + ' · ' + escapeHtml(x.by || 'QA') +
     ' · ' + (x.after !== x.before ? Math.round(x.before) + '% → ' + Math.round(x.after) + '%' : 'no points returned') + '</div>' +
     (x.changes && x.changes.length ? '<div>' + x.changes.map(c=> escapeHtml(c.label) + ': ' + escapeHtml(c.from) + ' → ' + escapeHtml(c.to)).join('; ') + '</div>' : '') +
@@ -3882,6 +3975,7 @@ document.getElementById('btnSaveDispute').addEventListener('click', async ()=>{
   const { sectionRows, deductionRows } = sectionAndDeductionRows(built.sections);
   const dispute = {
     at: new Date().toISOString(), by: CURRENT_USER.display_name || 'QA', byId: CURRENT_USER.id, note,
+    byAdmin: isAdminUser() || undefined,
     before: Number(row.score), after: built.score.score, changes,
   };
   const payload = {
@@ -4557,7 +4651,9 @@ async function init(){
 
   startPresenceHeartbeat();
   startTaskBell();
+  startIdeas();
   renderQuickNotes();
+  setTimeout(maybeShowTourPrompt, 1200);
   try{
     if(!CURRENT_USER.viewAs) adoptLegacyDrafts();
     const rawDraft = localStorage.getItem(draftKey(LS_CURRENT_DRAFT_KEY));
@@ -5242,7 +5338,7 @@ async function saveEvaluationToDatabase(){
     return;
   }
   if(schedule && schedule.state === 'other'){
-    showToast('This evaluation is assigned to ' + profileName(schedule.assignment.assignee_id) + '. Press "Assign to me" first.');
+    showToast('This evaluation is assigned to ' + (profileName(schedule.assignment.assignee_id) || 'QA') + '. Press "Assign to me" first.');
     return;
   }
   if(shown && shown.state === 'mine' && schedule && shown.agentId === schedule.agentId && schedule.state !== 'mine' &&
@@ -5682,11 +5778,6 @@ async function fetchAssignments(month){
   return data || [];
 }
 
-function profileName(id){
-  const p = (PROFILES_CACHE || []).find(x=> x.id === id);
-  return p ? (p.display_name || 'QA') : 'QA';
-}
-
 function canRemoveAssignment(a){
   return !!CURRENT_USER && (a.assigned_by === CURRENT_USER.id || a.assignee_id === CURRENT_USER.id || isAdminUser());
 }
@@ -5763,7 +5854,7 @@ async function createAssignment(kind){
     if(error) throw error;
     closeAssignModal();
     showToast((kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' +
-      (assigneeId === CURRENT_USER.id ? 'you' : profileName(assigneeId)));
+      (assigneeId === CURRENT_USER.id ? 'you' : (profileName(assigneeId) || 'QA')));
     refreshAgentsView();
   }catch(err){
     console.error('Could not assign evaluation', err);
@@ -5774,7 +5865,7 @@ async function createAssignment(kind){
 }
 
 async function removeAssignment(a){
-  if(!confirm('Remove this assignment for ' + profileName(a.assignee_id) + '?')) return;
+  if(!confirm('Remove this assignment for ' + (profileName(a.assignee_id) || 'QA') + '?')) return;
   const { error } = await supabaseClient.from('evaluation_assignments').delete().eq('id', a.id);
   if(error){ console.error('Could not remove assignment', error); showToast('Could not remove: ' + (error.message || 'unknown error')); return; }
   showToast('Assignment removed');
@@ -5859,7 +5950,8 @@ function syncPresence(){
   return PRESENCE_CHAIN;
 }
 // Only real QA staff report what they have open (not agents, not "view as").
-function presenceWritable(){ return !!CURRENT_USER && !CURRENT_USER.viewAs && CURRENT_USER.role !== 'agent'; }
+// Admins never report presence: evaluators must not see them in the app.
+function presenceWritable(){ return !!CURRENT_USER && !CURRENT_USER.viewAs && CURRENT_USER.role !== 'agent' && !isAdminUser(); }
 async function syncPresenceNow(){
   if(!PRESENCE_AVAILABLE || !supabaseClient || !presenceWritable()) return;
   const t = presenceTarget();
@@ -5901,7 +5993,7 @@ function openByHtml(s){
   return s.openBy.map(r=>{
     const since = new Date(r.opened_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     const isAssignee = s.assignment && s.assignment.assignee_id === r.user_id;
-    return '<div class="sched-open"><span class="live-dot"></span>' + escapeHtml(profileName(r.user_id)) +
+    return '<div class="sched-open"><span class="live-dot"></span>' + escapeHtml(profileName(r.user_id) || 'QA') +
       (isAssignee ? ' has it open right now' : ' is evaluating this agent right now') + ' (since ' + since + ').</div>';
   }).join('');
 }
@@ -5926,7 +6018,7 @@ async function refreshScheduleBanner(){
   if(token !== SCHEDULE_TOKEN) return sched;  // a newer refresh replaced this one
   const prev = SCHEDULE;
   if(prev && sched && prev.state === 'mine' && sched.state === 'other' && prev.agentId === sched.agentId && prev.month === sched.month){
-    showToast(profileName(sched.assignment.assignee_id) + ' took this evaluation; it is now assigned to them.');
+    showToast((profileName(sched.assignment.assignee_id) || 'QA') + ' took this evaluation; it is now assigned to them.');
   }
   SCHEDULE = sched;
   renderScheduleBanner();
@@ -5951,7 +6043,7 @@ function renderScheduleBanner(){
     html = '<div class="sched-title">Scheduled for you' + kind + '</div>' +
       nth + '. ' + (s.done ? s.done + ' already done this month.' : 'First one of the month.');
   }else if(s.state === 'other'){
-    const who = escapeHtml(profileName(s.assignment.assignee_id));
+    const who = escapeHtml(profileName(s.assignment.assignee_id) || 'QA');
     html = '<div class="sched-title">Assigned to ' + who + kind + '</div>' +
       nth + ' is scheduled for <b>' + who + '</b>. Assign it to yourself to start; the table will show you as the evaluator.' +
       '<button type="button" class="btn btn-primary" id="btnTakeAssignment">Assign to me</button>';
@@ -5980,7 +6072,7 @@ async function takeScheduledAssignment(){
   // Check again right now: the assignee may have opened it since the banner was drawn.
   const openBy = await fetchOpenBy(s.agentId, s.month);
   const assigneeOpen = openBy.find(r=> r.user_id === s.assignment.assignee_id);
-  if(assigneeOpen && !confirm(profileName(assigneeOpen.user_id) + ' has this evaluation open right now. Take it anyway? Their screen will tell them it was reassigned.')) return;
+  if(assigneeOpen && !confirm((profileName(assigneeOpen.user_id) || 'QA') + ' has this evaluation open right now. Take it anyway? Their screen will tell them it was reassigned.')) return;
   const btn = document.getElementById('btnTakeAssignment');
   if(btn){ btn.disabled = true; btn.textContent = 'Assigning...'; }
   try{
@@ -6074,7 +6166,7 @@ async function openViewEvalModal(evalId, fromProfile){
             const it = d.items.find(x=> x.id === id);
             return it ? '<span class="x-chip acc"><svg class="ic-svg" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="m8 12.5 2.8 2.7L16 9.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><span>' + escapeHtml(it.label) + '</span></span>' : '';
           }).join('') + '</div>' : '') +
-      (d && d.disputes && d.disputes.length ? '<div class="ve-subtitle">Disputes</div>' + disputeHistoryHtml(d) : '') +
+      (visibleDisputes(d).length ? '<div class="ve-subtitle">Disputes</div>' + disputeHistoryHtml(d) : '') +
       '<div class="ve-subtitle">Rubrics</div>' +
       sectionsHtml +
       (d && d.summary ? '<div class="ve-subtitle">Summary</div><pre class="ve-summary">' + escapeHtml(d.summary) + '</pre>' : '');
@@ -6288,7 +6380,7 @@ async function confirmBulkAssign(){
     });
     const { error } = await supabaseClient.from('evaluation_assignments').insert(rows);
     if(error) throw error;
-    const who = assigneeId === CURRENT_USER.id ? 'you' : profileName(assigneeId);
+    const who = assigneeId === CURRENT_USER.id ? 'you' : (profileName(assigneeId) || 'QA');
     showToast(rows.length + ' ' + (BULK.kind === 'call' ? 'call' : 'ticket') + ' evaluation' + (rows.length === 1 ? '' : 's') + ' assigned to ' + who);
     BULK.active = false; BULK.kind = null; BULK.picked.clear();
     updateBulkBar();
@@ -6466,8 +6558,8 @@ function renderMonthlyGrid(evals, scope, assignments){
       }else if(sl && sl.type === 'assignment'){
         const a = sl.assignment;
         const mine = CURRENT_USER && a.assignee_id === CURRENT_USER.id;
-        const who = mine ? 'You' : profileName(a.assignee_id);
-        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + profileName(a.assignee_id) + ' by ' + profileName(a.assigned_by);
+        const who = mine ? 'You' : (profileName(a.assignee_id) || 'QA');
+        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + (profileName(a.assignee_id) || 'QA') + (profileName(a.assigned_by) ? ' by ' + profileName(a.assigned_by) : '');
         ahtml += '<td class="cell-assigned' + (mine ? ' mine' : '') + '" title="' + escapeHtml(tip) + '">' +
           '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
           (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
@@ -6794,7 +6886,7 @@ function renderEvalList(evals, details){
     return '<div class="eval-item clickable" data-id="' + e.id + '">' +
       '<span class="date">' + (e.call_date || 'N/A') + '</span>' +
       '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
-      (details[e.id] && details[e.id].disputes && details[e.id].disputes.length ? '<span class="disputed-tag" title="This evaluation was disputed">Disputed</span>' : '') +
+      (visibleDisputes(details[e.id]).length ? '<span class="disputed-tag" title="This evaluation was disputed">Disputed</span>' : '') +
       '<span class="by" title="Evaluated by">' + escapeHtml(evaluatorLabel(e)) + '</span>' +
       '<span class="score ' + evalScoreClass(Math.round(e.score)) + '">' + Math.round(e.score) + '%</span>' +
       actions +
@@ -7181,6 +7273,7 @@ async function loadViewAsPrefs(){
 function renderConfigOptions(){
   document.getElementById('cfgQuickNotes').checked = prefOn('quickNotes');
   document.getElementById('cfgFocusPanel').checked = prefOn('focusPoints');
+  document.getElementById('cfgTourPrompt').checked = !tourOff();
   document.getElementById('cfgAgentPortal').checked = featureOn('agentPortal');
   renderAgentAccess();
 }
@@ -7819,6 +7912,265 @@ document.addEventListener('click', (e)=>{
   if(!e.target.closest('#bellMenu')) document.getElementById('bellMenu').classList.remove('show');
 });
 
+/* ---------- iTero logo: back to the Evaluation page ---------- */
+document.querySelector('.topbar .brand').addEventListener('click', ()=>{
+  if(!CURRENT_USER) return;
+  switchTab(isAgentUser() ? 'agents' : 'eval');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ---------- Suggestions box ---------- */
+// Evaluators send ideas for the app; admins read them here and mark them done.
+let IDEAS = [];
+let IDEAS_AVAILABLE = true;
+let IDEAS_TIMER = null;
+async function loadIdeas(){
+  if(!supabaseClient || !CURRENT_USER || isAgentUser() || !IDEAS_AVAILABLE) return;
+  let q = supabaseClient.from('app_feedback').select('id, author_name, message, status, created_at, created_by').order('created_at', { ascending: false });
+  if(!isAdminUser()) q = q.eq('created_by', CURRENT_USER.id);
+  const { data, error } = await q;
+  if(error){
+    if(error.code === '42P01' || error.code === 'PGRST205'){ IDEAS_AVAILABLE = false; document.getElementById('btnIdeas').style.display = 'none'; }
+    return;
+  }
+  IDEAS = data || [];
+  const fresh = isAdminUser() ? IDEAS.filter(i=> i.status === 'new').length : 0;
+  const count = document.getElementById('ideasCount');
+  count.textContent = fresh > 9 ? '9+' : String(fresh);
+  count.classList.toggle('show', fresh > 0);
+  if(document.getElementById('ideasMenu').classList.contains('show')) renderIdeasMenu();
+}
+function startIdeas(){
+  if(isAgentUser() || IDEAS_TIMER) return;
+  loadIdeas();
+  IDEAS_TIMER = setInterval(loadIdeas, 60000);
+}
+function ideaHtml(i, admin){
+  const when = taskStampLabel(i.created_at);
+  return '<div class="idea' + (i.status === 'done' ? ' done' : '') + '" data-idea="' + i.id + '"><div class="idea-head">' +
+    (admin ? '<b>' + escapeHtml(i.author_name || 'QA') + '</b>' : '') + '<span>' + escapeHtml(when) + '</span><span class="sp"></span>' +
+    (i.status === 'done' ? '<span class="idea-tag">Done</span>' : (admin ? '' : '<span class="idea-tag">Sent</span>')) +
+    (admin ? (i.status === 'done' ? '<button type="button" data-idea-open>Reopen</button>' : '<button type="button" data-idea-done>Done</button>') +
+      '<button type="button" class="idea-del" data-idea-del title="Delete">&times;</button>' : '') +
+    '</div><div class="idea-msg">' + escapeHtml(i.message) + '</div></div>';
+}
+function renderIdeasMenu(){
+  const menu = document.getElementById('ideasMenu');
+  const admin = isAdminUser();
+  const draft = menu.querySelector('textarea') ? menu.querySelector('textarea').value : '';
+  menu.innerHTML = admin
+    ? '<div class="vm-title">Suggestions from the team</div><div class="ideas-list">' +
+        (IDEAS.length ? IDEAS.map(i=> ideaHtml(i, true)).join('') : '<div class="ideas-empty">No suggestions yet.</div>') + '</div>'
+    : '<div class="vm-title">Suggest a change to the app</div>' +
+      '<textarea id="ideaText" maxlength="2000" placeholder="What would you change or add? Be as specific as you like."></textarea>' +
+      '<button type="button" class="ideas-send" id="btnIdeaSend">Send suggestion</button>' +
+      (IDEAS.length ? '<div class="vm-title" style="margin-top:12px;">Sent</div><div class="ideas-list">' + IDEAS.slice(0, 10).map(i=> ideaHtml(i, false)).join('') + '</div>' : '');
+  const ta = menu.querySelector('textarea');
+  if(ta){ ta.value = draft; }
+}
+document.getElementById('btnIdeas').addEventListener('click', async (e)=>{
+  e.stopPropagation();
+  const menu = document.getElementById('ideasMenu');
+  document.getElementById('bellMenu').classList.remove('show');
+  if(menu.classList.contains('show')){ menu.classList.remove('show'); return; }
+  renderIdeasMenu();
+  menu.classList.add('show');
+  const ta = menu.querySelector('textarea');
+  if(ta) ta.focus();
+  await loadIdeas();
+});
+document.getElementById('ideasMenu').addEventListener('click', async (e)=>{
+  e.stopPropagation();
+  const send = e.target.closest('#btnIdeaSend');
+  if(send){
+    const ta = document.getElementById('ideaText');
+    const message = ta.value.trim();
+    if(!message){ showToast('Write your suggestion first'); ta.focus(); return; }
+    send.disabled = true;
+    const { error } = await supabaseClient.from('app_feedback').insert({
+      created_by: CURRENT_USER.id, author_name: CURRENT_USER.display_name || '', message,
+    });
+    send.disabled = false;
+    if(error){ if(error.code !== 'VIEW_AS') showToast('Could not send it. Try again.'); console.error(error); return; }
+    ta.value = '';
+    showToast('Thanks! Your suggestion was sent.');
+    await loadIdeas();
+    renderIdeasMenu();
+    return;
+  }
+  const card = e.target.closest('[data-idea]');
+  if(!card || !isAdminUser()) return;
+  const id = card.dataset.idea;
+  let res = null;
+  if(e.target.closest('[data-idea-done]')) res = await supabaseClient.from('app_feedback').update({ status: 'done' }).eq('id', id);
+  else if(e.target.closest('[data-idea-open]')) res = await supabaseClient.from('app_feedback').update({ status: 'new' }).eq('id', id);
+  else if(e.target.closest('[data-idea-del]')){
+    if(!confirm('Delete this suggestion?')) return;
+    res = await supabaseClient.from('app_feedback').delete().eq('id', id);
+  }
+  if(!res) return;
+  if(res.error){ if(res.error.code !== 'VIEW_AS') showToast('Could not update it. Try again.'); return; }
+  await loadIdeas();
+  renderIdeasMenu();
+});
+document.addEventListener('click', (e)=>{
+  if(!e.target.closest('#ideasMenu') && !e.target.closest('#btnIdeas')) document.getElementById('ideasMenu').classList.remove('show');
+});
+
+/* ---------- App tour ---------- */
+const TOUR_SNOOZE_KEY = 'qa_tour_snoozed';
+function tourOff(){ return !!(CURRENT_USER && CURRENT_USER.prefs && CURRENT_USER.prefs.tourOff === true); }
+function maybeShowTourPrompt(){
+  let snoozed = false;
+  try{ snoozed = sessionStorage.getItem(TOUR_SNOOZE_KEY) === '1'; }catch(e){}
+  const show = !!CURRENT_USER && !isAgentUser() && !tourOff() && !snoozed && !TOUR.active;
+  document.getElementById('tourPrompt').classList.toggle('show', show);
+}
+function snoozeTourPrompt(){
+  try{ sessionStorage.setItem(TOUR_SNOOZE_KEY, '1'); }catch(e){}
+  document.getElementById('tourPrompt').classList.remove('show');
+}
+async function setTourOff(off){
+  const ok = await setMyPref('tourOff', off);
+  if(!ok) showToast('Could not save the option');
+  const cb = document.getElementById('cfgTourPrompt');
+  if(cb) cb.checked = !tourOff();
+  if(off) document.getElementById('tourPrompt').classList.remove('show');
+  return ok;
+}
+document.getElementById('btnTourPrompt').addEventListener('click', ()=>{
+  document.getElementById('tourDontShow').checked = false;
+  document.getElementById('tourStartOverlay').classList.add('show');
+});
+document.getElementById('btnTourPromptClose').addEventListener('click', snoozeTourPrompt);
+// "Don't show this again" takes effect as soon as it is ticked.
+document.getElementById('tourDontShow').addEventListener('change', (e)=>{ setTourOff(e.target.checked); });
+document.getElementById('btnTourNotNow').addEventListener('click', ()=>{
+  document.getElementById('tourStartOverlay').classList.remove('show');
+  if(!document.getElementById('tourDontShow').checked) snoozeTourPrompt();
+});
+document.getElementById('tourStartOverlay').addEventListener('click', (e)=>{
+  if(e.target.id === 'tourStartOverlay') document.getElementById('btnTourNotNow').click();
+});
+document.getElementById('btnTourStart').addEventListener('click', ()=>{
+  document.getElementById('tourStartOverlay').classList.remove('show');
+  if(!document.getElementById('tourDontShow').checked) snoozeTourPrompt();
+  startTour();
+});
+document.getElementById('cfgTourPrompt').addEventListener('change', async (e)=>{
+  const on = e.target.checked;
+  const ok = await setTourOff(!on);
+  if(!ok) return;
+  if(on){
+    try{ sessionStorage.removeItem(TOUR_SNOOZE_KEY); }catch(err){}
+    maybeShowTourPrompt();
+    showToast('The "Take tour?" notice is back');
+  }else showToast('The "Take tour?" notice is off');
+});
+
+const TOUR_STEPS = [
+  { view: 'eval', sel: '#mainTabs', title: 'The four pages', text: 'Evaluation is where you score a call. Agents shows scores and assignments, Tasks is the team to-do list, and Configuration holds the rubrics and your options. Click the iTero logo at any time to come back to Evaluation.' },
+  { view: 'eval', sel: '#schedBanner', title: 'Your assigned evaluations', text: 'When an evaluation is assigned to you, it shows here. Use "Assign to me" to take one that is waiting.' },
+  { view: 'eval', sel: '#fAgent', title: 'Agent and call details', text: 'Start typing the agent’s name and pick it from the list. Then fill in the call date, ticket ID and call reason. They are required to save.' },
+  { view: 'eval', sel: '#sections .item-card', title: 'Rubrics', text: 'Every rubric starts as met. Mark ✓ met, ✕ not met (it takes away its points) or ⚠ feedback (shown in the summary, no points lost).' },
+  { view: 'eval', sel: '#sections .txt-pick', title: 'Summary texts', text: 'The 1/N button chooses which text goes in the summary. On a met rubric it adds it to the accomplishments (up to 3). The list closes when you pick one, tap the button again or click outside.' },
+  { view: 'eval', sel: '.score-big', title: 'Score', text: 'The score starts at 100 and every failed rubric subtracts its points. An auto-zero rubric makes the whole evaluation 0.' },
+  { view: 'eval', sel: '#extrasPanel', title: 'Accomplishments and focus points', text: 'The accomplishments you chose appear here, and you can add focus points for the agent to work on.' },
+  { view: 'eval', sel: '#output, #summaryHeadRow', title: 'Summary', text: 'The summary writes itself as you mark rubrics. Copy it and send it to the agent.' },
+  { view: 'eval', sel: '#btnSaveEvaluation', title: 'Save', text: 'Saves the evaluation to the agent’s record. Each agent can have up to 4 evaluations a month.' },
+  { view: 'agents', sel: '.monthly-card', title: 'Monthly table', text: 'Scores for every agent this month. Switch to Assignments to give evaluations to yourself or someone else.' },
+  { view: 'agents', sel: '#view-agents .team-filter-field', title: 'NA and CALA', text: 'Switch between the two teams. Their lists and averages are always kept separate.' },
+  { view: 'agents', sel: '#agentsSelect', title: 'Agent profile', text: 'Pick an agent to see their chart, their most common errors, focus points and every evaluation. You can also export a PDF.' },
+  { view: 'tasks', sel: '#tasksTable', title: 'Tasks', text: 'The team to-do list. Add a task, set its priority, date and who is responsible, and mark it on hold or completed.' },
+  { view: null, sel: '#btnBell', title: 'Notifications', text: 'You get a notification here when someone gives you a task.' },
+  { view: null, sel: '#btnIdeas', title: 'Suggestions', text: 'Have an idea to improve the app? Write it here and send it.', staffOnly: true },
+  { view: 'config', sel: '#cfgFeaturesBlock', title: 'Your options', text: 'Turn the quick notes and focus points on or off for yourself. "App tour" brings back the "Take tour?" notice whenever you want to see this again.' },
+  { view: 'config', sel: '#cfgStaffBlock', title: 'Evaluators', text: 'Add a new evaluator with their name and email. They create their account with that email and get in.', admin: true },
+  { view: null, sel: '#themeSwitch', title: 'Light or dark', text: 'Switch between the light and dark look. That’s it, enjoy the app!' },
+];
+const TOUR = { active: false, i: 0, steps: [], el: null, startView: 'eval' };
+
+function tourVisible(el){
+  if(!el) return false;
+  const r = el.getBoundingClientRect();
+  return r.width > 0 && r.height > 0 && getComputedStyle(el).visibility !== 'hidden';
+}
+function tourTarget(step){
+  const all = Array.from(document.querySelectorAll(step.sel)).filter(tourVisible);
+  return all[0] || null;
+}
+function startTour(){
+  if(TOUR.active) return;
+  TOUR.steps = TOUR_STEPS.filter(s=> !s.admin || isAdminUser());
+  TOUR.active = true; TOUR.i = 0;
+  document.getElementById('tourPrompt').classList.remove('show');
+  document.getElementById('tourLayer').classList.add('show');
+  showTourStep(0, 1);
+}
+function endTour(){
+  TOUR.active = false;
+  document.getElementById('tourLayer').classList.remove('show');
+  document.getElementById('tourSpot').style.display = 'none';
+  document.getElementById('tourCard').style.display = 'none';
+  switchTab('eval');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+async function showTourStep(i, dir){
+  if(!TOUR.active) return;
+  if(i < 0) i = 0;
+  if(i >= TOUR.steps.length){ endTour(); return; }
+  const step = TOUR.steps[i];
+  if(step.view && !isViewVisible('view-' + step.view)){
+    switchTab(step.view);
+    await new Promise(res=> setTimeout(res, 450));
+  }
+  const el = tourTarget(step);
+  if(!el){ showTourStep(i + (dir || 1), dir || 1); return; }
+  TOUR.i = i; TOUR.el = el;
+  el.scrollIntoView({ block: 'center', behavior: 'instant' });
+  const card = document.getElementById('tourCard');
+  const n = TOUR.steps.length;
+  card.innerHTML = '<div class="tc-step">Step ' + (i + 1) + ' of ' + n + '</div><h4>' + escapeHtml(step.title) + '</h4><p>' + escapeHtml(step.text) + '</p>' +
+    '<div class="tc-actions"><button type="button" class="tc-skip" data-tour="end">' + (i === n - 1 ? 'Close' : 'Skip tour') + '</button><span class="sp"></span>' +
+    '<button type="button" data-tour="back"' + (i === 0 ? ' disabled' : '') + '>Back</button>' +
+    '<button type="button" class="tc-next" data-tour="next">' + (i === n - 1 ? 'Finish' : 'Next') + '</button></div>';
+  card.style.display = '';
+  document.getElementById('tourSpot').style.display = '';
+  placeTour();
+}
+function placeTour(){
+  if(!TOUR.active || !TOUR.el) return;
+  if(!TOUR.el.isConnected){ const t = tourTarget(TOUR.steps[TOUR.i]); if(!t) return; TOUR.el = t; }
+  const r = TOUR.el.getBoundingClientRect(), pad = 6;
+  const spot = document.getElementById('tourSpot');
+  spot.style.left = (r.left - pad) + 'px'; spot.style.top = (r.top - pad) + 'px';
+  spot.style.width = (r.width + pad * 2) + 'px'; spot.style.height = (r.height + pad * 2) + 'px';
+  const card = document.getElementById('tourCard');
+  const cw = card.offsetWidth, ch = card.offsetHeight, vw = window.innerWidth, vh = window.innerHeight, gap = 14;
+  let top = r.bottom + pad + gap;
+  if(top + ch > vh - 12) top = r.top - pad - gap - ch;
+  if(top < 12) top = Math.max(12, Math.min(vh - ch - 12, r.top + r.height / 2 - ch / 2));
+  let left = r.left + r.width / 2 - cw / 2;
+  left = Math.max(12, Math.min(vw - cw - 12, left));
+  card.style.top = top + 'px'; card.style.left = left + 'px';
+}
+document.getElementById('tourCard').addEventListener('click', (e)=>{
+  const b = e.target.closest('[data-tour]');
+  if(!b) return;
+  if(b.dataset.tour === 'end') endTour();
+  else if(b.dataset.tour === 'next') showTourStep(TOUR.i + 1, 1);
+  else if(b.dataset.tour === 'back') showTourStep(TOUR.i - 1, -1);
+});
+document.getElementById('tourLayer').addEventListener('click', (e)=> e.stopPropagation());
+window.addEventListener('resize', placeTour);
+window.addEventListener('scroll', placeTour, true);
+document.addEventListener('keydown', (e)=>{
+  if(!TOUR.active) return;
+  if(e.key === 'Escape') endTour();
+  else if(e.key === 'ArrowRight') showTourStep(TOUR.i + 1, 1);
+  else if(e.key === 'ArrowLeft') showTourStep(TOUR.i - 1, -1);
+});
+
 /* ---------- Test data (admin) ---------- */
 // Rows created by a test run carry is_test = true; this removes exactly those.
 const TEST_TABLES = [['evaluations', 'evaluations'], ['evaluation_assignments', 'assignments'], ['tasks', 'tasks']];
@@ -8120,7 +8472,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
         colTotals[i].n++;
       }else{
         const a = sl.assignment;
-        values.push('Assigned · ' + kindLabel(a.kind), profileName(a.assignee_id), '');
+        values.push('Assigned · ' + kindLabel(a.kind), profileName(a.assignee_id) || 'QA', '');
       }
     });
     while(values.length < 3 + cols * 3) values.push('');
@@ -8297,7 +8649,7 @@ function buildAgentPdf(agent, evals, allDeductions, details){
     evals.length ? scoreCell(Math.max(...evals.map(e=> Number(e.score))), evalScoreClass(Math.round(Math.max(...evals.map(e=> Number(e.score)))))) : '-',
     evals.length ? scoreCell(Math.min(...evals.map(e=> Number(e.score))), evalScoreClass(Math.round(Math.min(...evals.map(e=> Number(e.score)))))) : '-',
     String(evals.filter(e=> e.zero_triggered).length),
-    String(evals.filter(e=> details[e.id] && details[e.id].disputes && details[e.id].disputes.length).length),
+    String(evals.filter(e=> visibleDisputes(details[e.id]).length).length),
   ]], { styles: { fontSize: 10, halign: 'center', cellPadding: 5 } });
 
   // Repeated errors
@@ -8378,9 +8730,9 @@ function buildAgentPdf(agent, evals, allDeductions, details){
       const acc = d.accomplishments.map(id=> (items.find(x=> x.id === id) || {}).label).filter(Boolean);
       if(acc.length){ heading('Accomplishments'); acc.forEach(a=> para('- ' + a, { indent: 6 })); }
     }
-    if(Array.isArray(d.disputes) && d.disputes.length){
+    if(visibleDisputes(d).length){
       heading('Disputes');
-      d.disputes.forEach(x=>{
+      visibleDisputes(d).forEach(x=>{
         para(new Date(x.at).toLocaleString() + ' · ' + (x.by || 'QA') + ' · ' +
           (x.after !== x.before ? Math.round(x.before) + '% -> ' + Math.round(x.after) + '%' : 'no points returned'), { bold: true, size: 9.5 });
         if(x.changes && x.changes.length) para(x.changes.map(c=> c.label + ': ' + c.from + ' -> ' + c.to).join('; '), { size: 9.5, indent: 6 });
