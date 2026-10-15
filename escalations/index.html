@@ -479,24 +479,22 @@ function setAppVisible(v){
   $('loginOverlay').classList.toggle('hidden', v);
 }
 
+function showNoAccess(){
+  // Keep the session: it is shared with QA Evaluation on the same site.
+  setAppVisible(false);
+  $('loginForm').innerHTML = `<div class="login-logo">${document.querySelector('.brand-mark-wrap').innerHTML}</div>
+    <h2>Escalations tracker</h2>
+    <div class="login-error show">Escalations are only available to admins.</div>
+    <a class="btn btn-primary" href="../" style="width:100%;text-decoration:none;">Go to QA Evaluation</a>`;
+}
+
 async function startFor(user){
-  let profile = null;
-  try{
-    const { data, error } = await sb.from('profiles').select('role, display_name').eq('id', user.id).maybeSingle();
-    if(error) throw error;
-    profile = data;
-    if(!profile){
-      const { data: role } = await sb.rpc('claim_staff_invite');
-      if(role){ const r = await sb.from('profiles').select('role, display_name').eq('id', user.id).maybeSingle(); profile = r.data; }
-    }
-  }catch(e){ console.error('Profile lookup failed', e); }
-  if(!profile){
-    await sb.auth.signOut();
-    setAppVisible(false);
-    showLoginError('This account has no access to escalations. Ask your QA admin to add your email.');
-    return;
-  }
-  ME = { id: user.id, email: user.email, role: profile.role, display_name: profile.display_name || user.email };
+  // Admins only; the database enforces the same rule on both tables.
+  const { data: isAdmin, error } = await sb.rpc('is_admin_id', { uid: user.id });
+  if(error){ console.error('Admin check failed', error); setAppVisible(false); showLoginError('Could not check your access. Reload the page to try again.'); return; }
+  if(!isAdmin){ showNoAccess(); return; }
+  const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
+  ME = { id: user.id, email: user.email, role: 'admin', display_name: (profile && profile.display_name) || user.email };
   $('userBadgeName').textContent = ME.display_name;
   $('userBadgeRole').textContent = ME.role;
   setAppVisible(true);
