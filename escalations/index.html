@@ -250,8 +250,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
   <div class="user-badge" id="userBadge">
     <span class="name" id="userBadgeName"></span>
-    <span class="role" id="userBadgeRole"></span>
-    <a class="icon-btn" href="../" title="Open QA Evaluation"><svg viewBox="0 0 24 24" fill="none"><path d="M9 11l3 3 8-8M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
     <button class="icon-btn danger" id="btnLogout" title="Log out"><svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
   <div class="theme-switch" id="themeSwitch" title="Light or dark">
@@ -423,14 +421,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 const SUPABASE_URL = 'https://aqlyhkmsudebzikgthlz.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_uSOpkaG2F8Q86sPrMKGL-w_17-QCWlT';
 let sb = null;
-try{ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }catch(e){ console.error('Supabase client failed to load', e); }
+// Own storage key: signing in here never signs you in to QA Evaluation, and vice versa.
+try{ sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY, { auth:{ storageKey:'escalations-auth' } }); }catch(e){ console.error('Supabase client failed to load', e); }
 
 const STATUSES = ['Needs Review','Open','In Progress','Under Investigation','Waiting Replacement','Waiting Customer','Monitoring','Resolved'];
 const ACTIVE_STATUSES = STATUSES.filter(s => s !== 'Resolved' && s !== 'Needs Review');
 const NOT_SET = 'Not set';
 const FIELDS = ['ticket','subject','opened_on','requested_by','customer','customer_type','serial_number','software_version','poc','team','rca','issue','solution','category','jira','assigned_to_jira','status','status_note','closed_on'];
 
-let ME = null;               // { id, email, role, display_name }
+let ME = null;               // { id, email, display_name }
 let ESC = [];                // all escalations
 let LAST_UPD = new Map();    // escalation_id -> latest update timestamp
 let CURRENT = null;          // escalation open in the drawer (null = new)
@@ -469,7 +468,7 @@ try{ const t = localStorage.getItem('esc_theme'); if(t === 'light' || t === 'dar
 $('themeSwitch').addEventListener('click', ()=> setTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'));
 
 /* ============================================================
-   AUTH — same accounts as QA Evaluation
+   AUTH — own access list (escalation_members), separate from QA
    ============================================================ */
 $('loginLogo').innerHTML = document.querySelector('.brand-mark-wrap').innerHTML;
 function showLoginError(msg){ const el = $('loginError'); el.textContent = msg; el.classList.add('show'); }
@@ -480,23 +479,21 @@ function setAppVisible(v){
 }
 
 function showNoAccess(){
-  // Keep the session: it is shared with QA Evaluation on the same site.
   setAppVisible(false);
   $('loginForm').innerHTML = `<div class="login-logo">${document.querySelector('.brand-mark-wrap').innerHTML}</div>
     <h2>Escalations tracker</h2>
-    <div class="login-error show">Escalations are only available to admins.</div>
-    <a class="btn btn-primary" href="../" style="width:100%;text-decoration:none;">Go to QA Evaluation</a>`;
+    <div class="login-error show">This account has no access to escalations.</div>
+    <button type="button" class="btn btn-ghost" id="btnOtherAccount" style="width:100%;">Use another account</button>`;
+  $('btnOtherAccount').addEventListener('click', async ()=>{ await sb.auth.signOut(); location.reload(); });
 }
 
 async function startFor(user){
-  // Admins only; the database enforces the same rule on both tables.
-  const { data: isAdmin, error } = await sb.rpc('is_admin_id', { uid: user.id });
-  if(error){ console.error('Admin check failed', error); setAppVisible(false); showLoginError('Could not check your access. Reload the page to try again.'); return; }
-  if(!isAdmin){ showNoAccess(); return; }
-  const { data: profile } = await sb.from('profiles').select('display_name').eq('id', user.id).maybeSingle();
-  ME = { id: user.id, email: user.email, role: 'admin', display_name: (profile && profile.display_name) || user.email };
+  // Only accounts in escalation_members get in; the database enforces the same list.
+  const { data: member, error } = await sb.from('escalation_members').select('display_name').eq('user_id', user.id).maybeSingle();
+  if(error){ console.error('Access check failed', error); setAppVisible(false); showLoginError('Could not check your access. Reload the page to try again.'); return; }
+  if(!member){ showNoAccess(); return; }
+  ME = { id: user.id, email: user.email, display_name: member.display_name || user.email };
   $('userBadgeName').textContent = ME.display_name;
-  $('userBadgeRole').textContent = ME.role;
   setAppVisible(true);
   await loadAll();
   subscribeLive();
@@ -819,7 +816,7 @@ function openDrawer(e){
   $('fJiraAssigned').checked = !isNew && !!e.assigned_to_jira;
   $('fFirstUpdate').value = '';
   $('fFirstUpdateWrap').classList.toggle('hidden', !isNew);
-  $('btnDelete').classList.toggle('hidden', isNew || ME.role !== 'admin');
+  $('btnDelete').classList.toggle('hidden', isNew);
   $('updatesSection').classList.toggle('hidden', isNew);
   syncClosedField();
   $('newUpdate').value = '';
@@ -885,7 +882,7 @@ async function loadUpdates(id){
   if(error){ $('updatesList').innerHTML = '<div class="empty">Could not load updates</div>'; return; }
   if(!CURRENT || CURRENT.id !== id) return;
   $('updatesList').innerHTML = data.length ? data.map(u => `<div class="upd">
-      <div class="meta"><b>${esc(u.author_name || 'Someone')}</b><span>${esc(fmtWhen(u.created_at))}</span>${(u.author_id === ME.id || ME.role === 'admin') ? `<button class="icon-btn danger" data-del="${u.id}" title="Delete update"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>` : ''}</div>
+      <div class="meta"><b>${esc(u.author_name || 'Someone')}</b><span>${esc(fmtWhen(u.created_at))}</span><button class="icon-btn danger" data-del="${u.id}" title="Delete update"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M9 7V5h6v2m-8 0 1 13h8l1-13" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
       <div class="body">${esc(u.body)}</div></div>`).join('') : '<div class="empty">No updates yet</div>';
   $('updatesList').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', async ()=>{
     if(!confirm('Delete this update?')) return;
