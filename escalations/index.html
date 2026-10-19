@@ -198,6 +198,7 @@
   .import-summary{ font-size:13px; margin:14px 0 0; line-height:1.6; }
   .import-summary ul{ margin:6px 0 0; padding-left:18px; color:var(--text-dim); font-size:12.5px; }
   .import-summary .err{ color:var(--no); }
+  #summaryText{ width:100%; min-height:min(56vh, 520px); resize:vertical; background:var(--bg-elev-2); color:var(--text); border:1px solid var(--border); border-radius:var(--radius-sm); padding:12px 14px; font-family:inherit; font-size:13px; line-height:1.6; }
   .modal-actions{ display:flex; gap:8px; justify-content:flex-end; margin-top:16px; }
 
   .toast{ position:fixed; left:50%; bottom:24px; transform:translateX(-50%) translateY(20px); background:var(--bg-elev); border:1px solid var(--border); box-shadow:var(--shadow); padding:10px 16px; border-radius:var(--radius-sm); font-size:13px; opacity:0; pointer-events:none; transition:.2s; z-index:600; }
@@ -279,7 +280,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </div>
       </div>
       <div class="spacer"></div>
-      <button class="btn btn-ghost" id="btnCopy"><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>Copy summary</button>
+      <button class="btn btn-ghost" id="btnSummary" title="A written summary of the selected period, ready to paste"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 10h14M5 14h9M5 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Summary</button>
+      <button class="btn btn-ghost" id="btnPdfReport" title="A two-page report of the selected period, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13H7z M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>PDF report</button>
       <button class="btn btn-ghost" id="btnExportPeriod"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
     </div>
 
@@ -385,6 +387,17 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div class="drawer-body"><dl class="kv" id="drawerBody"></dl></div>
 </aside>
 
+<!-- =============== SUMMARY =============== -->
+<div class="modal" id="summaryModal" role="dialog" aria-label="Summary" style="width:min(760px, calc(100% - 32px));">
+  <h3 id="summaryTitle">Summary</h3>
+  <p>Written from the tickets closed in the selected period. You can edit it here before copying.</p>
+  <textarea id="summaryText" spellcheck="true"></textarea>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" id="btnSummaryClose">Close</button>
+    <button class="btn btn-primary" id="btnSummaryCopy">Copy</button>
+  </div>
+</div>
+
 <!-- =============== UPLOAD =============== -->
 <div class="modal" id="uploadModal" role="dialog" aria-label="Upload Excel">
   <h3>Upload escalations export</h3>
@@ -480,10 +493,11 @@ const reopenedTag = t => t.reopen_count ? `<span class="tag-reopened" title="Thi
 function solutionOf(t){ const s = parseSolution(t.solution_provided).solution; return s.length > 60 ? s.slice(0, 57) + '…' : s; }
 
 /* "Solution Provided" template, filled in Salesforce:
-     Part Replacement – PPC | Origin of the escalation: … | Previous case handlers: … | Scanner model: … | Avoidable: Yes | Notes: …
+     Part Replacement – PPC | Root cause: … | Origin of the escalation: … | Previous case handlers: … | Scanner model: … | Scanner serial number: … | Avoidable: Yes | Notes: …
    The solution is everything before the first "|" (what the statistics use). After it, each "Label: value"
    becomes a detail of the ticket; labels left empty are ignored, and text without a label is kept as notes. */
 const SOLUTION_FIELDS = [
+  { key:'rootcause',label:'Root cause',               re:/root\s+cause/ },
   { key:'origin',   label:'Origin of the escalation', re:/origin(?:\s+of\s+(?:the\s+)?escalation)?/ },
   { key:'handlers', label:'Previous case handlers',   re:/previous\s+(?:case\s+)?handlers?/ },
   { key:'serial',   label:'Scanner serial number',    re:/(?:scanner\s+)?(?:serial(?:\s+number)?|s\/?n)/ },
@@ -808,32 +822,295 @@ function renderTrend(base){
 }
 let resizeT; window.addEventListener('resize', ()=>{ clearTimeout(resizeT); resizeT = setTimeout(()=>{ if(currentView() === 'report') renderReport(); }, 150); });
 
-/* ---------- Copy summary (for email / chat) ---------- */
-function topLines(rows, n = 5){ return rows.slice(0, n).map(r => `  • ${r.label}: ${r.value}`).join('\n'); }
-$('btnCopy').addEventListener('click', async ()=>{
-  const { s, e, closed, opened, prevClosed } = periodData();
-  const durs = closed.map(daysToClose).filter(v => v != null);
-  const avg = durs.length ? (durs.reduce((a,b)=>a+b,0)/durs.length).toFixed(1) : '–';
-  const parts = closed.filter(isPart).length;
-  const text = [
-    `Escalations report: ${periodName(PERIOD, s, e)}`,
-    ``,
-    `Closed: ${closed.length} (previous ${PERIOD_WORD[PERIOD]}: ${prevClosed.length})`,
-    `Opened: ${opened.length}`,
-    `Average days to close: ${avg}${durs.length ? `, median ${median(durs).toFixed(1)}` : ''}`,
-    `Part replacements: ${parts}`,
-    `Avoidable: ${closed.filter(t => t._sp.details.avoidable === 'Yes').length} yes, ${closed.filter(t => t._sp.details.avoidable === 'No').length} no`,
-    `Reopened: ${closed.filter(t => t.reopen_count).length}`,
-    ``,
-    `By solution:`, topLines(countBy(closed, t=>t._sol)),
-    ``,
-    `By issue type:`, topLines(countBy(closed, t=>t.issue_type)),
-    ``,
-    `Closed tickets:`,
-    ...closed.map(t => `  • ${t.ticket_number}${t.reopen_count ? ' (reopened)' : ''} | ${t.account_name || ''} | ${t._sol || ''} | ${fmtDays(daysToClose(t))} days`),
-  ].join('\n');
-  try{ await navigator.clipboard.writeText(text); toast('Summary copied.'); }
-  catch(err){ console.error(err); toast('Could not copy. Your browser blocked the clipboard.'); }
+/* ============================================================
+   SUMMARY TEXT + PDF REPORT — built in the page from the selected period's tickets
+   ============================================================ */
+const NUM_WORDS = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen','twenty'];
+const word = n => n <= 20 ? NUM_WORDS[n] : String(n);
+const cap = s => !s || /^[a-z][A-Z]/.test(s) ? s : s[0].toUpperCase() + s.slice(1);   // leaves "iTero" alone
+const pct = (n, of) => of ? Math.round(n / of * 100) : 0;
+const d1 = v => v == null ? '–' : v.toFixed(1);
+const avgOf = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : null;
+const isBusiness = t => /business/i.test(t.priority || '');
+const PERIOD_ADJ = { week:'Weekly', month:'Monthly', quarter:'Quarterly', year:'Yearly' };
+const fmtLong = d => d.toLocaleDateString('en-US', { month:'long', day:'numeric' });
+const REPL_RE = /replacement\s+ticket\s*(?:#|number|no\.?)?\s*:?\s*(\d{5,})/i;
+
+function statsFor(rows){
+  const d = rows.map(daysToClose).filter(v => v != null);
+  return { n: rows.length, durs: d, avg: avgOf(d), med: median(d), in3: d.filter(v => v < 3).length, over14: d.filter(v => v >= 14).length };
+}
+// Second comparison column: the month before a week, the same month/quarter a year earlier.
+function comparePeriod(s){
+  if(PERIOD === 'week'){ const ms = new Date(s.getFullYear(), s.getMonth()-1, 1); return { label: ms.toLocaleDateString('en-US', { month:'long' }), s: ms, e: new Date(ms.getFullYear(), ms.getMonth()+1, 1) }; }
+  if(PERIOD === 'month' || PERIOD === 'quarter'){ const cs = new Date(s.getFullYear()-1, s.getMonth(), 1), [, ce] = bounds(PERIOD, cs); return { label: periodName(PERIOD, cs, ce), s: cs, e: ce }; }
+  return null;
+}
+// What the selected period covers, for the text: a week shows Monday to Friday unless something closed on the weekend.
+function rangeText(s, e, closed){
+  if(PERIOD === 'week'){
+    const weekend = closed.some(t => t._c.getDay() === 0 || t._c.getDay() === 6);
+    const last = new Date(s); last.setDate(last.getDate() + (weekend ? 6 : 4));
+    return { during: `During the week of ${fmtLong(s)} to ${fmtLong(last)}`, title: `Week of ${fmtLong(s)} to ${fmtLong(last)}, ${last.getFullYear()}`, short: `${fmtLong(s)} to ${fmtLong(last)}`, last };
+  }
+  const last = new Date(e); last.setDate(last.getDate()-1);
+  const name = periodName(PERIOD, s, e);
+  return { during: `During ${name}`, title: PERIOD === 'month' || PERIOD === 'year' ? name : `${name} (${fmtLong(s)} to ${fmtLong(last)})`, short: name, last };
+}
+
+// One closed ticket, described from its own fields and the Solution Provided template.
+function ticketStory(t){
+  const det = t._sp.details, sol = t._sp.solution || 'No solution given';
+  const notes = (t._sp.notes || '').split('\n').filter(Boolean);
+  const replM = (t.solution_provided || '').match(REPL_RE);
+  const extraNotes = notes.filter(n => !REPL_RE.test(n) || n.replace(REPL_RE, '').trim().length > 3);
+  const issue = [t.issue_type, t.sub_issue_type].filter(Boolean).join(' ').trim();
+  const sentence = x => { x = String(x).trim(); return x ? cap(x).replace(/[.\s]*$/, '.') : ''; };
+  const part = sol.match(/^part replacement\s*[–-]\s*(.+)$/i);
+  const days = daysToClose(t);
+  let how;
+  if(part){ const what = /^doa$/i.test(part[1].trim()) ? 'dead-on-arrival' : part[1].trim(); how = `${/^[aeiou]/i.test(what) ? 'an' : 'a'} ${what} part replacement`; }
+  return {
+    t, days,
+    title: det.rootcause || t.sub_issue_type || t.issue_type || 'Escalation',
+    issue: issue ? `${issue} issue` : 'Escalation',
+    origin: det.origin || '',
+    avoidable: det.avoidable === 'Yes',
+    validity: det.avoidable === 'Yes' ? 'Avoidable' : det.avoidable === 'No' ? 'Valid' : 'Not set',
+    repl: replM ? replM[1] : '',
+    notes: extraNotes.map(sentence).join(' '),
+    // "Resolved in 7.3 days with a PPC part replacement under replacement ticket 69289577."
+    resolved: days == null ? '' : part
+      ? `It was resolved in ${d1(days)} days with ${how}${replM ? ` under replacement ticket ${replM[1]}` : ''}.`
+      : `It was closed in ${d1(days)} days (${sol}).`,
+    resolution: part ? `${cap(how.replace(/^an? /, ''))}${replM ? ` issued under replacement ticket ${replM[1]}` : ''}.` : sentence(sol),
+  };
+}
+
+function reportData(){
+  const { s, e, closed, prevClosed } = periodData();
+  const cmp = comparePeriod(s);
+  // Open at the end of the period, as far as the uploaded data shows: opened before it ended, not closed by then.
+  const open = T.filter(t => t._o && t._o < e && (!t._c || t._c >= e));
+  const stories = closed.map(ticketStory).sort((a,b) => (b.days ?? -1) - (a.days ?? -1));
+  return {
+    s, e, closed, open, stories, range: rangeText(s, e, closed),
+    cur: statsFor(closed), prev: statsFor(prevClosed),
+    cmp: cmp ? Object.assign({ label: cmp.label }, statsFor(T.filter(t => inRange(t._c, cmp.s, cmp.e)))) : null,
+    openBiz: open.filter(isBusiness).length,
+    valid: stories.filter(x => x.validity === 'Valid').length,
+    avoid: stories.filter(x => x.avoidable).length,
+    parts: closed.filter(isPart).length,
+  };
+}
+
+function buildSummary(){
+  const R = reportData(), { cur, prev, cmp } = R, n = cur.n, pw = PERIOD_WORD[PERIOD];
+  const o = R.open.length, ob = R.openBiz, oc = o - ob;
+  const kind = (k, one, many) => k === 1 ? one : many;
+  let openPart = o ? `${word(o)} ${o === 1 ? 'remains' : 'remain'} open` : 'none remain open';
+  if(o && ob && oc) openPart += `, ${word(ob)} of them ${kind(ob, 'a Business Escalation', 'Business Escalations')} and ${word(oc)} ${kind(oc, 'a CSC Escalation', 'CSC Escalations')}`;
+  else if(o) openPart += o === 1 ? `, ${ob ? 'a Business Escalation' : 'a CSC Escalation'}` : `, all of them ${ob ? 'Business Escalations' : 'CSC Escalations'}`;
+  if(!n) return `${R.range.during}, no escalations were closed and ${openPart}.`;
+
+  const p1 = [`${R.range.during}, ${word(n)} ${n === 1 ? 'escalation was' : 'escalations were'} closed and ${openPart}.`];
+  const tt = countBy(R.closed, t => t.ticket_type)[0];
+  let s2 = tt.label === NOT_SET ? '' : tt.value === n ? `All closed escalations were ${tt.label} issues` : `${tt.label} issues accounted for ${pct(tt.value, n)}% of closed escalations`;
+  const partTxt = n === 1 ? (R.parts ? 'it was resolved with a part replacement' : 'it was not resolved with a part replacement')
+    : R.parts ? `part replacement was the resolution for ${word(R.parts)} of the ${word(n)} cases (${pct(R.parts, n)}%)` : 'none were resolved with a part replacement';
+  p1.push(s2 ? `${s2}, and ${partTxt}.` : `${cap(partTxt)}.`);
+  const unset = n - R.valid - R.avoid;
+  if(R.valid || R.avoid){
+    const v = R.valid ? `${cap(word(R.valid))} of the ${word(n)} closed escalations ${R.valid === 1 ? 'was' : 'were'} marked valid` : `None of the ${word(n)} closed escalations ${n === 1 ? 'was' : 'were'} marked valid`;
+    p1.push(`${v} and ${word(R.avoid)} ${R.avoid === 1 ? 'was' : 'were'} classified as avoidable${unset ? `; ${word(unset)} ${unset === 1 ? 'has' : 'have'} no Avoidable value` : ''}.`);
+  } else p1.push('None of the closed escalations has the Avoidable field filled in.');
+
+  const p2 = [];
+  if(cur.avg != null){
+    if(prev.avg != null){
+      const r = cur.avg / prev.avg;
+      const verb = r <= 0.6 ? 'improved sharply' : r < 0.9 ? 'improved' : r <= 1.1 ? 'held steady' : r < 1.5 ? 'slowed' : 'slowed sharply';
+      p2.push(`Resolution time ${verb} from the previous ${pw}, averaging ${d1(cur.avg)} days with a median of ${d1(cur.med)} days, compared with ${d1(prev.avg)} and ${d1(prev.med)} days the ${pw} before.`);
+    } else p2.push(`Resolution time averaged ${d1(cur.avg)} days with a median of ${d1(cur.med)} days; nothing closed the previous ${pw} to compare with.`);
+    const d = cur.durs.length;
+    let s = cur.in3 ? `${cap(word(cur.in3))} of the ${word(d)} ${d === 1 ? 'ticket was' : 'tickets were'} resolved within 3 days` : `No ticket was resolved within 3 days`;
+    const normal = cur.durs.filter(v => v < 14), slow = cur.durs.filter(v => v >= 14);
+    const span = a => Math.min(...a) === Math.max(...a) ? `${d1(a[0])} days` : `from ${d1(Math.min(...a))} to ${d1(Math.max(...a))} days`;
+    if(d > 1){
+      if(!slow.length) s += `; resolution times ranged ${span(normal)}`;
+      else if(!normal.length) s += `; every case took 14 days or more, ranging ${span(slow)}`;
+      else s += `; resolution times ranged ${span(normal)}, except for ${slow.length === 1 ? `one case that took ${d1(slow[0])} days` : `${word(slow.length)} cases that took 14 days or more (up to ${d1(Math.max(...slow))} days)`}`;
+    }
+    p2.push(s + '.');
+    if(cmp && cmp.avg != null){
+      const r = cur.avg / cmp.avg;
+      p2.push(`The average is ${r < 0.85 ? 'below' : r > 1.15 ? 'above' : 'now in line with'} ${cmp.label}’s ${d1(cmp.avg)} days.`);
+    }
+  }
+
+  const bullets = R.stories.map(x => {
+    const what = x.origin ? cap(x.origin).replace(/[.\s]*$/, '.') : `${cap(x.issue)}.`;
+    return `* ${x.title} (${x.t.ticket_number}): ${what}${x.avoidable ? ' The case was classified as avoidable.' : ''}${x.notes ? ' ' + x.notes : ''}${x.resolved ? ' ' + x.resolved : ''}`;
+  });
+  return [p1.join(' '), p2.join(' '), 'The main root causes and solutions were:', bullets.join('\n')].filter(Boolean).join('\n\n');
+}
+
+function openSummary(){
+  const { s, e } = periodData();
+  $('summaryTitle').textContent = `Summary: ${periodName(PERIOD, s, e)}`;
+  $('summaryText').value = buildSummary();
+  $('scrim').classList.add('show'); $('summaryModal').classList.add('show');
+}
+function closeSummary(){ $('summaryModal').classList.remove('show'); if(!$('drawer').classList.contains('show') && !$('uploadModal').classList.contains('show')) $('scrim').classList.remove('show'); }
+$('btnSummary').addEventListener('click', openSummary);
+$('btnSummaryClose').addEventListener('click', closeSummary);
+$('btnSummaryCopy').addEventListener('click', async ()=>{
+  try{ await navigator.clipboard.writeText($('summaryText').value); toast('Summary copied.'); }
+  catch(err){ $('summaryText').select(); toast('Could not copy automatically. The text is selected, press Ctrl+C.'); }
+});
+
+/* ---------- PDF report: opens in a new tab, printed or saved as PDF from the browser ---------- */
+function buildReportHtml(){
+  const R = reportData(), { cur, prev, cmp } = R, n = cur.n, pw = PERIOD_WORD[PERIOD], PW = cap(pw);
+  const daysCls = v => v == null ? '' : v >= 14 ? 't-red' : v >= 7 ? 't-amber' : 't-green';
+  const fd = v => v == null ? '–' : `${d1(v)} d`;
+  const avgDays = rows => avgOf(rows.map(daysToClose).filter(v => v != null));
+  const vol = (get, label) => {
+    const groups = new Map();
+    R.closed.forEach(t => { const raw = (get(t) || '').trim() || NOT_SET, k = raw.toLowerCase(); if(!groups.has(k)) groups.set(k, { label: raw, rows: [] }); groups.get(k).rows.push(t); });
+    const list = [...groups.values()].sort((a,b) => b.rows.length - a.rows.length || (avgDays(b.rows) ?? 0) - (avgDays(a.rows) ?? 0));
+    const top = Math.max(1, ...list.map(g => g.rows.length));
+    return `<div class="block"><h2>${esc(label)}</h2>${list.length ? `<table class="vol"><thead><tr><th></th><th></th><th class="r">Tickets (%)</th><th class="r">Avg days</th></tr></thead><tbody>${list.slice(0, 10).map(g => `<tr>
+      <td class="vl">${esc(g.label)}</td><td class="vb"><span class="track"><span class="fill" style="width:${(g.rows.length / top * 100).toFixed(1)}%"></span></span></td>
+      <td class="r b">${g.rows.length} (${pct(g.rows.length, n)}%)</td><td class="r dim">${fd(avgDays(g.rows))}</td></tr>`).join('')}</tbody></table>${list.length > 10 ? `<p class="note">${list.length - 10} more not shown.</p>` : ''}` : '<p class="note">Nothing closed in this period.</p>'}</div>`;
+  };
+  const BUCKETS = [['Under 1 day',0,1,'#7fa8c9'],['1-3 days',1,3,'#2a9d8f'],['3-7 days',3,7,'#5aa66f'],['7-14 days',7,14,'#d4801f'],['14+ days',14,Infinity,'#c0392b']];
+  const dist = BUCKETS.map(([label,lo,hi,color]) => ({ label, color, value: cur.durs.filter(v => v >= lo && v < hi).length }));
+  const ofD = cur.durs.length;
+  const pctOr = (k, of) => of ? `${pct(k, of)}%` : '–';
+  const cmpRows = [
+    ['Avg resolution', x => x.avg == null ? '–' : `${d1(x.avg)} days`],
+    ['Median resolution', x => x.med == null ? '–' : `${d1(x.med)} days`],
+    ['Closed within 3 days', x => pctOr(x.in3, x.durs.length)],
+    ['Took 14 days or more', x => pctOr(x.over14, x.durs.length)],
+  ];
+  const ob = R.openBiz, oc = R.open.length - ob;
+  const unset = n - R.valid - R.avoid;
+
+  // Root causes: tickets grouped by their root cause (or sub-issue type when the template has none).
+  const causes = new Map();
+  R.stories.forEach(x => { const k = x.title.toLowerCase(); if(!causes.has(k)) causes.set(k, { title: x.title, items: [] }); causes.get(k).items.push(x); });
+  const causeRows = [...causes.values()].sort((a,b) => b.items.length - a.items.length || (avgOf(b.items.map(x=>x.days).filter(v=>v!=null)) ?? 0) - (avgOf(a.items.map(x=>x.days).filter(v=>v!=null)) ?? 0));
+
+  const header = (title, sub) => `<header><div><h1>${esc(title)}</h1><p>${esc(R.range.title)} &nbsp;|&nbsp; ${esc(sub)}</p></div><span class="pg">CSC Escalations</span></header>`;
+  const asOf = UPLOADS[0] ? ` Data as of the upload of ${fmtDateTime(new Date(UPLOADS[0].uploaded_at))}.` : '';
+
+  const page1 = `<section class="page">
+    ${header(`${PERIOD_ADJ[PERIOD]} Escalations Executive Summary`, `Tickets closed this ${pw} and open escalations`)}
+    <div class="body">
+      <div class="kpis">
+        <div class="kpi navy"><div class="kl">Tickets closed</div><div class="kv">${n}</div><div class="kf">${R.valid} valid, ${R.avoid} avoidable${unset ? `, ${unset} not set` : ''}</div></div>
+        <div class="kpi amber"><div class="kl">Avg resolution</div><div class="kv">${cur.avg == null ? '–' : d1(cur.avg) + ' days'}</div><div class="kf">${cur.avg == null ? '' : Math.round(cur.avg * 24) + ' hours on average'}</div></div>
+        <div class="kpi green"><div class="kl">Median resolution</div><div class="kv">${cur.med == null ? '–' : d1(cur.med) + ' days'}</div><div class="kf">Half of tickets closed faster</div></div>
+        <div class="kpi red"><div class="kl">Closed within 3 days</div><div class="kv">${pctOr(cur.in3, ofD)}</div><div class="kf">${cur.in3} of ${ofD} tickets</div></div>
+        <div class="kpi teal"><div class="kl">Open escalations</div><div class="kv">${R.open.length}</div><div class="kf">${ob} Business, ${oc} CSC</div></div>
+      </div>
+      <div class="cols">${vol(t => t.ticket_type, 'Volume by Ticket Type')}${vol(t => t._sp.solution, 'Resolution Category')}</div>
+      <div class="block"><h2>Resolution Time Distribution</h2>
+        ${ofD ? `<div class="dist">${dist.filter(b => b.value).map(b => `<span style="flex:${b.value};background:${b.color}">${pct(b.value, ofD)}%</span>`).join('')}</div>
+        <div class="dist-l">${dist.map(b => `<span>${b.label} (${b.value})</span>`).join('')}</div>` : '<p class="note">Nothing closed in this period.</p>'}
+      </div>
+      <div class="cols">${vol(t => t._sp.details.scanner, 'Volume by Model')}
+        <div class="block"><h2>This ${PW} vs Previous ${PW}${cmp ? ` and ${esc(cmp.label)}` : ''}</h2>
+          <table class="grid"><thead><tr><th>Metric</th><th>This ${pw}</th><th>Previous ${pw}</th>${cmp ? `<th>${esc(cmp.label)}</th>` : ''}</tr></thead><tbody>
+          ${cmpRows.map(([label, f]) => `<tr><td>${label}</td><td class="hl">${f(cur)}</td><td>${f(prev)}</td>${cmp ? `<td>${f(cmp)}</td>` : ''}</tr>`).join('')}
+          </tbody></table>
+        </div>
+      </div>
+    </div>
+    <footer>Source: escalations uploaded to the tracker, tickets closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}. Open escalations are tickets opened before the end of the period and not closed by then.${asOf} Resolution time is calendar time from ticket opening to closure.</footer>
+  </section>`;
+
+  const page2 = `<section class="page">
+    ${header(`${PERIOD_ADJ[PERIOD]} Root Causes, Resolutions and Open Items`, 'What happened, how it was resolved and what remains open')}
+    <div class="body">
+      <div class="block"><h2>Root Cause and Resolution Summary</h2>
+        ${causeRows.length ? `<table class="grid"><thead><tr><th style="width:17%">Root Cause</th><th style="width:7%">Tickets</th><th style="width:7%">Avg Days</th><th>What Happened</th><th style="width:27%">How It Was Resolved</th></tr></thead><tbody>
+        ${causeRows.map(c => { const a = avgOf(c.items.map(x => x.days).filter(v => v != null)); return `<tr><td class="b">${esc(c.title)}</td><td>${c.items.length} (${pct(c.items.length, n)}%)</td><td class="b ${daysCls(a)}">${fd(a)}</td>
+          <td>${c.items.map(x => `${esc(x.issue)} (${esc(x.t.ticket_number)})${x.t._o ? `, open since ${esc(fmtLong(x.t._o))}` : ''}.${x.origin ? ' ' + esc(cap(x.origin).replace(/[.\s]*$/, '.')) : ''}`).join('<br>')}</td>
+          <td>${c.items.map(x => { const r = x.resolution + (x.notes ? ' ' + x.notes : ''); return esc(r.length > 170 ? r.slice(0, 167).replace(/\s+\S*$/, '') + '…' : r); }).join('<br>')}</td></tr>`; }).join('')}
+        </tbody></table>` : '<p class="note">Nothing closed in this period.</p>'}
+      </div>
+      <div class="block"><h2>Closed This ${PW} (${n})</h2>
+        ${n ? `<table class="grid"><thead><tr><th style="width:10%">Ticket</th><th style="width:9%">Days</th><th style="width:9%">Validity</th><th>Specific Origin</th></tr></thead><tbody>
+        ${R.stories.map(x => `<tr><td>${esc(x.t.ticket_number)}</td><td class="b ${daysCls(x.days)}">${x.days == null ? '–' : d1(x.days) + ' days'}</td><td>${x.validity}</td><td>${esc(cap(x.origin || x.issue))}</td></tr>`).join('')}
+        </tbody></table>
+        <div class="legend"><span><i style="background:#2e8b57"></i>Under 7 days</span><span><i style="background:#d4801f"></i>7 to 13.9 days</span><span><i style="background:#c0392b"></i>14 days or more</span></div>` : '<p class="note">Nothing closed in this period.</p>'}
+      </div>
+      <div class="block"><h2>Open Escalations (${R.open.length})</h2>
+        <div class="open"><div class="big">${ob} Business &nbsp;/&nbsp; ${oc} CSC</div>
+        <p>${R.open.length ? `Of the ${R.open.length} escalation${R.open.length === 1 ? '' : 's'} open at the end of the period, ${ob} ${ob === 1 ? 'is a Business Escalation' : 'are Business Escalations'} and ${oc} ${oc === 1 ? 'is a CSC Escalation' : 'are CSC Escalations'}.` : 'No escalation in the uploaded data was open at the end of the period.'}</p>${R.open.length ? `<p>Tickets: ${R.open.slice().sort((x,y) => x._o - y._o).map(t => `${esc(t.ticket_number)} (${isBusiness(t) ? 'Business' : 'CSC'}, opened ${esc(fmtShort(t._o))})`).join(', ')}.</p>` : ''}</div>
+      </div>
+    </div>
+    <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity read from the Solution Provided template. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
+  </section>`;
+
+  const title = `${PERIOD_ADJ[PERIOD]} Escalations ${R.range.short}${PERIOD === 'week' ? ' ' + R.range.last.getFullYear() : ''}`;
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(title)}</title><style>
+  @page{ size: letter landscape; margin: 0; }
+  *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+  body{ margin:0; background:#e9ecf0; font-family:-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#1d2733; font-size:9.5px; }
+  .bar{ position:sticky; top:0; z-index:5; display:flex; gap:10px; align-items:center; justify-content:center; padding:10px; background:#1f3a5f; color:#fff; font-size:13px; }
+  .bar button{ background:#2a9d8f; color:#fff; border:0; border-radius:6px; padding:8px 16px; font-weight:700; font-size:13px; cursor:pointer; }
+  .page{ width:11in; min-height:8.5in; margin:16px auto; background:#fff; display:flex; flex-direction:column; break-after:page; box-shadow:0 4px 18px rgba(0,0,0,.12); }
+  .page:last-child{ break-after:auto; }
+  header{ background:#1f3a5f; color:#fff; padding:18px 34px 14px; border-bottom:4px solid #2a9d8f; display:flex; justify-content:space-between; align-items:flex-start; }
+  header h1{ margin:0 0 6px; font-size:22px; }
+  header p{ margin:0; font-size:10px; color:#c9d6e6; }
+  .pg{ font-size:9px; color:#c9d6e6; white-space:nowrap; }
+  .body{ padding:14px 34px 6px; flex:1; }
+  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+  .kpi{ background:#f3f5f8; border-left:4px solid #1f3a5f; padding:10px 12px; }
+  .kl{ font-size:8px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#1f3a5f; }
+  .kv{ font-size:22px; font-weight:800; margin:4px 0 3px; }
+  .kf{ font-size:8.5px; color:#5c6774; }
+  .navy .kv{ color:#1f3a5f; } .amber{ border-color:#d4801f; } .amber .kv{ color:#d4801f; } .green{ border-color:#2e8b57; } .green .kv{ color:#2e8b57; }
+  .red{ border-color:#c0392b; } .red .kv{ color:#c0392b; } .teal{ border-color:#2a9d8f; } .teal .kv{ color:#2a9d8f; }
+  .cols{ display:grid; grid-template-columns:1fr 1fr; gap:28px; }
+  .block{ margin-bottom:11px; }
+  .kpis, .cols, .dist, .open, tr{ break-inside:avoid; }
+  h2{ break-after:avoid; }
+  h2{ font-size:12px; color:#1f3a5f; margin:0 0 8px; padding-bottom:6px; border-bottom:2px solid #2a9d8f; }
+  table{ width:100%; border-collapse:collapse; }
+  .vol td, .vol th{ padding:3px 4px; }
+  .vol th{ font-size:7.5px; color:#5c6774; font-weight:600; }
+  .vl{ width:34%; font-weight:600; } .vb{ width:38%; }
+  .track{ display:block; height:8px; background:#e6e9ee; } .fill{ display:block; height:8px; background:#1f3a5f; }
+  .cols .block:nth-child(2) .fill{ background:#2a9d8f; }
+  .r{ text-align:right; white-space:nowrap; } .b{ font-weight:700; } .dim{ color:#5c6774; }
+  .dist{ display:flex; height:16px; color:#fff; font-size:8px; font-weight:700; }
+  .dist span{ display:flex; align-items:center; justify-content:center; margin-right:2px; }
+  .dist-l{ display:flex; justify-content:space-around; font-size:8px; color:#5c6774; margin-top:5px; }
+  .grid th{ background:#1f3a5f; color:#fff; text-align:left; font-size:8px; padding:5px 7px; }
+  .grid td{ padding:4px 7px; border-bottom:1px solid #e3e7ec; vertical-align:top; line-height:1.35; }
+  .grid tr:nth-child(even) td{ background:#f6f8fa; }
+  .grid td.hl{ font-weight:700; color:#2e8b57; }
+  .t-green{ color:#2e8b57; } .t-amber{ color:#d4801f; } .t-red{ color:#c0392b; }
+  .legend{ display:flex; gap:16px; margin-top:6px; font-size:8px; color:#5c6774; } .legend i{ display:inline-block; width:8px; height:8px; margin-right:4px; vertical-align:-1px; }
+  .open{ background:#f3f5f8; border-left:4px solid #1f3a5f; padding:10px 14px; }
+  .open .big{ font-size:16px; font-weight:800; color:#1f3a5f; } .open p{ margin:4px 0 0; color:#5c6774; }
+  .note{ color:#5c6774; margin:4px 0; }
+  footer{ margin:0 34px 18px; padding-top:6px; border-top:1px solid #d5dbe2; font-size:7.5px; color:#7a8591; }
+  @media print{ body{ background:#fff; } .bar{ display:none; } .page{ margin:0; box-shadow:none; } }
+  </style></head><body>
+  <div class="bar"><span>${esc(title)}</span><button onclick="window.print()">Print / Save as PDF</button></div>
+  ${page1}${page2}
+  </body></html>`;
+}
+$('btnPdfReport').addEventListener('click', ()=>{
+  const w = window.open('', '_blank');
+  if(!w){ toast('Your browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
+  w.document.open(); w.document.write(buildReportHtml()); w.document.close();
 });
 
 /* ---------- Export ---------- */
@@ -956,8 +1233,8 @@ function openDrawer(t){
 }
 function closeDrawer(){ $('scrim').classList.remove('show'); $('drawer').classList.remove('show'); }
 $('btnCloseDrawer').addEventListener('click', closeDrawer);
-$('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); });
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); } });
+$('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); closeSummary(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); } });
 
 /* ============================================================
    UPLOADS
