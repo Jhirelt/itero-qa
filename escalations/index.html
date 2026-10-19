@@ -12,6 +12,8 @@
     --yes: #34c77b;
     --no: #ef5b6a;
     --no-soft: rgba(239,91,106,0.15);
+    --warn: #f0ad2e;
+    --warn-soft: rgba(240,173,46,0.16);
     --radius: 10px;
     --radius-sm: 6px;
   }
@@ -170,6 +172,7 @@
   .muted{ color:var(--text-faint); }
   .nowrap{ white-space:nowrap; }
   .ticket{ font-weight:700; font-variant-numeric:tabular-nums; }
+  .tag-reopened{ display:inline-block; margin-left:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--warn); background:var(--warn-soft); border:1px solid var(--warn); padding:1px 6px; border-radius:999px; vertical-align:1px; white-space:nowrap; }
   .list-head{ display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap; }
   .list-head .count{ font-size:12px; color:var(--text-dim); margin-right:auto; }
 
@@ -288,6 +291,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="kpi"><div class="k-label">Avg. days to close</div><div class="k-value" id="kAvg">–</div><div class="k-foot" id="kAvgFoot"></div></div>
       <div class="kpi"><div class="k-label">Median days to close</div><div class="k-value" id="kMed">–</div><div class="k-foot" id="kMedFoot"></div></div>
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="kParts">–</div><div class="k-foot" id="kPartsFoot"></div></div>
+      <div class="kpi" id="kReopenedTile" style="cursor:pointer" title="See the reopened tickets closed in this period"><div class="k-label">Reopened</div><div class="k-value" id="kReopened">–</div><div class="k-foot">Closed in the period, came back in a later upload</div></div>
     </div>
 
     <div class="grid-2">
@@ -330,6 +334,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="field"><label for="tIssue">Issue type</label><select class="ctl" id="tIssue"></select></div>
       <div class="field"><label for="tTicketType">Ticket type</label><select class="ctl" id="tTicketType"></select></div>
       <div class="field"><label for="tSolution">Solution</label><select class="ctl" id="tSolution"></select></div>
+      <div class="field"><label for="tReopened">Reopened</label><select class="ctl" id="tReopened"><option value="">All tickets</option><option value="yes">Reopened only</option><option value="no">Not reopened</option></select></div>
     </div>
     <div class="list-head">
       <span class="count" id="tCount"></span>
@@ -358,9 +363,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div id="view-uploads" class="hidden">
     <div class="panel">
       <h4>Uploads</h4>
-      <p class="sub">Each upload adds new tickets and updates the ones already here (matched by ticket number). Nothing is deleted.</p>
+      <p class="sub">Each upload adds to the data already here. A ticket number that was already stored is replaced by the new row and tagged Reopened.</p>
       <div class="table-wrap" style="border:none;">
-        <table class="data" id="uploadsTable" style="min-width:640px;"><thead><tr><th>Uploaded</th><th>File</th><th style="text-align:right">Rows</th><th style="text-align:right">New</th><th style="text-align:right">Updated</th></tr></thead><tbody></tbody></table>
+        <table class="data" id="uploadsTable" style="min-width:640px;"><thead><tr><th>Uploaded</th><th>File</th><th style="text-align:right">Rows</th><th style="text-align:right">New</th><th style="text-align:right">Reopened</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -379,7 +384,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 <!-- =============== UPLOAD =============== -->
 <div class="modal" id="uploadModal" role="dialog" aria-label="Upload Excel">
   <h3>Upload escalations export</h3>
-  <p>Use the "Closed CSC escalations" export from Salesforce (.xls), or any .xlsx / .csv with the same columns. Tickets already here are updated, new ones are added.</p>
+  <p>Use the "Closed CSC escalations" export from Salesforce (.xls), or any .xlsx / .csv with the same columns. It adds to the data already here.</p>
   <label class="drop" id="dropZone">Choose a file or drop it here<input type="file" id="uploadFile" accept=".xls,.xlsx,.csv,.htm,.html" hidden></label>
   <div class="import-summary" id="uploadSummary"></div>
   <div class="modal-actions">
@@ -467,6 +472,7 @@ function toTimestamp(v){
 // The Salesforce export loses the en dash: "Part Replacement ? PPC".
 const fixDash = s => s == null ? s : String(s).replace(/ \? /g, ' – ');
 // "Part Replacement – PPC | Replacement ticket 69289577" -> "Part Replacement – PPC"
+const reopenedTag = t => t.reopen_count ? `<span class="tag-reopened" title="This ticket came again in a later upload${t.reopened_at ? ' (' + fmtDate(new Date(t.reopened_at)) + ')' : ''}">Reopened</span>` : '';
 function solutionOf(t){ const s = (t.solution_provided || '').split('|')[0].trim(); return s.length > 60 ? s.slice(0, 57) + '…' : s; }
 
 /* ---------- Theme ---------- */
@@ -611,6 +617,7 @@ document.querySelectorAll('#periodSeg button').forEach(b => b.addEventListener('
 }));
 $('btnPrev').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], -1); renderReport(); });
 $('btnNext').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], 1); renderReport(); });
+$('kReopenedTile').addEventListener('click', ()=> openTicketsWith({ reopened:true, period:true }));
 $('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Date(); renderReport(); });
 ['rIssue','rTicketType'].forEach(id => $(id).addEventListener('change', renderReport));
 
@@ -676,6 +683,7 @@ function renderReport(){
   const parts = closed.filter(isPart).length;
   $('kParts').textContent = parts;
   $('kPartsFoot').textContent = closed.length ? `${Math.round(parts / closed.length * 100)}% of closed` : '';
+  $('kReopened').textContent = closed.filter(t => t.reopen_count).length;
 
   renderTrend(base);
   const toTickets = (field) => r => openTicketsWith({ [field]: r.label === NOT_SET ? '' : r.label, period:true });
@@ -691,7 +699,7 @@ function renderReport(){
 
   $('closedTitle').textContent = `Closed in ${periodName(PERIOD, s, e)}`;
   $('closedTable').querySelector('tbody').innerHTML = closed.length ? closed.map(t => `<tr class="row" data-id="${esc(t.ticket_number)}">
-      <td class="ticket">${esc(t.ticket_number)}</td><td class="nowrap">${esc(fmtDate(t._c))}</td><td class="num">${esc(fmtDays(daysToClose(t)))}</td>
+      <td class="ticket nowrap">${esc(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._c))}</td><td class="num">${esc(fmtDays(daysToClose(t)))}</td>
       <td>${esc(t.account_name || '')}</td><td class="wide"><span class="clip">${esc(t.subject || '')}</span></td>
       <td>${esc(t.issue_type || '')}</td><td>${esc(t._sol)}</td><td>${esc(t.internal_requestor || '')}</td></tr>`).join('')
     : '<tr><td colspan="8" class="empty">Nothing closed in this period</td></tr>';
@@ -764,13 +772,14 @@ $('btnCopy').addEventListener('click', async ()=>{
     `Opened: ${opened.length}`,
     `Average days to close: ${avg}${durs.length ? `, median ${median(durs).toFixed(1)}` : ''}`,
     `Part replacements: ${parts}`,
+    `Reopened: ${closed.filter(t => t.reopen_count).length}`,
     ``,
     `By solution:`, topLines(countBy(closed, t=>t._sol)),
     ``,
     `By issue type:`, topLines(countBy(closed, t=>t.issue_type)),
     ``,
     `Closed tickets:`,
-    ...closed.map(t => `  • ${t.ticket_number} | ${t.account_name || ''} | ${t._sol || ''} | ${fmtDays(daysToClose(t))} days`),
+    ...closed.map(t => `  • ${t.ticket_number}${t.reopen_count ? ' (reopened)' : ''} | ${t.account_name || ''} | ${t._sol || ''} | ${fmtDays(daysToClose(t))} days`),
   ].join('\n');
   try{ await navigator.clipboard.writeText(text); toast('Summary copied.'); }
   catch(err){ console.error(err); toast('Could not copy. Your browser blocked the clipboard.'); }
@@ -783,6 +792,7 @@ function exportRows(rows, name){
     const o = {};
     COLUMNS.forEach(c => { o[c.label] = c.date ? (t['_' + (c.key === 'opened_at' ? 'o' : 'c')] || '') : (t[c.key] || ''); });
     o['Days to close'] = daysToClose(t) == null ? '' : +daysToClose(t).toFixed(1);
+    o['Reopened'] = t.reopen_count ? 'Yes' : '';
     Object.entries(t.extra || {}).forEach(([k,v]) => { o[k] = v; });
     return o;
   });
@@ -808,16 +818,17 @@ function switchView(v){
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
 let TICKET_PERIOD = null;   // [start, end) when opened from a report bar
-function openTicketsWith({ issue = '', ticketType = '', solution = '', period = false }){
+function openTicketsWith({ issue = '', ticketType = '', solution = '', reopened = false, period = false }){
   $('tSearch').value = '';
   $('tIssue').value = issue || $('rIssue').value;
   $('tTicketType').value = ticketType || $('rTicketType').value;
   $('tSolution').value = solution;
+  $('tReopened').value = reopened ? 'yes' : '';
   TICKET_PERIOD = period ? bounds(PERIOD, ANCHOR) : null;
   switchView('tickets');
 }
 $('tSearch').addEventListener('input', renderTickets);
-['tIssue','tTicketType','tSolution'].forEach(id => $(id).addEventListener('change', renderTickets));
+['tIssue','tTicketType','tSolution','tReopened'].forEach(id => $(id).addEventListener('change', renderTickets));
 document.querySelectorAll('#ticketsTable th[data-sort]').forEach(th => th.addEventListener('click', ()=>{
   const k = th.dataset.sort;
   SORT = SORT.key === k ? { key:k, dir:-SORT.dir } : { key:k, dir: ['opened_at','closed_at','days'].includes(k) ? -1 : 1 };
@@ -830,6 +841,8 @@ function ticketRows(){
     if(it && !same(t.issue_type, it)) return false;
     if(tt && !same(t.ticket_type, tt)) return false;
     if(so && !same(t._sol, so)) return false;
+    const ro = $('tReopened').value;
+    if(ro && (ro === 'yes') !== !!t.reopen_count) return false;
     if(TICKET_PERIOD && !inRange(t._c, TICKET_PERIOD[0], TICKET_PERIOD[1])) return false;
     if(q){
       const hay = [t.ticket_number, t.account_name, t.subject, t.internal_requestor, t.solution_provided, t.issue_type, t.sub_issue_type, t.ticket_type].join(' ').toLowerCase();
@@ -855,7 +868,7 @@ function renderTickets(){
   $('tCount').innerHTML = `${rows.length} of ${T.length} tickets` + (TICKET_PERIOD ? ` closed in ${esc(periodName(PERIOD, TICKET_PERIOD[0], TICKET_PERIOD[1]))} · <a href="#" id="clearPeriod" style="color:var(--accent)">show all dates</a>` : '');
   if(TICKET_PERIOD) $('clearPeriod').addEventListener('click', ev => { ev.preventDefault(); TICKET_PERIOD = null; renderTickets(); });
   $('ticketsTable').querySelector('tbody').innerHTML = rows.length ? rows.map(t => `<tr class="row" data-id="${esc(t.ticket_number)}">
-      <td class="ticket">${esc(t.ticket_number)}</td><td class="nowrap">${esc(fmtDate(t._o))}</td><td class="nowrap">${esc(fmtDate(t._c))}</td>
+      <td class="ticket nowrap">${esc(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._o))}</td><td class="nowrap">${esc(fmtDate(t._c))}</td>
       <td class="num">${esc(fmtDays(daysToClose(t)))}</td><td>${esc(t.account_name || '')}</td>
       <td class="wide"><span class="clip">${esc(t.subject || '')}</span></td><td>${esc(t.issue_type || '')}</td><td>${esc(t.ticket_type || '')}</td>
       <td>${esc(t._sol)}</td><td>${esc(t.internal_requestor || '')}</td></tr>`).join('')
@@ -869,12 +882,13 @@ function bindRows(table){
 /* ---------- Ticket detail ---------- */
 function openDrawer(t){
   if(!t) return;
-  $('drawerTitle').textContent = `Ticket ${t.ticket_number}`;
+  $('drawerTitle').innerHTML = `Ticket ${esc(t.ticket_number)}${reopenedTag(t)}`;
   const rows = [
     ['Account', t.account_name], ['Subject', t.subject],
     ['Opened', fmtDateTime(t._o)], ['Closed', fmtDateTime(t._c)], ['Days to close', fmtDays(daysToClose(t))],
     ['Issue type', t.issue_type], ['Sub-issue type', t.sub_issue_type], ['Ticket type', t.ticket_type],
     ['Complaint sub type', t.complaint_sub_type], ['Priority', t.priority],
+    ...(t.reopen_count ? [['Reopened', `Yes, ${t.reopen_count === 1 ? 'once' : t.reopen_count + ' times'}${t.reopened_at ? ', last on ' + fmtDateTime(new Date(t.reopened_at)) : ''}`]] : []),
     ['Solution provided', t.solution_provided], ['Internal requestor', t.internal_requestor],
     ...Object.entries(t.extra || {}),
   ];
@@ -943,7 +957,7 @@ async function readFile(file){
   const existing = new Set(T.map(t => t.ticket_number));
   const nNew = rows.filter(r => !existing.has(r.ticket_number)).length;
   const closedDates = rows.map(r => r.closed_at).filter(Boolean).sort();
-  sum.innerHTML = `<b>${esc(file.name)}</b>: ${rows.length} tickets, <b>${nNew}</b> new and <b>${rows.length - nNew}</b> already here (will be updated).`
+  sum.innerHTML = `<b>${esc(file.name)}</b>: ${rows.length} tickets ready to upload.`
     + (closedDates.length ? `<br>Closed between ${esc(fmtDate(parseTs(closedDates[0])))} and ${esc(fmtDate(parseTs(closedDates[closedDates.length-1])))}.` : '')
     + (unknown.length ? `<br><span class="muted">Extra columns kept as-is: ${unknown.map(esc).join(', ')}.</span>` : '')
     + (problems.length ? `<ul>${problems.slice(0, 8).map(p => `<li>${esc(p)}</li>`).join('')}${problems.length > 8 ? `<li>…and ${problems.length - 8} more</li>` : ''}</ul>` : '');
@@ -990,11 +1004,21 @@ $('btnUploadGo').addEventListener('click', async ()=>{
       file_name: PARSED.fileName, row_count: PARSED.rows.length, new_count: PARSED.nNew, updated_count: PARSED.rows.length - PARSED.nNew,
     }).select().single();
     if(upErr) throw upErr;
-    const existing = new Map(T.map(t => [t.ticket_number, t]));
+    // A ticket number already stored is replaced by the new row and tagged Reopened.
+    const existing = new Map();
+    const nums = PARSED.rows.map(r => r.ticket_number);
+    for(let i = 0; i < nums.length; i += 200){
+      const { data, error } = await sb.from('escalation_tickets').select('ticket_number, first_upload_id, reopen_count').in('ticket_number', nums.slice(i, i + 200));
+      if(error) throw error;
+      data.forEach(t => existing.set(t.ticket_number, t));
+    }
     const now = new Date().toISOString();
     const payload = PARSED.rows.map(r => {
+      const old = existing.get(r.ticket_number);
       const p = { extra: r.extra, last_upload_id: up.id, updated_at: now,
-        first_upload_id: existing.has(r.ticket_number) ? (existing.get(r.ticket_number).first_upload_id ?? up.id) : up.id };
+        first_upload_id: old ? (old.first_upload_id ?? up.id) : up.id,
+        reopen_count: old ? (old.reopen_count || 0) + 1 : 0,
+        reopened_at: old ? now : null };
       COLUMNS.forEach(c => { p[c.key] = r[c.key] ?? null; });
       return p;
     });
@@ -1002,8 +1026,9 @@ $('btnUploadGo').addEventListener('click', async ()=>{
       const { error } = await sb.from('escalation_tickets').upsert(payload.slice(i, i + 500), { onConflict:'ticket_number' });
       if(error) throw error;
     }
+    await sb.from('escalation_uploads').update({ new_count: payload.length - existing.size, updated_count: existing.size }).eq('id', up.id);
     closeUpload();
-    toast(`Uploaded ${PARSED.rows.length} tickets (${PARSED.nNew} new).`);
+    toast(`Uploaded ${PARSED.rows.length} tickets.`);
     await loadAll(true);
   }catch(err){
     console.error(err);
