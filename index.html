@@ -5056,14 +5056,41 @@ function applyRoleToUI(){
   document.getElementById('userBadge').style.display = 'flex';
 }
 
+// When the profile could not be read at sign-in, keep trying in the background
+// and swap the email for the real name and role once it loads.
+function refreshProfileLater(userId, attempt = 0){
+  if(attempt >= 10) return;
+  setTimeout(async ()=>{
+    if(!CURRENT_USER || CURRENT_USER.id !== userId) return;
+    try{
+      const { data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', userId).maybeSingle();
+      if(!error && data){
+        CURRENT_USER.display_name = data.display_name;
+        CURRENT_USER.role = data.role;
+        CURRENT_USER.prefs = data.prefs || {};
+        applyRoleToUI();
+        return;
+      }
+    }catch(e){}
+    refreshProfileLater(userId, attempt + 1);
+  }, 5000);
+}
+
 async function loadProfileAndStart(user){
   let profile = null, lookupFailed = false;
-  try{
-    let { data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', user.id).maybeSingle();
-    if(error && error.code === '42703') ({ data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).maybeSingle());
-    if(error){ lookupFailed = true; console.error('Profile lookup returned an error (role will default to evaluator):', error); }
-    else profile = data;
-  }catch(e){ lookupFailed = true; console.error('Could not load profile (role will default to evaluator):', e); }
+  // A slow or failed read is tried again, so the summary and saved evaluations
+  // carry the evaluator's name and not their email.
+  for(let attempt = 0; attempt < 3; attempt++){
+    lookupFailed = false;
+    try{
+      let { data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', user.id).maybeSingle();
+      if(error && error.code === '42703') ({ data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).maybeSingle());
+      if(error){ lookupFailed = true; console.error('Profile lookup returned an error (role will default to evaluator):', error); }
+      else profile = data;
+    }catch(e){ lookupFailed = true; console.error('Could not load profile (role will default to evaluator):', e); }
+    if(!lookupFailed) break;
+    await new Promise(r=> setTimeout(r, 1500 * (attempt + 1)));
+  }
 
   if(!profile && !lookupFailed){
     // No QA profile yet: an evaluator an admin added in Configuration gets one now.
@@ -5104,6 +5131,7 @@ async function loadProfileAndStart(user){
       display_name: profile ? profile.display_name : user.email,
       prefs: (profile && profile.prefs) || {},
     };
+    if(lookupFailed) refreshProfileLater(user.id);
     applyViewAs();
     if(CURRENT_USER.viewAs) await loadViewAsPrefs();
   }
