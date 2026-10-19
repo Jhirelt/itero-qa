@@ -2806,11 +2806,21 @@ function textOptions(cfg, kind){
   return [cfg[base]].concat(cfg[ALT_FIELD[base]] || []).filter(t=> typeof t === 'string' && t.trim());
 }
 
-function chosenText(id, cfg, kind){
+// The not-met base text is the rubric's criterion, which the subtitle now
+// shows; when there are other texts, those are the ones to pick from.
+function firstPickable(cfg, kind){
+  return !cfg.zeroType && kind !== 'yes' && (cfg.subtitle || '').trim() && textOptions(cfg, kind).length > 1 ? 1 : 0;
+}
+function choiceIndex(id, cfg, kind){
   const opts = textOptions(cfg, kind);
   const key = kind === 'yes' ? 'yes' : 'no';
   const i = (CHOICES[id] && CHOICES[id][key]) || 0;
-  return opts[i] || opts[0] || '';
+  return Math.max(firstPickable(cfg, kind), Math.min(i, opts.length - 1));
+}
+
+function chosenText(id, cfg, kind){
+  const opts = textOptions(cfg, kind);
+  return opts[choiceIndex(id, cfg, kind)] || opts[0] || '';
 }
 
 let TEXT_PICK_ANCHOR = null;
@@ -2890,7 +2900,8 @@ function openTextPicker(btn){
   if(!cfg || !val) return;
   const kind = val === 'yes' ? 'yes' : 'no';
   const opts = textOptions(cfg, kind);
-  const current = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
+  const current = choiceIndex(id, cfg, kind);
+  const start = firstPickable(cfg, kind);
   if(kind === 'yes'){
     const added = ACCOMPLISHMENTS.includes(id);
     if(!added && ACCOMPLISHMENTS.length >= MAX_ACCOMPLISHMENTS){
@@ -2912,8 +2923,9 @@ function openTextPicker(btn){
     (kind === 'yes' ? 'add as accomplishment' : asFeedback ? 'feedback text' : 'not met text') + '</div>' +
     (asFeedback ? '<div class="txt-pick-hint">Same examples as the deduction, shown without points.</div>' : '') +
     (kind === 'yes' && !added ? '<div class="txt-pick-hint">Choose the text to add to the accomplishments.</div>' : '') +
-    opts.map((t, i)=> '<button type="button" class="txt-pick-opt' + ((kind === 'no' || added) && i === current ? ' active' : '') + '" data-idx="' + i + '">' +
-      '<span class="num">' + (i + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('') +
+    (cfg.subtitle && cfg.subtitle.trim() ? '<div class="txt-pick-hint">' + escapeHtml(cfg.subtitle.trim()) + '</div>' : '') +
+    opts.map((t, i)=> i < start ? '' : '<button type="button" class="txt-pick-opt' + ((kind === 'no' || added) && i === current ? ' active' : '') + '" data-idx="' + i + '">' +
+      '<span class="num">' + (i - start + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('') +
     (added ? '<button type="button" class="txt-pick-remove">Remove from accomplishments</button>' : '');
   placePopover(pop, btn);
   TEXT_PICK_ANCHOR = btn;
@@ -3408,8 +3420,8 @@ function refreshEval(){
       pick.style.display = usable ? '' : 'none';
       if(usable){
         const added = isAcc && ACCOMPLISHMENTS.includes(id);
-        const i = Math.min((CHOICES[id] && CHOICES[id][kind]) || 0, opts.length - 1);
-        pick.textContent = (added ? '\u2713 ' : '') + (i + 1) + '/' + opts.length;
+        const start = firstPickable(cfg, kind);
+        pick.textContent = (added ? '\u2713 ' : '') + (choiceIndex(id, cfg, kind) - start + 1) + '/' + (opts.length - start);
         pick.className = 'txt-pick ' + (kind === 'yes' ? 'y' : val === 'feedback' ? 'f' : 'n') + (added ? ' on' : '');
         pick.title = isAcc ? (added ? 'In the accomplishments. Click to change or remove.' : 'Add to the accomplishments (max ' + MAX_ACCOMPLISHMENTS + ')')
           : val === 'feedback' ? 'Choose the feedback text (same examples as deductions, no points)' : 'Choose which text goes in the summary';
