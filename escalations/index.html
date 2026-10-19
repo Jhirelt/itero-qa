@@ -473,7 +473,40 @@ function toTimestamp(v){
 const fixDash = s => s == null ? s : String(s).replace(/ \? /g, ' – ');
 // "Part Replacement – PPC | Replacement ticket 69289577" -> "Part Replacement – PPC"
 const reopenedTag = t => t.reopen_count ? `<span class="tag-reopened" title="This ticket came again in a later upload${t.reopened_at ? ' (' + fmtDate(new Date(t.reopened_at)) + ')' : ''}">Reopened</span>` : '';
-function solutionOf(t){ const s = (t.solution_provided || '').split('|')[0].trim(); return s.length > 60 ? s.slice(0, 57) + '…' : s; }
+function solutionOf(t){ const s = parseSolution(t.solution_provided).solution; return s.length > 60 ? s.slice(0, 57) + '…' : s; }
+
+/* "Solution Provided" template, filled in Salesforce:
+     Part Replacement – PPC | Origin of the escalation: … | Previous case handlers: … | Scanner model: … | Avoidable: Yes | Notes: …
+   The solution is everything before the first "|" (what the statistics use). After it, each "Label: value"
+   becomes a detail of the ticket; labels left empty are ignored, and text without a label is kept as notes. */
+const SOLUTION_FIELDS = [
+  { key:'origin',   label:'Origin of the escalation', re:/origin(?:\s+of\s+(?:the\s+)?escalation)?/ },
+  { key:'handlers', label:'Previous case handlers',   re:/previous\s+(?:case\s+)?handlers?/ },
+  { key:'scanner',  label:'Scanner model',            re:/scanner(?:\s+model)?/ },
+  { key:'avoidable',label:'Avoidable',                re:/avoidable/ },
+  { key:'notes',    label:'Notes',                    re:/notes?/ },
+];
+const SOLUTION_LABEL_RE = new RegExp('(?:^|[|\\n])\\s*(' + SOLUTION_FIELDS.map(f => f.re.source).join('|') + ')\\s*:', 'gi');
+function parseSolution(text){
+  const raw = String(text || '');
+  const cut = raw.search(/[|\n]/);
+  const out = { solution: (cut < 0 ? raw : raw.slice(0, cut)).trim(), details: {}, notes: '' };
+  if(cut < 0) return out;
+  const rest = raw.slice(cut);
+  const hits = [...rest.matchAll(SOLUTION_LABEL_RE)];
+  const clean = v => v.replace(/^[\s|]+|[\s|]+$/g, '').replace(/\s*\|\s*/g, ' · ').trim();
+  const free = [clean(rest.slice(0, hits.length ? hits[0].index : rest.length))];
+  hits.forEach((m, i) => {
+    const f = SOLUTION_FIELDS.find(x => new RegExp('^(?:' + x.re.source + ')$', 'i').test(m[1].trim()));
+    const v = clean(rest.slice(m.index + m[0].length, i + 1 < hits.length ? hits[i+1].index : rest.length));
+    if(!f || !v) return;
+    if(f.key === 'notes') free.push(v);
+    else if(f.key === 'avoidable') out.details.avoidable = /^y/i.test(v) ? 'Yes' : /^n/i.test(v) ? 'No' : v;
+    else out.details[f.key] = v;
+  });
+  out.notes = free.filter(Boolean).join('\n');
+  return out;
+}
 
 /* ---------- Theme ---------- */
 function setTheme(th){
@@ -548,7 +581,7 @@ async function fetchAll(table, order){
 async function loadAll(resetPeriod){
   try{
     const [tickets, uploads] = await Promise.all([ fetchAll('escalation_tickets', 'ticket_number'), fetchAll('escalation_uploads', 'uploaded_at') ]);
-    T = tickets.map(t => Object.assign(t, { _o: parseTs(t.opened_at), _c: parseTs(t.closed_at), _sol: solutionOf(t) }));
+    T = tickets.map(t => Object.assign(t, { _o: parseTs(t.opened_at), _c: parseTs(t.closed_at), _sol: solutionOf(t), _sp: parseSolution(t.solution_provided) }));
     UPLOADS = uploads;
   }catch(err){ console.error(err); toast('Could not load the data. Reload the page to try again.'); return; }
   if(resetPeriod || !ANCHOR) ANCHOR = latestClosed() || new Date();
@@ -793,6 +826,9 @@ function exportRows(rows, name){
     COLUMNS.forEach(c => { o[c.label] = c.date ? (t['_' + (c.key === 'opened_at' ? 'o' : 'c')] || '') : (t[c.key] || ''); });
     o['Days to close'] = daysToClose(t) == null ? '' : +daysToClose(t).toFixed(1);
     o['Reopened'] = t.reopen_count ? 'Yes' : '';
+    o['Solution'] = t._sp.solution;
+    SOLUTION_FIELDS.filter(f => f.key !== 'notes').forEach(f => { o[f.label] = t._sp.details[f.key] || ''; });
+    o['Solution notes'] = t._sp.notes;
     Object.entries(t.extra || {}).forEach(([k,v]) => { o[k] = v; });
     return o;
   });
@@ -889,7 +925,10 @@ function openDrawer(t){
     ['Issue type', t.issue_type], ['Sub-issue type', t.sub_issue_type], ['Ticket type', t.ticket_type],
     ['Complaint sub type', t.complaint_sub_type], ['Priority', t.priority],
     ...(t.reopen_count ? [['Reopened', `Yes, ${t.reopen_count === 1 ? 'once' : t.reopen_count + ' times'}${t.reopened_at ? ', last on ' + fmtDateTime(new Date(t.reopened_at)) : ''}`]] : []),
-    ['Solution provided', t.solution_provided], ['Internal requestor', t.internal_requestor],
+    ['Solution', t._sp.solution],
+    ...SOLUTION_FIELDS.filter(f => f.key !== 'notes' && t._sp.details[f.key]).map(f => [f.label, t._sp.details[f.key]]),
+    ...(t._sp.notes ? [['Solution notes', t._sp.notes]] : []),
+    ['Internal requestor', t.internal_requestor],
     ...Object.entries(t.extra || {}),
   ];
   const up = UPLOADS.find(u => u.id === t.last_upload_id);
@@ -932,6 +971,7 @@ $('uploadFile').addEventListener('change', e => { const f = e.target.files[0]; i
 function tableFromHtml(text){
   const doc = new DOMParser().parseFromString(text, 'text/html');
   const trs = [...doc.querySelectorAll('tr')];
+  doc.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
   return trs.map(tr => [...tr.querySelectorAll('th,td')].map(c => c.textContent.replace(/ /g,' ').trim()));
 }
 function tableFromWorkbook(buf){
