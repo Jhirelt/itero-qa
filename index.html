@@ -633,6 +633,13 @@
   }
   .reorder button svg{ width:11px; height:11px; }
   .cfg-texts{ display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+  .cfg-subtitle{ margin-bottom:8px; }
+  .cfg-subtitle label{ font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; color:var(--text-dim); display:block; margin-bottom:4px; }
+  .cfg-subtitle textarea{
+    width:100%; min-height:34px; resize:vertical; background:var(--bg-elev-2); border:1px solid var(--border);
+    border-radius:var(--radius-sm); color:var(--text); font-size:11.5px; padding:7px; outline:none; font-family:inherit;
+  }
+  .cfg-subtitle textarea:focus{ border-color:var(--accent); }
   .cfg-texts div label{ font-size:10px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; display:flex; align-items:center; gap:5px; margin-bottom:4px;}
   .cfg-texts div label.y{ color:var(--yes); }
   .cfg-texts div label.n{ color:var(--no); }
@@ -2623,6 +2630,67 @@ const CRITERIA_TEXTS = {
   "6.10": { reason: ["Sensitive information was shared without sufficient validation, exposing the customer to a serious privacy risk.", "Information was added to an unrelated ticket, potentially making customer data accessible in the wrong context.", "Continuing without verifying the requestor can permanently damage customer trust and compromise confidential information."] },
 };
 
+// Subtitle of each rubric: written in the summary above the chosen text.
+const RUBRIC_SUBTITLES = {
+  "1.1": "Used the correct greeting.",
+  "1.2": "Offered additional assistance at the end of the call.",
+  "1.3": "Did a proper and professional closing.",
+  "1.4": "The agent validated the call asking for the ticket ID in case of a transfer and validated the account name with the customer and/or the FL agent.",
+  "2.1": "The agent used courteous phrases during the call, demonstrating a clear willingness to assist and using professional business language.",
+  "2.2": "The agent did not blame our products, coworkers, or teams negatively and rather focused on the resolution and helping our customers.",
+  "2.3": "The agent used the caller's name from the beginning of the call.",
+  "2.4": "The agent did not interrupt the customer, and in case of an accidental interruption, the agent apologized.",
+  "2.5": "There was energy and enthusiasm during the call. The tone of voice was polite and did not sound robotic or scripted.",
+  "2.6": "The conversation was fluid throughout the call, and the customer was able to understand what was discussed.",
+  "2.7": "The agent did not use filler words during the call.",
+  "2.8": "The agent showed genuine empathy during the call, acknowledging the scenario and offering help.",
+  "2.9": "The agent created a positive emotion change by the end of the interaction.",
+  "2.10": "The agent genuinely apologized to the customer in case of a business mistake.",
+  "3.1": "The symptom codes selected match the current scenario and are specific based on the main reason for a part replacement, if applicable.",
+  "3.2": "RMA ticket(s) were created, and all required fields were filled appropriately depending on the part(s) requested.",
+  "3.3": "If an alternative address is required by the customer, the agent should fill in the appropriate fields to accomplish the request.",
+  "3.4": "Product complaint ticket(s) were created, and all required fields were filled appropriately depending on the hardware issue.",
+  "3.5": "Software complaint was created if applicable.",
+  "3.6": "A service complaint was created if applicable.",
+  "3.7": "A product safety ticket was created if applicable.",
+  "3.8": "The agent used an adequate documentation template.",
+  "3.9": "The content of the ticket's notes was clear and concise, and described all talking points during the call.",
+  "3.10": "The documentation contained only true and accurate information.",
+  "3.11": "The agent attached the required screenshots, videos, emails, logs, or any other relevant information to back up the resolution.",
+  "3.12": "All the main ticket fields were filled out properly, depending on the scenario.",
+  "3.13": "The return checkbox was selected to trigger the return process.",
+  "3.14": "The agent documented the interaction on the correct ticket and account.",
+  "3.15": "The correct asset was selected, if applicable.",
+  "3.16": "The correct part was selected in the parts list on SFDC, and in case the part does not exist, it was documented in the ticket's notes accordingly.",
+  "3.17": "The content of customer-facing emails was clear and grammatically correct.",
+  "3.18": "The correct templates were used for customer-facing emails.",
+  "3.19": "The agent documented the customer's name correctly.",
+  "3.20": "The agent used the correct subject on all tickets relevant to the scenario.",
+  "3.21": "The agent attached the relevant KB article to the ticket if applicable.",
+  "3.22": "The agent filled out any additional documentation report if applicable.",
+  "4.1": "The agent used the appropriate AHT based on the scenario to resolve the call efficiently and correctly.",
+  "4.2": "The agent avoided dead air by keeping the customer informed of what was being done during the call.",
+  "4.3": "The agent answered the call in 5 seconds or less.",
+  "4.4": "Had a valid reason to place the customer on hold/mute.",
+  "4.5": "The agent asked for permission before placing the customer on hold/mute.",
+  "4.6": "A valid reason was provided to use hold/mute.",
+  "4.7": "A timeframe of no longer than 5 minutes was provided to the customer before placing the call on hold/mute.",
+  "4.8": "The agent accomplished the timeframe provided to the customer and refreshed the call if applicable.",
+  "4.9": "The agent thanked the customer when returning from hold/mute.",
+  "4.10": "Connected the customer to the correct department/queue and informed the customer where and why they were transferred if applicable.",
+  "5.1": "Asked appropriate and complete probing questions relevant to the scenario.",
+  "5.2": "The agent did not use any technical or internal vocabulary during the call with non-tech-savvy customers.",
+  "5.3": "All the information provided to the customer during the call was accurate and revised via KB, previous emails, or SMEs.",
+  "5.4": "Accomplished all customer's requests during the call.",
+  "5.5": "Resolved the main scenario by following the appropriate troubleshooting process.",
+  "5.6": "Contacted the customer back in case of a disconnection or if a callback was requested by the customer.",
+  "5.7": "The agent escalated the ticket to the appropriate team if necessary.",
+  "5.8": "The agent closed the ticket without any resolution.",
+  "5.9": "The agent left the ticket open after the resolution was provided.",
+  "5.10": "The agent provided all the necessary information to educate the customer and avoid a future callback.",
+  "5.11": "The part(s) requested are coherent based on previous ticket history.",
+};
+
 const DEFAULT_NAMES = [
   "Aaron Ramirez Loria","Adrian Quesada",
   "Andrea Trejos Flores","Angelo Miguel Espinoza Flores",
@@ -3007,7 +3075,7 @@ async function loadConfig(){
       const extra = CRITERIA_TEXTS[id] || {};
       items[id] = isZero
         ? { label, pts, reason: a, reasonAlts: (extra.reason || []).slice(), zeroType: true }
-        : { label, pts, yes: a, no: b, yesAlts: (extra.yes || []).slice(), noAlts: (extra.no || []).slice(), zeroType: false };
+        : { label, pts, subtitle: RUBRIC_SUBTITLES[id] || '', yes: a, no: b, yesAlts: (extra.yes || []).slice(), noAlts: (extra.no || []).slice(), zeroType: false };
     });
   });
 
@@ -3041,7 +3109,7 @@ async function loadConfig(){
           if(src.zeroType){
             if(typeof src.reason === 'string') CONFIG.items[id] = { label: src.label, pts: 0, reason: src.reason, reasonAlts: cleanAlts(src.reasonAlts), zeroType: true };
           } else if(typeof src.yes === 'string' && typeof src.no === 'string' && typeof src.pts === 'number'){
-            CONFIG.items[id] = { label: src.label, pts: src.pts, yes: src.yes, no: src.no, yesAlts: cleanAlts(src.yesAlts), noAlts: cleanAlts(src.noAlts), zeroType: false };
+            CONFIG.items[id] = { label: src.label, pts: src.pts, subtitle: typeof src.subtitle === 'string' ? src.subtitle : '', yes: src.yes, no: src.no, yesAlts: cleanAlts(src.yesAlts), noAlts: cleanAlts(src.noAlts), zeroType: false };
           }
         });
       }
@@ -3052,6 +3120,8 @@ async function loadConfig(){
           const src = stored.items[id] || {};
           const allowed = cur.zeroType ? ['label','reason'] : ['label','yes','no'];
           allowed.forEach(k=>{ if(typeof src[k] === 'string' && src[k].length) cur[k] = src[k]; });
+          // A saved subtitle wins, even an empty one (cleared on purpose).
+          if(!cur.zeroType && typeof src.subtitle === 'string') cur.subtitle = src.subtitle;
           // Configs saved before the criteria sheet keep their own options and
           // get the sheet's texts appended; newer ones are taken as saved.
           const seeded = Number(stored.criteriaSeed) >= CRITERIA_SEED;
@@ -3406,12 +3476,15 @@ function boldText(str){
 function noText(cfg){
   return cfg.zeroType ? cfg.reason : cfg.no;
 }
+// A rubric with a subtitle shows the subtitle on the line and the chosen text below it.
 function formatLine(icon, cfg, text, kind){
-  return CONFIG.itemTemplate
+  const subtitle = (cfg.subtitle || '').trim();
+  const line = CONFIG.itemTemplate
     .replace(/{{icon}}/g, icon)
     .replace(/{{label}}/g, cfg.label)
-    .replace(/{{text}}/g, text)
+    .replace(/{{text}}/g, subtitle || text)
     .replace(/{{pts}}/g, ptsSuffix(cfg, kind));
+  return subtitle && text.trim() !== subtitle ? line + '\n' + text : line;
 }
 
 function buildOutput(score, earned, possible, zeroTriggered){
@@ -3437,7 +3510,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
     sections.forEach(sec=>{
       const items = pickItems(sec);
       if(!items.length) return;
-      const lines = items.map(it=> formatLine(it.icon, { label: it.label, pts: it.pts, zeroType: sec.isZeroSection }, it.text, it.kind));
+      const lines = items.map(it=> formatLine(it.icon, { label: it.label, subtitle: it.subtitle, pts: it.pts, zeroType: sec.isZeroSection }, it.text, it.kind));
       blocks.push('*' + sec.title + '*\n' + lines.join('\n\n'));
     });
     return blocks;
@@ -4299,6 +4372,7 @@ function buildCfgItem(id, secKey){
       <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
       <input class="cfg-label" data-id="${id}" value="${escapeHtml(cfg.label)}">
     </div>
+    ${cfg.zeroType ? '' : '<div class="cfg-subtitle"><label>Subtitle (in the summary, above the chosen text)</label><textarea data-id="' + id + '" data-field="subtitle" placeholder="No subtitle">' + escapeHtml(cfg.subtitle || '') + '</textarea></div>'}
     ${textsHtml}
   `;
 
@@ -4548,10 +4622,10 @@ function computeSectionBreakdown(){
       }
       if(val === 'yes'){
         earned += cfg.pts; possible += cfg.pts;
-        if(ACCOMPLISHMENTS.includes(id)) accomplishments.push({ label: cfg.label, text: chosenText(id, cfg, 'yes'), pts: cfg.pts });
+        if(ACCOMPLISHMENTS.includes(id)) accomplishments.push({ label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'yes'), pts: cfg.pts });
       }
-      else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
-      else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
+      else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
+      else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
     });
     return {
       key: sec.key, title: sec.title, earned, possible,
