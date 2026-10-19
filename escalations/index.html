@@ -255,7 +255,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 <div class="wrap" style="display:none;">
   <div id="firstRun" class="first-run hidden">
     <h2>No escalations yet</h2>
-    <p>Upload the "Closed CSC escalations" export from Salesforce to build the report.</p>
+    <p id="firstRunText">Upload the "Closed CSC escalations" export from Salesforce to build the report.</p>
     <button class="btn btn-primary" id="btnUploadFirst">Upload Excel</button>
   </div>
 
@@ -369,9 +369,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div id="view-uploads" class="hidden">
     <div class="panel">
       <h4>Uploads</h4>
-      <p class="sub">Each upload adds to the data already here. A ticket number that was already stored is replaced by the new row and tagged Reopened.</p>
+      <p class="sub">Each upload adds to the data already here. A ticket number that was already stored is replaced by the new row and tagged Reopened. "In the data now" counts the tickets whose current data still comes from that file; deleting an upload removes those tickets.</p>
       <div class="table-wrap" style="border:none;">
-        <table class="data" id="uploadsTable" style="min-width:640px;"><thead><tr><th>Uploaded</th><th>File</th><th style="text-align:right">Rows</th><th style="text-align:right">New</th><th style="text-align:right">Reopened</th></tr></thead><tbody></tbody></table>
+        <table class="data" id="uploadsTable" style="min-width:640px;"><thead><tr><th>Uploaded</th><th>File</th><th style="text-align:right">Rows</th><th style="text-align:right">New</th><th style="text-align:right">Reopened</th><th style="text-align:right">In the data now</th><th class="upl-actions"></th></tr></thead><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -546,10 +546,13 @@ function showNoAccess(){
 }
 async function startFor(user){
   // Only accounts in escalation_members get in; the database enforces the same list.
-  const { data: member, error } = await sb.from('escalation_members').select('display_name').eq('user_id', user.id).maybeSingle();
+  const { data: member, error } = await sb.from('escalation_members').select('display_name, can_upload').eq('user_id', user.id).maybeSingle();
   if(error){ console.error('Access check failed', error); setAppVisible(false); showLoginError('Could not check your access. Reload the page to try again.'); return; }
   if(!member){ showNoAccess(); return; }
-  ME = { id: user.id, email: user.email, display_name: member.display_name || user.email };
+  ME = { id: user.id, email: user.email, display_name: member.display_name || user.email, can_upload: !!member.can_upload };
+  // Only members allowed to upload see the button; the database enforces the same rule.
+  ['btnUpload','btnUploadFirst'].forEach(id => $(id).classList.toggle('hidden', !ME.can_upload));
+  $('firstRunText').textContent = ME.can_upload ? 'Upload the "Closed CSC escalations" export from Salesforce to build the report.' : 'The report shows up here once escalations are uploaded.';
   $('userBadgeName').textContent = ME.display_name;
   setAppVisible(true);
   await loadAll(true);
@@ -966,16 +969,41 @@ document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawe
 /* ============================================================
    UPLOADS
    ============================================================ */
+// Tickets whose current data came from this upload (a later upload of the same ticket replaces it).
+const ticketsFrom = u => T.filter(t => t.last_upload_id === u.id);
 function renderUploads(){
+  const canDelete = ME && ME.can_upload;
+  document.querySelector('#uploadsTable th.upl-actions').classList.toggle('hidden', !canDelete);
   $('uploadsTable').querySelector('tbody').innerHTML = UPLOADS.length ? UPLOADS.map(u => `<tr>
       <td class="nowrap">${esc(fmtDateTime(new Date(u.uploaded_at)))}</td><td>${esc(u.file_name)}</td>
-      <td class="num">${u.row_count}</td><td class="num">${u.new_count}</td><td class="num">${u.updated_count}</td></tr>`).join('')
-    : '<tr><td colspan="5" class="empty">No uploads yet</td></tr>';
+      <td class="num">${u.row_count}</td><td class="num">${u.new_count}</td><td class="num">${u.updated_count}</td>
+      <td class="num">${ticketsFrom(u).length}</td>
+      ${canDelete ? `<td class="num"><button class="icon-btn danger" data-del="${u.id}" title="Delete this upload"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></td>` : ''}</tr>`).join('')
+    : `<tr><td colspan="${canDelete ? 7 : 6}" class="empty">No uploads yet</td></tr>`;
+  $('uploadsTable').querySelectorAll('[data-del]').forEach(b => b.addEventListener('click', ()=> deleteUpload(UPLOADS.find(u => u.id === +b.dataset.del))));
+}
+async function deleteUpload(u){
+  if(!u || !ME.can_upload) return;
+  const n = ticketsFrom(u).length;
+  const msg = `Delete the upload "${u.file_name}"?\n\n` + (n
+    ? `${n} ticket${n === 1 ? '' : 's'} whose current data came from this file will be removed from the report.`
+    : 'No ticket in the report still uses data from this file, so the report will not change.')
+    + `\nTickets that a later upload replaced stay as they are. This can't be undone.`;
+  if(!confirm(msg)) return;
+  try{
+    const { error: tErr } = await sb.from('escalation_tickets').delete().eq('last_upload_id', u.id);
+    if(tErr) throw tErr;
+    const { error: uErr } = await sb.from('escalation_uploads').delete().eq('id', u.id);
+    if(uErr) throw uErr;
+    toast(`Deleted "${u.file_name}"` + (n ? ` and ${n} ticket${n === 1 ? '' : 's'}.` : '.'));
+    await loadAll(false);
+  }catch(err){ console.error(err); toast('Could not delete the upload. Try again.'); }
 }
 
 let PARSED = null;   // { fileName, rows: [ticket payloads], problems: [] }
 
 function openUpload(){
+  if(!ME || !ME.can_upload) return;
   PARSED = null; $('uploadFile').value = ''; $('uploadSummary').innerHTML = ''; $('btnUploadGo').disabled = true;
   $('scrim').classList.add('show'); $('uploadModal').classList.add('show');
 }
