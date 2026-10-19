@@ -292,6 +292,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="kpi"><div class="k-label">Median days to close</div><div class="k-value" id="kMed">–</div><div class="k-foot" id="kMedFoot"></div></div>
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="kParts">–</div><div class="k-foot" id="kPartsFoot"></div></div>
       <div class="kpi" id="kReopenedTile" style="cursor:pointer" title="See the reopened tickets closed in this period"><div class="k-label">Reopened</div><div class="k-value" id="kReopened">–</div><div class="k-foot">Closed in the period, came back in a later upload</div></div>
+      <div class="kpi"><div class="k-label">Avoidable</div><div class="k-value" id="kAvoid">–</div><div class="k-foot" id="kAvoidFoot"></div></div>
     </div>
 
     <div class="grid-2">
@@ -316,6 +317,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="panel"><h4>By requestor</h4><p class="sub">Internal requestor, closed in the period</p><div class="hbars" id="requestorBars"></div></div>
       <div class="panel"><h4>By priority</h4><p class="sub">Closed in the period</p><div class="hbars" id="priorityBars"></div></div>
       <div class="panel"><h4>Days to close</h4><p class="sub">Closed in the period</p><div class="hbars" id="durationBars"></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="panel"><h4>Avoidable</h4><p class="sub">From the Solution Provided template, closed in the period</p><div class="hbars" id="avoidableBars"></div></div>
+      <div class="panel"><h4>By scanner model</h4><p class="sub">From the Solution Provided template, closed in the period</p><div class="hbars" id="scannerBars"></div></div>
+      <div class="panel"><h4>Repeat scanners</h4><p class="sub">Serial numbers in more than one escalation, any date, for scanners with an escalation closed in the period</p><div class="hbars" id="serialBars"></div></div>
     </div>
 
     <div class="panel">
@@ -482,6 +488,7 @@ function solutionOf(t){ const s = parseSolution(t.solution_provided).solution; r
 const SOLUTION_FIELDS = [
   { key:'origin',   label:'Origin of the escalation', re:/origin(?:\s+of\s+(?:the\s+)?escalation)?/ },
   { key:'handlers', label:'Previous case handlers',   re:/previous\s+(?:case\s+)?handlers?/ },
+  { key:'serial',   label:'Scanner serial number',    re:/(?:scanner\s+)?(?:serial(?:\s+number)?|s\/?n)/ },
   { key:'scanner',  label:'Scanner model',            re:/scanner(?:\s+model)?/ },
   { key:'avoidable',label:'Avoidable',                re:/avoidable/ },
   { key:'notes',    label:'Notes',                    re:/notes?/ },
@@ -717,6 +724,9 @@ function renderReport(){
   $('kParts').textContent = parts;
   $('kPartsFoot').textContent = closed.length ? `${Math.round(parts / closed.length * 100)}% of closed` : '';
   $('kReopened').textContent = closed.filter(t => t.reopen_count).length;
+  const avYes = closed.filter(t => t._sp.details.avoidable === 'Yes').length, avSet = closed.filter(t => t._sp.details.avoidable === 'Yes' || t._sp.details.avoidable === 'No').length;
+  $('kAvoid').textContent = avYes;
+  $('kAvoidFoot').textContent = avSet ? `${Math.round(avYes / avSet * 100)}% of the ${avSet} with Avoidable filled` : 'None with Avoidable filled';
 
   renderTrend(base);
   const toTickets = (field) => r => openTicketsWith({ [field]: r.label === NOT_SET ? '' : r.label, period:true });
@@ -726,6 +736,17 @@ function renderReport(){
   renderHbars($('ticketTypeBars'), countBy(closed, t=>t.ticket_type), toTickets('ticketType'));
   renderHbars($('requestorBars'), countBy(closed, t=>t.internal_requestor));
   renderHbars($('priorityBars'), countBy(closed, t=>t.priority));
+  // Template fields: tickets without them count as "Not set" so the totals match "Closed".
+  const avRows = ['Yes','No'].map(label => ({ label, value: closed.filter(t => t._sp.details.avoidable === label).length }));
+  const avOther = closed.length - avRows[0].value - avRows[1].value;
+  renderHbars($('avoidableBars'), closed.length ? avRows.concat(avOther ? [{ label:NOT_SET, value:avOther }] : []) : [], null);
+  renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
+  const serials = new Set(closed.map(t => (t._sp.details.serial || '').toUpperCase()).filter(Boolean));
+  const allBySerial = countBy(base.filter(t => serials.has((t._sp.details.serial || '').toUpperCase())), t => (t._sp.details.serial || '').toUpperCase());
+  const repeat = allBySerial.filter(r => r.value > 1);
+  $('serialBars').innerHTML = '';
+  if(repeat.length) renderHbars($('serialBars'), repeat, r => { $('tSearch').value = r.label; openTicketsWith({}); $('tSearch').value = r.label; renderTickets(); });
+  else $('serialBars').innerHTML = `<div class="empty">${serials.size ? 'No scanner has more than one escalation' : 'No serial numbers in this period'}</div>`;
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
   renderHbars($('durationBars'), durs.length ? durRows : [], null);
@@ -805,6 +826,7 @@ $('btnCopy').addEventListener('click', async ()=>{
     `Opened: ${opened.length}`,
     `Average days to close: ${avg}${durs.length ? `, median ${median(durs).toFixed(1)}` : ''}`,
     `Part replacements: ${parts}`,
+    `Avoidable: ${closed.filter(t => t._sp.details.avoidable === 'Yes').length} yes, ${closed.filter(t => t._sp.details.avoidable === 'No').length} no`,
     `Reopened: ${closed.filter(t => t.reopen_count).length}`,
     ``,
     `By solution:`, topLines(countBy(closed, t=>t._sol)),
