@@ -1533,7 +1533,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           </div>
         </div>
         <div class="panel" id="extrasPanel">
-          <div class="extras-head"><h4>Accomplishments</h4><span class="extras-count" id="accCount">0 / 3</span></div>
+          <div class="extras-head"><h4>Accomplishments</h4><span class="extras-count" id="accCount">0 / 4</span></div>
           <div id="accList" class="chip-list"></div>
           <div class="extras-divider focus-part"></div>
           <div class="extras-head focus-part"><h4>Focus points</h4><span class="extras-count" id="focusCount"></span></div>
@@ -2095,7 +2095,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <tr><td><code>{{agent}}</code> <code>{{evaluator}}</code> <code>{{caller}}</code> <code>{{ticket}}</code> <code>{{order}}</code> <code>{{reason}}</code></td><td>Just that one field's value, on its own</td></tr>
       <tr><td><code>{{deductions}}</code></td><td>A "Deductions" heading plus every rubric marked ✕, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
       <tr><td><code>{{feedback}}</code></td><td>A "Feedback" heading plus every rubric flagged ⚠, grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
-      <tr><td><code>{{accomplishments}}</code></td><td>An "Accomplishments" heading plus the met rubrics picked as accomplishments (up to 3), grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
+      <tr><td><code>{{accomplishments}}</code></td><td>An "Accomplishments" heading plus the met rubrics picked as accomplishments (up to 4), grouped by section. Skipped entirely (no heading) if there are none.</td></tr>
       <tr><td><code>{{focus}}</code></td><td>A "Focus points" heading plus the focus points picked for the evaluation. If the template doesn't use it, they go right after the accomplishments.</td></tr>
       <tr><td><code>{{score}}</code> <code>{{earned}}</code> <code>{{possible}}</code></td><td>The score (100 minus points lost), and the raw points earned / possible</td></tr>
       <tr><td><code>{{zeroline}}</code></td><td>The automatic-zero warning line, only when triggered</td></tr>
@@ -2664,7 +2664,7 @@ let CHOICES = {};
 
 // Accomplishments are picked by hand (up to MAX_ACCOMPLISHMENTS) from the
 // rubrics marked as met; focus points come from a fixed list.
-const MAX_ACCOMPLISHMENTS = 3;
+const MAX_ACCOMPLISHMENTS = 4;
 let ACCOMPLISHMENTS = [];
 let FOCUS_POINTS = [];
 const FOCUS_POINT_OPTIONS = [
