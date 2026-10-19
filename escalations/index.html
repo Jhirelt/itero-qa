@@ -278,8 +278,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           <button class="btn btn-ghost" id="btnLatest" title="Go to the latest period with closed escalations">Latest</button>
         </div>
       </div>
-      <div class="field"><label for="rIssue">Issue type</label><select class="ctl" id="rIssue"></select></div>
-      <div class="field"><label for="rTicketType">Ticket type</label><select class="ctl" id="rTicketType"></select></div>
       <div class="spacer"></div>
       <button class="btn btn-ghost" id="btnCopy"><svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>Copy summary</button>
       <button class="btn btn-ghost" id="btnExportPeriod"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
@@ -618,8 +616,8 @@ function fillSelect(sel, values, allLabel){
 }
 function fillFilterOptions(){
   const issues = distinct(t=>t.issue_type), types = distinct(t=>t.ticket_type), sols = distinct(t=>t._sol);
-  fillSelect($('rIssue'), issues, 'All issue types'); fillSelect($('tIssue'), issues, 'All issue types');
-  fillSelect($('rTicketType'), types, 'All ticket types'); fillSelect($('tTicketType'), types, 'All ticket types');
+  fillSelect($('tIssue'), issues, 'All issue types');
+  fillSelect($('tTicketType'), types, 'All ticket types');
   fillSelect($('tSolution'), sols, 'All solutions');
 }
 const same = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
@@ -659,12 +657,8 @@ $('btnPrev').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIO
 $('btnNext').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], 1); renderReport(); });
 $('kReopenedTile').addEventListener('click', ()=> openTicketsWith({ reopened:true, period:true }));
 $('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Date(); renderReport(); });
-['rIssue','rTicketType'].forEach(id => $(id).addEventListener('change', renderReport));
 
-function reportBase(){
-  const it = $('rIssue').value, tt = $('rTicketType').value;
-  return T.filter(t => (!it || same(t.issue_type, it)) && (!tt || same(t.ticket_type, tt)));
-}
+function reportBase(){ return T; }
 const inRange = (d, s, e) => d && d >= s && d < e;
 
 function countBy(rows, get){
@@ -818,9 +812,8 @@ $('btnCopy').addEventListener('click', async ()=>{
   const durs = closed.map(daysToClose).filter(v => v != null);
   const avg = durs.length ? (durs.reduce((a,b)=>a+b,0)/durs.length).toFixed(1) : '–';
   const parts = closed.filter(isPart).length;
-  const filt = [$('rIssue').value, $('rTicketType').value].filter(Boolean);
   const text = [
-    `Escalations report: ${periodName(PERIOD, s, e)}${filt.length ? ` (${filt.join(', ')})` : ''}`,
+    `Escalations report: ${periodName(PERIOD, s, e)}`,
     ``,
     `Closed: ${closed.length} (previous ${PERIOD_WORD[PERIOD]}: ${prevClosed.length})`,
     `Opened: ${opened.length}`,
@@ -878,8 +871,8 @@ document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', (
 let TICKET_PERIOD = null;   // [start, end) when opened from a report bar
 function openTicketsWith({ issue = '', ticketType = '', solution = '', reopened = false, period = false }){
   $('tSearch').value = '';
-  $('tIssue').value = issue || $('rIssue').value;
-  $('tTicketType').value = ticketType || $('rTicketType').value;
+  $('tIssue').value = issue;
+  $('tTicketType').value = ticketType;
   $('tSolution').value = solution;
   $('tReopened').value = reopened ? 'yes' : '';
   TICKET_PERIOD = period ? bounds(PERIOD, ANCHOR) : null;
