@@ -188,6 +188,11 @@
   .kv dt{ color:var(--text-dim); font-size:11px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; padding-top:2px; }
   .kv dd{ margin:0; line-height:1.45; word-break:break-word; white-space:pre-wrap; }
 
+  .detail-form:not(:empty){ display:grid; gap:12px; padding:14px; margin-bottom:18px; border:1px solid var(--border); border-radius:var(--radius); background:var(--bg-elev-2); }
+  .detail-form h4{ margin:0; font-size:13px; }
+  .detail-form .ctl{ background:var(--bg-elev); }
+  .detail-form textarea.ctl{ resize:vertical; line-height:1.45; }
+  .detail-form .modal-actions{ margin-top:0; }
   /* ---------- Upload modal ---------- */
   .modal{ position:fixed; left:50%; top:50%; transform:translate(-50%,-50%); width:min(600px, calc(100% - 32px)); background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); z-index:220; padding:20px; display:none; max-height:calc(100vh - 40px); overflow:auto; }
   .modal.show{ display:block; }
@@ -319,9 +324,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="panel"><h4>Days to close</h4><p class="sub">Closed in the period</p><div class="hbars" id="durationBars"></div></div>
     </div>
     <div class="grid-3">
-      <div class="panel"><h4>Avoidable</h4><p class="sub">From the Solution Provided template, closed in the period</p><div class="hbars" id="avoidableBars"></div></div>
-      <div class="panel"><h4>By scanner model</h4><p class="sub">From the Solution Provided template, closed in the period</p><div class="hbars" id="scannerBars"></div></div>
-      <div class="panel"><h4>Repeat scanners</h4><p class="sub">Serial numbers in more than one escalation, any date, for scanners with an escalation closed in the period</p><div class="hbars" id="serialBars"></div></div>
+      <div class="panel"><h4>Avoidable</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="avoidableBars"></div></div>
+      <div class="panel" style="grid-column:span 2"><h4>By root cause</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="rootCauseBars"></div></div>
     </div>
 
     <div class="panel">
@@ -384,7 +388,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     <h3 id="drawerTitle">Ticket</h3>
     <button class="icon-btn" id="btnCloseDrawer" title="Close" style="width:30px;height:30px;"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></button>
   </div>
-  <div class="drawer-body"><dl class="kv" id="drawerBody"></dl></div>
+  <div class="drawer-body"><div class="detail-form" id="detailForm"></div><dl class="kv" id="drawerBody"></dl></div>
 </aside>
 
 <!-- =============== SUMMARY =============== -->
@@ -488,43 +492,26 @@ function toTimestamp(v){
 
 // The Salesforce export loses the en dash: "Part Replacement ? PPC".
 const fixDash = s => s == null ? s : String(s).replace(/ \? /g, ' – ');
-// "Part Replacement – PPC | Replacement ticket 69289577" -> "Part Replacement – PPC"
 const reopenedTag = t => t.reopen_count ? `<span class="tag-reopened" title="This ticket came again in a later upload${t.reopened_at ? ' (' + fmtDate(new Date(t.reopened_at)) + ')' : ''}">Reopened</span>` : '';
-function solutionOf(t){ const s = parseSolution(t.solution_provided).solution; return s.length > 60 ? s.slice(0, 57) + '…' : s; }
+// Solution Provided is a standard outcome ("Part Replacement – PPC"). Older rows may carry more text after "|": only the outcome counts.
+const solutionText = text => { const raw = String(text || ''), cut = raw.search(/[|\n]/); return (cut < 0 ? raw : raw.slice(0, cut)).trim(); };
+function solutionOf(t){ const s = solutionText(t.solution_provided); return s.length > 60 ? s.slice(0, 57) + '…' : s; }
 
-/* "Solution Provided" template, filled in Salesforce:
-     Part Replacement – PPC | Root cause: … | Origin of the escalation: … | Previous case handlers: … | Scanner model: … | Scanner serial number: … | Avoidable: Yes | Notes: …
-   The solution is everything before the first "|" (what the statistics use). After it, each "Label: value"
-   becomes a detail of the ticket; labels left empty are ignored, and text without a label is kept as notes. */
-const SOLUTION_FIELDS = [
-  { key:'rootcause',label:'Root cause',               re:/root\s+cause/ },
-  { key:'origin',   label:'Origin of the escalation', re:/origin(?:\s+of\s+(?:the\s+)?escalation)?/ },
-  { key:'handlers', label:'Previous case handlers',   re:/previous\s+(?:case\s+)?handlers?/ },
-  { key:'serial',   label:'Scanner serial number',    re:/(?:scanner\s+)?(?:serial(?:\s+number)?|s\/?n)/ },
-  { key:'scanner',  label:'Scanner model',            re:/scanner(?:\s+model)?/ },
-  { key:'avoidable',label:'Avoidable',                re:/avoidable/ },
-  { key:'notes',    label:'Notes',                    re:/notes?/ },
+/* Details filled in on the page for each ticket (table escalation_ticket_details).
+   They live apart from the uploaded data, so a new upload of the same ticket keeps them. */
+const DETAIL_FIELDS = [
+  { key:'avoidable',   col:'avoidable',         label:'Avoidable', options:['Yes','No'] },
+  { key:'rootcause',   col:'root_cause',        label:'Root cause', hint:'Short title, e.g. Incomplete network troubleshooting' },
+  { key:'origin',      col:'origin',            label:'Origin of the escalation', long:true, hint:'What happened and why it was escalated' },
+  { key:'prevtickets', col:'previous_tickets',  label:'Previous tickets' },
+  { key:'handlers',    col:'previous_handlers', label:'Previous case handlers' },
 ];
-const SOLUTION_LABEL_RE = new RegExp('(?:^|[|\\n])\\s*(' + SOLUTION_FIELDS.map(f => f.re.source).join('|') + ')\\s*:', 'gi');
-function parseSolution(text){
-  const raw = String(text || '');
-  const cut = raw.search(/[|\n]/);
-  const out = { solution: (cut < 0 ? raw : raw.slice(0, cut)).trim(), details: {}, notes: '' };
-  if(cut < 0) return out;
-  const rest = raw.slice(cut);
-  const hits = [...rest.matchAll(SOLUTION_LABEL_RE)];
-  const clean = v => v.replace(/^[\s|]+|[\s|]+$/g, '').replace(/\s*\|\s*/g, ' · ').trim();
-  const free = [clean(rest.slice(0, hits.length ? hits[0].index : rest.length))];
-  hits.forEach((m, i) => {
-    const f = SOLUTION_FIELDS.find(x => new RegExp('^(?:' + x.re.source + ')$', 'i').test(m[1].trim()));
-    const v = clean(rest.slice(m.index + m[0].length, i + 1 < hits.length ? hits[i+1].index : rest.length));
-    if(!f || !v) return;
-    if(f.key === 'notes') free.push(v);
-    else if(f.key === 'avoidable') out.details.avoidable = /^y/i.test(v) ? 'Yes' : /^n/i.test(v) ? 'No' : v;
-    else out.details[f.key] = v;
-  });
-  out.notes = free.filter(Boolean).join('\n');
-  return out;
+let DETAILS = new Map();   // ticket_number -> escalation_ticket_details row
+function applyDetails(t){
+  const d = DETAILS.get(t.ticket_number) || {};
+  t._sp = { solution: solutionText(t.solution_provided), notes: '', details: {} };
+  DETAIL_FIELDS.forEach(f => { const v = (d[f.col] || '').trim(); if(v) t._sp.details[f.key] = v; });
+  return t;
 }
 
 /* ---------- Theme ---------- */
@@ -602,8 +589,9 @@ async function fetchAll(table, order){
 }
 async function loadAll(resetPeriod){
   try{
-    const [tickets, uploads] = await Promise.all([ fetchAll('escalation_tickets', 'ticket_number'), fetchAll('escalation_uploads', 'uploaded_at') ]);
-    T = tickets.map(t => Object.assign(t, { _o: parseTs(t.opened_at), _c: parseTs(t.closed_at), _sol: solutionOf(t), _sp: parseSolution(t.solution_provided) }));
+    const [tickets, uploads, details] = await Promise.all([ fetchAll('escalation_tickets', 'ticket_number'), fetchAll('escalation_uploads', 'uploaded_at'), fetchAll('escalation_ticket_details', 'ticket_number') ]);
+    DETAILS = new Map(details.map(d => [d.ticket_number, d]));
+    T = tickets.map(t => applyDetails(Object.assign(t, { _o: parseTs(t.opened_at), _c: parseTs(t.closed_at), _sol: solutionOf(t) })));
     UPLOADS = uploads;
   }catch(err){ console.error(err); toast('Could not load the data. Reload the page to try again.'); return; }
   if(resetPeriod || !ANCHOR) ANCHOR = latestClosed() || new Date();
@@ -751,13 +739,7 @@ function renderReport(){
   const avRows = ['Yes','No'].map(label => ({ label, value: closed.filter(t => t._sp.details.avoidable === label).length }));
   const avOther = closed.length - avRows[0].value - avRows[1].value;
   renderHbars($('avoidableBars'), closed.length ? avRows.concat(avOther ? [{ label:NOT_SET, value:avOther }] : []) : [], null);
-  renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
-  const serials = new Set(closed.map(t => (t._sp.details.serial || '').toUpperCase()).filter(Boolean));
-  const allBySerial = countBy(base.filter(t => serials.has((t._sp.details.serial || '').toUpperCase())), t => (t._sp.details.serial || '').toUpperCase());
-  const repeat = allBySerial.filter(r => r.value > 1);
-  $('serialBars').innerHTML = '';
-  if(repeat.length) renderHbars($('serialBars'), repeat, r => { $('tSearch').value = r.label; openTicketsWith({}); $('tSearch').value = r.label; renderTickets(); });
-  else $('serialBars').innerHTML = `<div class="empty">${serials.size ? 'No scanner has more than one escalation' : 'No serial numbers in this period'}</div>`;
+  renderHbars($('rootCauseBars'), countBy(closed, t=>t._sp.details.rootcause));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
   renderHbars($('durationBars'), durs.length ? durRows : [], null);
@@ -858,7 +840,7 @@ function rangeText(s, e, closed){
   return { during: `During ${name}`, title: PERIOD === 'month' || PERIOD === 'year' ? name : `${name} (${fmtLong(s)} to ${fmtLong(last)})`, short: name, last };
 }
 
-// One closed ticket, described from its own fields and the Solution Provided template.
+// One closed ticket, described from its own fields and the details set on it.
 function ticketStory(t){
   const det = t._sp.details, sol = t._sp.solution || 'No solution given';
   const notes = (t._sp.notes || '').split('\n').filter(Boolean);
@@ -1020,7 +1002,7 @@ function buildReportHtml(){
         ${ofD ? `<div class="dist">${dist.filter(b => b.value).map(b => `<span style="flex:${b.value};background:${b.color}">${pct(b.value, ofD)}%</span>`).join('')}</div>
         <div class="dist-l">${dist.map(b => `<span>${b.label} (${b.value})</span>`).join('')}</div>` : '<p class="note">Nothing closed in this period.</p>'}
       </div>
-      <div class="cols">${vol(t => t._sp.details.scanner, 'Volume by Model')}
+      <div class="cols">${vol(t => t.issue_type, 'Volume by Issue Type')}
         <div class="block"><h2>This ${PW} vs Previous ${PW}${cmp ? ` and ${esc(cmp.label)}` : ''}</h2>
           <table class="grid"><thead><tr><th>Metric</th><th>This ${pw}</th><th>Previous ${pw}</th>${cmp ? `<th>${esc(cmp.label)}</th>` : ''}</tr></thead><tbody>
           ${cmpRows.map(([label, f]) => `<tr><td>${label}</td><td class="hl">${f(cur)}</td><td>${f(prev)}</td>${cmp ? `<td>${f(cmp)}</td>` : ''}</tr>`).join('')}
@@ -1052,7 +1034,7 @@ function buildReportHtml(){
         <p>${R.open.length ? `Of the ${R.open.length} escalation${R.open.length === 1 ? '' : 's'} open at the end of the period, ${ob} ${ob === 1 ? 'is a Business Escalation' : 'are Business Escalations'} and ${oc} ${oc === 1 ? 'is a CSC Escalation' : 'are CSC Escalations'}.` : 'No escalation in the uploaded data was open at the end of the period.'}</p>${R.open.length ? `<p>Tickets: ${R.open.slice().sort((x,y) => x._o - y._o).map(t => `${esc(t.ticket_number)} (${isBusiness(t) ? 'Business' : 'CSC'}, opened ${esc(fmtShort(t._o))})`).join(', ')}.</p>` : ''}</div>
       </div>
     </div>
-    <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity read from the Solution Provided template. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
+    <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity set on each ticket in the tracker. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
   </section>`;
 
   const title = `${PERIOD_ADJ[PERIOD]} Escalations ${R.range.short}${PERIOD === 'week' ? ' ' + R.range.last.getFullYear() : ''}`;
@@ -1122,8 +1104,7 @@ function exportRows(rows, name){
     o['Days to close'] = daysToClose(t) == null ? '' : +daysToClose(t).toFixed(1);
     o['Reopened'] = t.reopen_count ? 'Yes' : '';
     o['Solution'] = t._sp.solution;
-    SOLUTION_FIELDS.filter(f => f.key !== 'notes').forEach(f => { o[f.label] = t._sp.details[f.key] || ''; });
-    o['Solution notes'] = t._sp.notes;
+    DETAIL_FIELDS.forEach(f => { o[f.label] = t._sp.details[f.key] || ''; });
     Object.entries(t.extra || {}).forEach(([k,v]) => { o[k] = v; });
     return o;
   });
@@ -1221,15 +1202,40 @@ function openDrawer(t){
     ['Complaint sub type', t.complaint_sub_type], ['Priority', t.priority],
     ...(t.reopen_count ? [['Reopened', `Yes, ${t.reopen_count === 1 ? 'once' : t.reopen_count + ' times'}${t.reopened_at ? ', last on ' + fmtDateTime(new Date(t.reopened_at)) : ''}`]] : []),
     ['Solution', t._sp.solution],
-    ...SOLUTION_FIELDS.filter(f => f.key !== 'notes' && t._sp.details[f.key]).map(f => [f.label, t._sp.details[f.key]]),
-    ...(t._sp.notes ? [['Solution notes', t._sp.notes]] : []),
+    ...(ME && ME.can_upload ? [] : DETAIL_FIELDS.map(f => [f.label, t._sp.details[f.key]])),
     ['Internal requestor', t.internal_requestor],
     ...Object.entries(t.extra || {}),
   ];
   const up = UPLOADS.find(u => u.id === t.last_upload_id);
   if(up) rows.push(['From upload', `${up.file_name} (${fmtDateTime(new Date(up.uploaded_at))})`]);
   $('drawerBody').innerHTML = rows.map(([k,v]) => `<dt>${esc(k)}</dt><dd>${v ? esc(v) : '<span class="muted">–</span>'}</dd>`).join('');
+  renderDetailForm(t);
   $('scrim').classList.add('show'); $('drawer').classList.add('show');
+}
+// Members who upload fill in the escalation details here; everyone else sees them in the list above.
+function renderDetailForm(t){
+  const box = $('detailForm');
+  if(!ME || !ME.can_upload){ box.innerHTML = ''; return; }
+  const d = t._sp.details;
+  box.innerHTML = `<h4>Escalation details</h4>` + DETAIL_FIELDS.map(f => `<div class="field"><label for="df-${f.key}">${esc(f.label)}</label>${
+      f.options ? `<select class="ctl" id="df-${f.key}"><option value="">Not set</option>${f.options.map(o => `<option${d[f.key] === o ? ' selected' : ''}>${o}</option>`).join('')}</select>`
+      : f.long ? `<textarea class="ctl" id="df-${f.key}" rows="3" placeholder="${esc(f.hint || '')}">${esc(d[f.key] || '')}</textarea>`
+      : `<input class="ctl" id="df-${f.key}" value="${esc(d[f.key] || '')}" placeholder="${esc(f.hint || '')}">`}</div>`).join('')
+    + `<div class="modal-actions"><button class="btn btn-primary" id="btnSaveDetails">Save</button></div>`;
+  $('btnSaveDetails').addEventListener('click', ()=> saveDetails(t));
+}
+async function saveDetails(t){
+  const row = { ticket_number: t.ticket_number, updated_by: ME.id, updated_at: new Date().toISOString() };
+  DETAIL_FIELDS.forEach(f => { row[f.col] = $('df-' + f.key).value.trim() || null; });
+  const btn = $('btnSaveDetails'); btn.disabled = true; btn.textContent = 'Saving...';
+  try{
+    const { error } = await sb.from('escalation_ticket_details').upsert(row, { onConflict:'ticket_number' });
+    if(error) throw error;
+    DETAILS.set(t.ticket_number, row); applyDetails(t);
+    toast(`Saved ticket ${t.ticket_number}.`);
+    if(currentView() === 'report') renderReport();
+  }catch(err){ console.error(err); toast('Could not save. Try again.'); }
+  finally{ btn.disabled = false; btn.textContent = 'Save'; }
 }
 function closeDrawer(){ $('scrim').classList.remove('show'); $('drawer').classList.remove('show'); }
 $('btnCloseDrawer').addEventListener('click', closeDrawer);
