@@ -535,7 +535,8 @@ function solutionOf(t){ const s = solutionText(t.solution_provided); return s.le
 
 /* Details filled in on the page for each ticket (table escalation_ticket_details).
    They live apart from the uploaded data, so a new upload of the same ticket keeps them. */
-const SCANNER_MODELS = ['Lumina - Cart', '5D Plus - Cart', '5D Plus Lite - Cart', 'Office PC/other'];
+const SCANNER_MODELS = ['Office PC', 'Element 2', 'Element 2 5D', '5D Plus - Cart', '5D Plus Lite - Cart', 'Lumina - Cart', 'Lumina Pro - Cart',
+  '5D Plus - Mobile', '5D Plus Lite - Mobile', 'Lumina - Mobile', 'Lumina Pro - Mobile', 'Flex', '5D Flex', '5D Plus LC', '5D Plus Lite LC'];
 const DETAIL_FIELDS = [
   { key:'avoidable',   col:'avoidable',         label:'Avoidable', options:['Yes','No'] },
   { key:'scanner',     col:'scanner_model',     label:'Scanner model', options:SCANNER_MODELS },
