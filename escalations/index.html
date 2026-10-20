@@ -154,6 +154,7 @@
   .kpi .k-label{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:700; }
   .kpi .k-value{ font-size:30px; font-weight:800; margin-top:6px; font-variant-numeric:tabular-nums; letter-spacing:-.5px; }
   .kpi .k-foot{ font-size:12px; color:var(--text-faint); margin-top:2px; }
+  .kpi .k-foot a{ color:var(--accent); text-decoration:none; } .kpi .k-foot a:hover{ text-decoration:underline; }
 
   .grid-2{ display:grid; grid-template-columns: 2fr 1fr; gap:12px; margin-bottom:12px; }
   .grid-3{ display:grid; grid-template-columns: repeat(3, 1fr); gap:12px; margin-bottom:12px; }
@@ -325,9 +326,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="kpi"><div class="k-label">Closed</div><div class="k-value" id="kClosed">–</div><div class="k-foot" id="kClosedFoot"></div></div>
       <div class="kpi"><div class="k-label">Opened</div><div class="k-value" id="kOpened">–</div><div class="k-foot" id="kOpenedFoot"></div></div>
       <div class="kpi"><div class="k-label">Avg. days to close</div><div class="k-value" id="kAvg">–</div><div class="k-foot" id="kAvgFoot"></div></div>
-      <div class="kpi"><div class="k-label">Median days to close</div><div class="k-value" id="kMed">–</div><div class="k-foot" id="kMedFoot"></div></div>
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="kParts">–</div><div class="k-foot" id="kPartsFoot"></div></div>
-      <div class="kpi" id="kReopenedTile" style="cursor:pointer" title="See the reopened tickets closed in this period"><div class="k-label">Reopened</div><div class="k-value" id="kReopened">–</div><div class="k-foot">Closed in the period, came back in a later upload</div></div>
       <div class="kpi"><div class="k-label">Avoidable</div><div class="k-value" id="kAvoid">–</div><div class="k-foot" id="kAvoidFoot"></div></div>
       <div class="kpi"><div class="k-label">Customer satisfaction</div><div class="k-value" id="kCsat">–</div><div class="k-foot" id="kCsatFoot"></div></div>
     </div>
@@ -347,25 +346,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="grid-3">
       <div class="panel"><h4>By issue type</h4><p class="sub">Closed in the period</p><div class="hbars" id="issueBars"></div></div>
-      <div class="panel"><h4>By sub-issue type</h4><p class="sub">Closed in the period</p><div class="hbars" id="subIssueBars"></div></div>
-      <div class="panel"><h4>By ticket type</h4><p class="sub">Closed in the period</p><div class="hbars" id="ticketTypeBars"></div></div>
-    </div>
-    <div class="grid-3">
-      <div class="panel"><h4>By requestor</h4><p class="sub">Internal requestor, closed in the period</p><div class="hbars" id="requestorBars"></div></div>
-      <div class="panel"><h4>By priority</h4><p class="sub">Closed in the period</p><div class="hbars" id="priorityBars"></div></div>
+      <div class="panel"><h4>By scanner model</h4><p class="sub">Set on each ticket</p><div class="hbars" id="scannerBars"></div></div>
       <div class="panel"><h4>Days to close</h4><p class="sub">Closed in the period</p><div class="hbars" id="durationBars"></div></div>
-    </div>
-    <div class="grid-3">
-      <div class="panel"><h4>Avoidable</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="avoidableBars"></div></div>
-      <div class="panel"><h4>By scanner model</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="scannerBars"></div></div>
-      <div class="panel"><h4>By root cause</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="rootCauseBars"></div></div>
     </div>
 
     <div class="panel">
       <h4 id="closedTitle">Closed in the period</h4>
       <p class="sub">Newest first. Click a row to see every field.</p>
       <div class="table-wrap" style="border:none;">
-        <table class="data" id="closedTable"><thead><tr><th>Ticket</th><th>Closed</th><th>Days</th><th>Account</th><th>Subject</th><th>Issue type</th><th>Solution</th><th>Requestor</th></tr></thead><tbody></tbody></table>
+        <table class="data" id="closedTable"><thead><tr><th>Ticket</th><th>Closed</th><th>Days</th><th>Account</th><th>Subject</th><th>Solution</th></tr></thead><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -701,7 +690,6 @@ function setPeriod(p){
 document.querySelectorAll('#periodSeg button').forEach(b => b.addEventListener('click', ()=>{ setPeriod(b.dataset.period); renderReport(); }));
 $('btnPrev').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], -1); renderReport(); });
 $('btnNext').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], 1); renderReport(); });
-$('kReopenedTile').addEventListener('click', ()=> openTicketsWith({ reopened:true, period:true }));
 $('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Date(); if(PERIOD === 'custom') ANCHOR = addDays(startOfDay(ANCHOR), 1 - CUSTOM_DAYS); renderReport(); });
 
 function reportBase(){ return T; }
@@ -752,20 +740,19 @@ function renderReport(){
   $('btnNext').disabled = s > new Date();
 
   $('kClosed').textContent = closed.length;
-  $('kClosedFoot').textContent = deltaText(closed.length, prevClosed.length);
+  // Reopened tickets are a link under Closed, shown only when there are any.
+  const reo = closed.filter(t => t.reopen_count).length;
+  $('kClosedFoot').innerHTML = esc(deltaText(closed.length, prevClosed.length)) + (reo ? ` · <a href="#" id="kReopenedLink" title="See the reopened tickets closed in this period">${reo} reopened</a>` : '');
+  if(reo) $('kReopenedLink').addEventListener('click', ev => { ev.preventDefault(); openTicketsWith({ reopened:true, period:true }); });
   $('kOpened').textContent = opened.length;
   $('kOpenedFoot').textContent = deltaText(opened.length, prevOpened.length);
   const durs = closed.map(daysToClose).filter(v => v != null);
   $('kAvg').textContent = durs.length ? (durs.reduce((a,b)=>a+b,0)/durs.length).toFixed(1) : '–';
   const prevD = prevClosed.map(daysToClose).filter(v => v != null);
   $('kAvgFoot').textContent = prevD.length ? `Previous ${PERIOD_WORD[PERIOD]}: ${(prevD.reduce((a,b)=>a+b,0)/prevD.length).toFixed(1)}` : 'Opened to closed, in days';
-  const med = median(durs);
-  $('kMed').textContent = med == null ? '–' : med.toFixed(1);
-  $('kMedFoot').textContent = durs.length ? `Longest: ${Math.max(...durs).toFixed(0)} days` : '';
   const parts = closed.filter(isPart).length;
   $('kParts').textContent = parts;
   $('kPartsFoot').textContent = closed.length ? `${Math.round(parts / closed.length * 100)}% of closed` : '';
-  $('kReopened').textContent = closed.filter(t => t.reopen_count).length;
   const avYes = closed.filter(t => t._sp.details.avoidable === 'Yes').length, avSet = closed.filter(t => t._sp.details.avoidable === 'Yes' || t._sp.details.avoidable === 'No').length;
   $('kAvoid').textContent = avYes;
   $('kAvoidFoot').textContent = avSet ? `${Math.round(avYes / avSet * 100)}% of the ${avSet} with Avoidable filled` : 'None with Avoidable filled';
@@ -777,15 +764,6 @@ function renderReport(){
   const toTickets = (field) => r => openTicketsWith({ [field]: r.label === NOT_SET ? '' : r.label, period:true });
   renderHbars($('solutionBars'), countBy(closed, t=>t._sol), toTickets('solution'));
   renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('issue'));
-  renderHbars($('subIssueBars'), countBy(closed, t=>t.sub_issue_type));
-  renderHbars($('ticketTypeBars'), countBy(closed, t=>t.ticket_type), toTickets('ticketType'));
-  renderHbars($('requestorBars'), countBy(closed, t=>t.internal_requestor));
-  renderHbars($('priorityBars'), countBy(closed, t=>t.priority));
-  // Template fields: tickets without them count as "Not set" so the totals match "Closed".
-  const avRows = ['Yes','No'].map(label => ({ label, value: closed.filter(t => t._sp.details.avoidable === label).length }));
-  const avOther = closed.length - avRows[0].value - avRows[1].value;
-  renderHbars($('avoidableBars'), closed.length ? avRows.concat(avOther ? [{ label:NOT_SET, value:avOther }] : []) : [], null);
-  renderHbars($('rootCauseBars'), countBy(closed, t=>t._sp.details.rootcause));
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
@@ -795,8 +773,8 @@ function renderReport(){
   $('closedTable').querySelector('tbody').innerHTML = closed.length ? closed.map(t => `<tr class="row" data-id="${esc(t.ticket_number)}">
       <td class="ticket nowrap">${esc(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._c))}</td><td class="num">${esc(fmtDays(daysToClose(t)))}</td>
       <td>${esc(t.account_name || '')}</td><td class="wide"><span class="clip">${esc(t.subject || '')}</span></td>
-      <td>${esc(t.issue_type || '')}</td><td>${esc(t._sol)}</td><td>${esc(t.internal_requestor || '')}</td></tr>`).join('')
-    : '<tr><td colspan="8" class="empty">Nothing closed in this period</td></tr>';
+      <td>${esc(t._sol)}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">Nothing closed in this period</td></tr>';
   bindRows($('closedTable'));
 }
 
@@ -805,12 +783,14 @@ function renderTrend(base){
   const TP = PERIOD === 'custom' ? 'week' : PERIOD;   // a custom range is charted by week
   const el = $('trendChart');
   const N = TP === 'year' ? 5 : 12;
-  const [curStart] = bounds(TP, ANCHOR);
+  // A custom range ends the chart on the week of its last day and highlights every week it touches.
+  const [selS, selE] = bounds(PERIOD, ANCHOR);
+  const [curStart] = bounds(TP, PERIOD === 'custom' ? addDays(selE, -1) : ANCHOR);
   const buckets = [];
   for(let i = N-1; i >= 0; i--){
     const [s, e] = bounds(TP, shift(TP, curStart, -i));
     const label = TP === 'week' ? fmtShort(s) : TP === 'month' ? s.toLocaleDateString('en-US', { month:'short', year:'2-digit' }) : TP === 'quarter' ? `Q${Math.floor(s.getMonth()/3)+1} ’${String(s.getFullYear()).slice(2)}` : String(s.getFullYear());
-    buckets.push({ s, e, label, value: base.filter(t => inRange(t._c, s, e)).length, cur: i === 0 });
+    buckets.push({ s, e, label, value: base.filter(t => inRange(t._c, s, e)).length, cur: PERIOD === 'custom' ? s < selE && e > selS : i === 0 });
   }
   $('trendTitle').textContent = `Closed per ${PERIOD_WORD[TP]}`;
   $('trendSub').textContent = `Last ${N} ${PERIOD_WORD[TP]}s, the selected one highlighted. Click a bar to jump to it.`;
