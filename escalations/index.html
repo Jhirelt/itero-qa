@@ -198,6 +198,14 @@
   .nowrap{ white-space:nowrap; }
   .ticket{ font-weight:700; font-variant-numeric:tabular-nums; }
   .tag-reopened{ display:inline-block; margin-left:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--warn); background:var(--warn-soft); border:1px solid var(--warn); padding:1px 6px; border-radius:999px; vertical-align:1px; white-space:nowrap; }
+  .more-stats summary{ cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
+  .more-stats summary::-webkit-details-marker{ display:none; }
+  .more-stats summary h4::before{ content:'▸'; display:inline-block; width:14px; transition:transform .15s; }
+  .more-stats[open] summary h4::before{ transform:rotate(90deg); }
+  .more-stats summary h4{ margin:0; } .more-stats summary .sub{ margin:0; }
+  .more-stats[open] summary{ margin-bottom:12px; }
+  .more-stats .grid-3{ margin-bottom:0; }
+  .more-stats .grid-3 > div h5{ margin:0 0 8px; font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; }
   .list-head{ display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap; }
   .list-head .count{ font-size:12px; color:var(--text-dim); margin-right:auto; }
 
@@ -350,6 +358,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="panel"><h4>Days to close</h4><p class="sub">Closed in the period</p><div class="hbars" id="durationBars"></div></div>
     </div>
 
+    <details class="panel more-stats" id="moreStats">
+      <summary><h4>More breakdowns</h4><span class="sub">Sub-issue type, ticket type, priority, requestor, avoidable, root cause and median days, for the same period</span></summary>
+      <p class="sub" id="moreMedian"></p>
+      <div class="grid-3" id="moreBars"></div>
+    </details>
+
     <div class="panel">
       <h4 id="closedTitle">Closed in the period</h4>
       <p class="sub">Newest first. Click a row to see every field.</p>
@@ -363,11 +377,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div id="view-tickets" class="hidden">
     <div class="filters">
       <div class="field grow"><label for="tSearch">Search</label><input class="ctl" id="tSearch" placeholder="Ticket, account, subject, requestor, solution…"></div>
-      <div class="field"><label for="tIssue">Issue type</label><select class="ctl" id="tIssue"></select></div>
-      <div class="field"><label for="tTicketType">Ticket type</label><select class="ctl" id="tTicketType"></select></div>
-      <div class="field"><label for="tSolution">Solution</label><select class="ctl" id="tSolution"></select></div>
+      <span id="tFiltersMain" style="display:contents"></span>
       <div class="field"><label for="tReopened">Reopened</label><select class="ctl" id="tReopened"><option value="">All tickets</option><option value="yes">Reopened only</option><option value="no">Not reopened</option></select></div>
+      <button class="btn btn-ghost" id="btnMoreFilters" aria-expanded="false">More filters</button>
     </div>
+    <div class="filters hidden" id="tFiltersMore"></div>
     <div class="list-head">
       <span class="count" id="tCount"></span>
       <button class="btn btn-ghost" id="btnExportAll"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
@@ -643,12 +657,33 @@ function fillSelect(sel, values, allLabel){
   sel.innerHTML = `<option value="">${esc(allLabel)}</option>` + values.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('');
   if([...sel.options].some(o => o.value === cur)) sel.value = cur;
 }
+// Ticket filters. "more" ones sit behind the More filters button; the report keeps only the main ones in view.
+const NONE = '__none__';   // option value for tickets with the field empty
+const TFILTERS = [
+  { id:'tIssue',     label:'Issue type',            get:t=>t.issue_type },
+  { id:'tSolution',  label:'Solution',              get:t=>t._sol },
+  { id:'tTicketType',label:'Ticket type',           get:t=>t.ticket_type, more:true },
+  { id:'tSubIssue',  label:'Sub-issue type',        get:t=>t.sub_issue_type, more:true },
+  { id:'tPriority',  label:'Priority',              get:t=>t.priority, more:true },
+  { id:'tRequestor', label:'Requestor',             get:t=>t.internal_requestor, more:true },
+  { id:'tScanner',   label:'Scanner model',         get:t=>t._sp.details.scanner, more:true },
+  { id:'tAvoidable', label:'Avoidable',             get:t=>t._sp.details.avoidable, more:true },
+  { id:'tRootCause', label:'Root cause',            get:t=>t._sp.details.rootcause, more:true },
+  { id:'tCsat',      label:'Customer satisfaction', get:t=>isCsat(t) ? 'Yes' : 'No', more:true },
+];
+$('tFiltersMain').innerHTML = TFILTERS.filter(f => !f.more).map(f => `<div class="field"><label for="${f.id}">${f.label}</label><select class="ctl" id="${f.id}"></select></div>`).join('');
+$('tFiltersMore').innerHTML = TFILTERS.filter(f => f.more).map(f => `<div class="field"><label for="${f.id}">${f.label}</label><select class="ctl" id="${f.id}"></select></div>`).join('');
+function showMoreFilters(on){ $('tFiltersMore').classList.toggle('hidden', !on); $('btnMoreFilters').setAttribute('aria-expanded', on); $('btnMoreFilters').textContent = on ? 'Fewer filters' : 'More filters'; }
+$('btnMoreFilters').addEventListener('click', ()=> showMoreFilters($('tFiltersMore').classList.contains('hidden')));
 function fillFilterOptions(){
-  const issues = distinct(t=>t.issue_type), types = distinct(t=>t.ticket_type), sols = distinct(t=>t._sol);
-  fillSelect($('tIssue'), issues, 'All issue types');
-  fillSelect($('tTicketType'), types, 'All ticket types');
-  fillSelect($('tSolution'), sols, 'All solutions');
+  TFILTERS.forEach(f => {
+    const sel = $(f.id), cur = sel.value;
+    const vals = distinct(f.get), empty = T.some(t => !(f.get(t) || '').trim());
+    sel.innerHTML = `<option value="">All</option>` + vals.map(v => `<option value="${esc(v)}">${esc(v)}</option>`).join('') + (empty ? `<option value="${NONE}">${NOT_SET}</option>` : '');
+    if([...sel.options].some(o => o.value === cur)) sel.value = cur;
+  });
 }
+const matchFilter = (f, t, v) => v === NONE ? !(f.get(t) || '').trim() : same(f.get(t), v);
 const same = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLowerCase();
 
 /* ============================================================
@@ -761,9 +796,10 @@ function renderReport(){
   $('kCsatFoot').textContent = closed.length ? `${Math.round(csat / closed.length * 100)}% of closed (sub-issue type)` : 'Sub-issue type "Customer satisfaction"';
 
   renderTrend(base);
-  const toTickets = (field) => r => openTicketsWith({ [field]: r.label === NOT_SET ? '' : r.label, period:true });
-  renderHbars($('solutionBars'), countBy(closed, t=>t._sol), toTickets('solution'));
-  renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('issue'));
+  const toTickets = id => r => openTicketsWith({ filters:{ [id]: r.label }, period:true });
+  renderHbars($('solutionBars'), countBy(closed, t=>t._sol), toTickets('tSolution'));
+  renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('tIssue'));
+  renderMoreStats(closed, durs, toTickets);
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
@@ -776,6 +812,15 @@ function renderReport(){
       <td>${esc(t._sol)}</td></tr>`).join('')
     : '<tr><td colspan="6" class="empty">Nothing closed in this period</td></tr>';
   bindRows($('closedTable'));
+}
+
+// Breakdowns kept out of the main view, in the collapsed "More breakdowns" panel.
+function renderMoreStats(closed, durs, toTickets){
+  const med = median(durs);
+  $('moreMedian').textContent = med == null ? 'Median days to close: –' : `Median days to close: ${med.toFixed(1)} (half of the tickets closed faster). Longest: ${Math.max(...durs).toFixed(1)} days.`;
+  const ids = ['tSubIssue','tTicketType','tPriority','tRequestor','tAvoidable','tRootCause'];
+  $('moreBars').innerHTML = ids.map(id => `<div><h5>${TFILTERS.find(f => f.id === id).label}</h5><div class="hbars" id="more-${id}"></div></div>`).join('');
+  ids.forEach(id => { const f = TFILTERS.find(x => x.id === id); renderHbars($('more-' + id), countBy(closed, f.get), toTickets(id), 6); });
 }
 
 // Closed per week/month/quarter/year: the 12 periods ending with the selected one.
@@ -1222,17 +1267,17 @@ function switchView(v){
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
 let TICKET_PERIOD = null;   // [start, end) when opened from a report bar
-function openTicketsWith({ issue = '', ticketType = '', solution = '', reopened = false, period = false }){
+// filters: { tIssue: 'value', ... }; NOT_SET means tickets with the field empty.
+function openTicketsWith({ filters = {}, reopened = false, period = false }){
   $('tSearch').value = '';
-  $('tIssue').value = issue;
-  $('tTicketType').value = ticketType;
-  $('tSolution').value = solution;
+  TFILTERS.forEach(f => { const v = filters[f.id]; $(f.id).value = v == null ? '' : v === NOT_SET ? NONE : v; });
+  showMoreFilters(TFILTERS.some(f => f.more && $(f.id).value));
   $('tReopened').value = reopened ? 'yes' : '';
   TICKET_PERIOD = period ? bounds(PERIOD, ANCHOR) : null;
   switchView('tickets');
 }
 $('tSearch').addEventListener('input', renderTickets);
-['tIssue','tTicketType','tSolution','tReopened'].forEach(id => $(id).addEventListener('change', renderTickets));
+TFILTERS.map(f => f.id).concat('tReopened').forEach(id => $(id).addEventListener('change', renderTickets));
 document.querySelectorAll('#ticketsTable th[data-sort]').forEach(th => th.addEventListener('click', ()=>{
   const k = th.dataset.sort;
   SORT = SORT.key === k ? { key:k, dir:-SORT.dir } : { key:k, dir: ['opened_at','closed_at','days'].includes(k) ? -1 : 1 };
@@ -1240,11 +1285,10 @@ document.querySelectorAll('#ticketsTable th[data-sort]').forEach(th => th.addEve
 }));
 
 function ticketRows(){
-  const q = $('tSearch').value.trim().toLowerCase(), it = $('tIssue').value, tt = $('tTicketType').value, so = $('tSolution').value;
+  const q = $('tSearch').value.trim().toLowerCase();
+  const active = TFILTERS.map(f => [f, $(f.id).value]).filter(([, v]) => v);
   return T.filter(t => {
-    if(it && !same(t.issue_type, it)) return false;
-    if(tt && !same(t.ticket_type, tt)) return false;
-    if(so && !same(t._sol, so)) return false;
+    if(active.some(([f, v]) => !matchFilter(f, t, v))) return false;
     const ro = $('tReopened').value;
     if(ro && (ro === 'yes') !== !!t.reopen_count) return false;
     if(TICKET_PERIOD && !inRange(t._c, TICKET_PERIOD[0], TICKET_PERIOD[1])) return false;
