@@ -123,6 +123,30 @@
   .stepper{ display:flex; align-items:center; gap:6px; }
   .stepper .lbl{ font-size:14px; font-weight:800; min-width:190px; text-align:center; font-variant-numeric:tabular-nums; }
   .stepper .btn{ padding:7px 9px; }
+  .stepper .btn.lbl{ padding:7px 12px; color:var(--text); }
+  .cal-anchor{ position:relative; }
+  .cal-pop{ position:absolute; top:calc(100% + 8px); left:50%; transform:translateX(-50%); z-index:120; display:none; background:var(--bg-elev); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:14px 16px; width:max-content; }
+  .cal-pop.show{ display:block; }
+  .cal-head{ display:flex; justify-content:space-between; align-items:center; margin-bottom:-26px; position:relative; z-index:1; pointer-events:none; }
+  .cal-head .icon-btn{ pointer-events:auto; width:30px; height:30px; }
+  .cal-months{ display:flex; gap:26px; }
+  .cal-month h5{ margin:6px 0 10px; text-align:center; font-size:13px; }
+  .cal-grid{ display:grid; grid-template-columns:repeat(7, 38px); row-gap:2px; }
+  .cal-grid .dow{ font-size:10.5px; color:var(--text-dim); text-align:center; padding-bottom:6px; font-weight:700; }
+  .cal-day{ height:38px; border:none; background:none; color:var(--text); font-size:13px; cursor:pointer; position:relative; font-variant-numeric:tabular-nums; }
+  .cal-day span{ display:flex; align-items:center; justify-content:center; width:36px; height:36px; margin:auto; border-radius:50%; border:1px solid transparent; }
+  .cal-day:hover span{ border-color:var(--text); }
+  .cal-day.has::after{ content:''; position:absolute; left:50%; bottom:5px; width:4px; height:4px; margin-left:-2px; border-radius:50%; background:var(--accent); }
+  .cal-day.in{ background:var(--accent-soft); }
+  .cal-day.start{ background:linear-gradient(to right, transparent 50%, var(--accent-soft) 50%); }
+  .cal-day.end{ background:linear-gradient(to left, transparent 50%, var(--accent-soft) 50%); }
+  .cal-day.start.end{ background:none; }
+  .cal-day.start span, .cal-day.end span{ background:var(--accent); color:#00110f; font-weight:800; }
+  .cal-day.start.has::after, .cal-day.end.has::after{ background:#00110f; }
+  .cal-day.today span{ text-decoration:underline; }
+  .cal-foot{ display:flex; align-items:center; gap:8px; margin-top:12px; padding-top:12px; border-top:1px solid var(--border); font-size:12.5px; color:var(--text-dim); }
+  .cal-foot .spacer{ flex:1; }
+  @media (max-width:700px){ .cal-month + .cal-month{ display:none; } .cal-pop{ position:fixed; left:50%; top:90px; } .cal-grid{ grid-template-columns:repeat(7, 40px); } }
 
   /* ---------- KPI tiles ---------- */
   .kpis{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:12px; margin-bottom:12px; }
@@ -279,7 +303,14 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="field"><label>Period</label>
         <div class="stepper">
           <button class="btn btn-ghost" id="btnPrev" title="Previous"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <span class="lbl" id="periodLabel"></span>
+          <div class="cal-anchor">
+            <button class="btn btn-ghost lbl" id="periodLabel" title="Pick any date range" aria-haspopup="dialog"></button>
+            <div class="cal-pop" id="calPop" role="dialog" aria-label="Pick dates">
+              <div class="cal-head"><button class="icon-btn" id="calPrev" title="Previous month"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span></span><button class="icon-btn" id="calNext" title="Next month"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+              <div class="cal-months" id="calMonths"></div>
+              <div class="cal-foot"><span id="calSel">Pick the first day</span><span class="spacer"></span><button class="btn btn-ghost" id="calClear">Clear</button><button class="btn btn-primary" id="calApply" disabled>Apply</button></div>
+            </div>
+          </div>
           <button class="btn btn-ghost" id="btnNext" title="Next"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
           <button class="btn btn-ghost" id="btnLatest" title="Go to the latest period with closed escalations">Latest</button>
         </div>
@@ -298,6 +329,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="kParts">–</div><div class="k-foot" id="kPartsFoot"></div></div>
       <div class="kpi" id="kReopenedTile" style="cursor:pointer" title="See the reopened tickets closed in this period"><div class="k-label">Reopened</div><div class="k-value" id="kReopened">–</div><div class="k-foot">Closed in the period, came back in a later upload</div></div>
       <div class="kpi"><div class="k-label">Avoidable</div><div class="k-value" id="kAvoid">–</div><div class="k-foot" id="kAvoidFoot"></div></div>
+      <div class="kpi"><div class="k-label">Customer satisfaction</div><div class="k-value" id="kCsat">–</div><div class="k-foot" id="kCsatFoot"></div></div>
     </div>
 
     <div class="grid-2">
@@ -325,7 +357,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
     <div class="grid-3">
       <div class="panel"><h4>Avoidable</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="avoidableBars"></div></div>
-      <div class="panel" style="grid-column:span 2"><h4>By root cause</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="rootCauseBars"></div></div>
+      <div class="panel"><h4>By scanner model</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="scannerBars"></div></div>
+      <div class="panel"><h4>By root cause</h4><p class="sub">Set on each ticket, closed in the period</p><div class="hbars" id="rootCauseBars"></div></div>
     </div>
 
     <div class="panel">
@@ -499,8 +532,10 @@ function solutionOf(t){ const s = solutionText(t.solution_provided); return s.le
 
 /* Details filled in on the page for each ticket (table escalation_ticket_details).
    They live apart from the uploaded data, so a new upload of the same ticket keeps them. */
+const SCANNER_MODELS = ['Lumina - Cart', '5D Plus - Cart', '5D Plus Lite - Cart', 'Office PC/other'];
 const DETAIL_FIELDS = [
   { key:'avoidable',   col:'avoidable',         label:'Avoidable', options:['Yes','No'] },
+  { key:'scanner',     col:'scanner_model',     label:'Scanner model', options:SCANNER_MODELS },
   { key:'rootcause',   col:'root_cause',        label:'Root cause', hint:'Short title, e.g. Incomplete network troubleshooting' },
   { key:'origin',      col:'origin',            label:'Origin of the escalation', long:true, hint:'What happened and why it was escalated' },
   { key:'prevtickets', col:'previous_tickets',  label:'Previous tickets' },
@@ -630,8 +665,12 @@ const same = (a, b) => (a || '').trim().toLowerCase() === (b || '').trim().toLow
 /* ============================================================
    REPORT
    ============================================================ */
+// Custom range (calendar): ANCHOR is its first day and CUSTOM_DAYS its length.
+let CUSTOM_DAYS = 7;
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
 // [start, end) of the period that contains d
 function bounds(period, d){
+  if(period === 'custom'){ const s = startOfDay(d); return [s, addDays(s, CUSTOM_DAYS)]; }
   if(period === 'week'){ const s = mondayOf(d), e = new Date(s); e.setDate(e.getDate()+7); return [s, e]; }
   if(period === 'month') return [new Date(d.getFullYear(), d.getMonth(), 1), new Date(d.getFullYear(), d.getMonth()+1, 1)];
   if(period === 'quarter'){ const q = Math.floor(d.getMonth()/3)*3; return [new Date(d.getFullYear(), q, 1), new Date(d.getFullYear(), q+3, 1)]; }
@@ -639,6 +678,7 @@ function bounds(period, d){
 }
 function shift(period, d, n){
   const x = new Date(d);
+  if(period === 'custom') return addDays(startOfDay(d), CUSTOM_DAYS*n);
   if(period === 'week') x.setDate(x.getDate() + 7*n);
   else if(period === 'month') x.setMonth(x.getMonth() + n, 1);
   else if(period === 'quarter') x.setMonth(x.getMonth() + 3*n, 1);
@@ -646,22 +686,23 @@ function shift(period, d, n){
   return x;
 }
 function periodName(period, s, e){
+  if(period === 'custom'){ const last = addDays(e, -1); return +s === +last ? fmtDate(s) : `${s.getFullYear() === last.getFullYear() ? fmtShort(s) : fmtDate(s)} – ${fmtDate(last)}`; }
   if(period === 'week'){ const last = new Date(e); last.setDate(last.getDate()-1); return `${fmtShort(s)} – ${fmtShort(last)}, ${last.getFullYear()}`; }
   if(period === 'month') return s.toLocaleDateString('en-US', { month:'long', year:'numeric' });
   if(period === 'quarter') return `Q${Math.floor(s.getMonth()/3)+1} ${s.getFullYear()}`;
   return String(s.getFullYear());
 }
-const PERIOD_WORD = { week:'week', month:'month', quarter:'quarter', year:'year' };
+const PERIOD_WORD = { week:'week', month:'month', quarter:'quarter', year:'year', custom:'period' };
 
-document.querySelectorAll('#periodSeg button').forEach(b => b.addEventListener('click', ()=>{
-  PERIOD = b.dataset.period;
-  document.querySelectorAll('#periodSeg button').forEach(x => x.classList.toggle('active', x === b));
-  renderReport();
-}));
+function setPeriod(p){
+  PERIOD = p;
+  document.querySelectorAll('#periodSeg button').forEach(x => x.classList.toggle('active', x.dataset.period === p));
+}
+document.querySelectorAll('#periodSeg button').forEach(b => b.addEventListener('click', ()=>{ setPeriod(b.dataset.period); renderReport(); }));
 $('btnPrev').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], -1); renderReport(); });
 $('btnNext').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], 1); renderReport(); });
 $('kReopenedTile').addEventListener('click', ()=> openTicketsWith({ reopened:true, period:true }));
-$('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Date(); renderReport(); });
+$('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Date(); if(PERIOD === 'custom') ANCHOR = addDays(startOfDay(ANCHOR), 1 - CUSTOM_DAYS); renderReport(); });
 
 function reportBase(){ return T; }
 const inRange = (d, s, e) => d && d >= s && d < e;
@@ -688,6 +729,8 @@ function deltaText(cur, prev){
   return d === 0 ? `Same as previous ${PERIOD_WORD[PERIOD]}` : `${d > 0 ? '+' : '−'}${Math.abs(d)} vs previous ${PERIOD_WORD[PERIOD]} (${prev})`;
 }
 const isPart = t => /^part replacement/i.test(t._sol);
+// Customer satisfaction cases: Salesforce sub-issue type "Customer satisfaction".
+const isCsat = t => /^customer\s+satisfaction$/i.test((t.sub_issue_type || '').trim());
 
 function periodData(){
   const [s, e] = bounds(PERIOD, ANCHOR);
@@ -726,6 +769,9 @@ function renderReport(){
   const avYes = closed.filter(t => t._sp.details.avoidable === 'Yes').length, avSet = closed.filter(t => t._sp.details.avoidable === 'Yes' || t._sp.details.avoidable === 'No').length;
   $('kAvoid').textContent = avYes;
   $('kAvoidFoot').textContent = avSet ? `${Math.round(avYes / avSet * 100)}% of the ${avSet} with Avoidable filled` : 'None with Avoidable filled';
+  const csat = closed.filter(isCsat).length;
+  $('kCsat').textContent = csat;
+  $('kCsatFoot').textContent = closed.length ? `${Math.round(csat / closed.length * 100)}% of closed (sub-issue type)` : 'Sub-issue type "Customer satisfaction"';
 
   renderTrend(base);
   const toTickets = (field) => r => openTicketsWith({ [field]: r.label === NOT_SET ? '' : r.label, period:true });
@@ -740,6 +786,7 @@ function renderReport(){
   const avOther = closed.length - avRows[0].value - avRows[1].value;
   renderHbars($('avoidableBars'), closed.length ? avRows.concat(avOther ? [{ label:NOT_SET, value:avOther }] : []) : [], null);
   renderHbars($('rootCauseBars'), countBy(closed, t=>t._sp.details.rootcause));
+  renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
   renderHbars($('durationBars'), durs.length ? durRows : [], null);
@@ -755,17 +802,18 @@ function renderReport(){
 
 // Closed per week/month/quarter/year: the 12 periods ending with the selected one.
 function renderTrend(base){
+  const TP = PERIOD === 'custom' ? 'week' : PERIOD;   // a custom range is charted by week
   const el = $('trendChart');
-  const N = PERIOD === 'year' ? 5 : 12;
-  const [curStart] = bounds(PERIOD, ANCHOR);
+  const N = TP === 'year' ? 5 : 12;
+  const [curStart] = bounds(TP, ANCHOR);
   const buckets = [];
   for(let i = N-1; i >= 0; i--){
-    const [s, e] = bounds(PERIOD, shift(PERIOD, curStart, -i));
-    const label = PERIOD === 'week' ? fmtShort(s) : PERIOD === 'month' ? s.toLocaleDateString('en-US', { month:'short', year:'2-digit' }) : PERIOD === 'quarter' ? `Q${Math.floor(s.getMonth()/3)+1} ’${String(s.getFullYear()).slice(2)}` : String(s.getFullYear());
+    const [s, e] = bounds(TP, shift(TP, curStart, -i));
+    const label = TP === 'week' ? fmtShort(s) : TP === 'month' ? s.toLocaleDateString('en-US', { month:'short', year:'2-digit' }) : TP === 'quarter' ? `Q${Math.floor(s.getMonth()/3)+1} ’${String(s.getFullYear()).slice(2)}` : String(s.getFullYear());
     buckets.push({ s, e, label, value: base.filter(t => inRange(t._c, s, e)).length, cur: i === 0 });
   }
-  $('trendTitle').textContent = `Closed per ${PERIOD_WORD[PERIOD]}`;
-  $('trendSub').textContent = `Last ${N} ${PERIOD_WORD[PERIOD]}s, the selected one highlighted. Click a bar to jump to it.`;
+  $('trendTitle').textContent = `Closed per ${PERIOD_WORD[TP]}`;
+  $('trendSub').textContent = `Last ${N} ${PERIOD_WORD[TP]}s, the selected one highlighted. Click a bar to jump to it.`;
 
   const W = Math.max(el.clientWidth || 600, 280), H = 230, padL = 30, padR = 8, padT = 10, padB = 26;
   const iw = W - padL - padR, ih = H - padT - padB;
@@ -786,23 +834,77 @@ function renderTrend(base){
     bars += `<path class="bar${b.cur ? ' cur' : ''}" data-i="${i}" d="${path}"/>`;
     hits += `<rect class="hit" data-i="${i}" x="${padL + bw*i}" y="${padT}" width="${bw}" height="${ih}"/>`;
   });
-  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Escalations closed per ${PERIOD_WORD[PERIOD]}"><g class="grid">${grid}</g><g class="axis">${axis}</g><g>${bars}</g><g>${hits}</g></svg><div class="tip" id="trendTip"></div>`;
+  el.innerHTML = `<svg viewBox="0 0 ${W} ${H}" height="${H}" role="img" aria-label="Escalations closed per ${PERIOD_WORD[TP]}"><g class="grid">${grid}</g><g class="axis">${axis}</g><g>${bars}</g><g>${hits}</g></svg><div class="tip" id="trendTip"></div>`;
   const tip = $('trendTip');
   el.querySelectorAll('.hit').forEach(h => {
     const i = +h.dataset.i, b = buckets[i];
     h.addEventListener('mouseenter', ()=>{
       el.querySelectorAll('.bar').forEach(p => p.classList.toggle('hl', +p.dataset.i === i));
-      tip.innerHTML = `${esc(periodName(PERIOD, b.s, b.e))}<br><b>${b.value}</b> closed`;
+      tip.innerHTML = `${esc(periodName(TP, b.s, b.e))}<br><b>${b.value}</b> closed`;
       const r = el.querySelector('svg').getBoundingClientRect();
       tip.style.left = ((padL + bw*i + bw/2) / W * r.width) + 'px';
       tip.style.top = (Math.min(y(b.value), padT + ih - 4) / H * r.height) + 'px';
       tip.style.display = 'block';
     });
     h.addEventListener('mouseleave', ()=>{ tip.style.display = 'none'; el.querySelectorAll('.bar').forEach(p=>p.classList.remove('hl')); });
-    h.addEventListener('click', ()=>{ ANCHOR = b.s; renderReport(); });
+    h.addEventListener('click', ()=>{ if(PERIOD === 'custom') setPeriod('week'); ANCHOR = b.s; renderReport(); });
   });
 }
 let resizeT; window.addEventListener('resize', ()=>{ clearTimeout(resizeT); resizeT = setTimeout(()=>{ if(currentView() === 'report') renderReport(); }, 150); });
+
+
+/* ---------- Date range calendar: click the first day, then the last ---------- */
+const CAL = { month: null, a: null, b: null, hover: null };
+const sameDay = (x, y) => x && y && +startOfDay(x) === +startOfDay(y);
+function openCal(){
+  const [s, e] = bounds(PERIOD, ANCHOR);
+  CAL.a = s; CAL.b = addDays(e, -1); CAL.hover = null;
+  CAL.month = new Date(CAL.b.getFullYear(), CAL.b.getMonth() - (window.innerWidth > 700 ? 1 : 0), 1);   // phones show one month
+  renderCal(); $('calPop').classList.add('show');
+}
+function closeCal(){ $('calPop').classList.remove('show'); }
+function renderCal(){
+  const closedDays = new Set(T.filter(t => t._c).map(t => +startOfDay(t._c)));
+  const today = startOfDay(new Date());
+  const lo = CAL.a, hi = CAL.b || (CAL.hover && CAL.hover >= CAL.a ? CAL.hover : null);
+  const month = m => {
+    const first = new Date(m.getFullYear(), m.getMonth(), 1), days = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+    const lead = (first.getDay() + 6) % 7;   // weeks start on Monday
+    let cells = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="dow">${d}</div>`).join('') + '<div></div>'.repeat(lead);
+    for(let i = 1; i <= days; i++){
+      const d = new Date(m.getFullYear(), m.getMonth(), i), cls = ['cal-day'];
+      if(closedDays.has(+d)) cls.push('has');
+      if(+d === +today) cls.push('today');
+      if(lo && sameDay(d, lo)) cls.push('start');
+      if(hi && sameDay(d, hi)) cls.push('end');
+      if(lo && hi && d > lo && d < hi) cls.push('in');
+      cells += `<button class="${cls.join(' ')}" data-d="${+d}" title="${closedDays.has(+d) ? 'Escalations closed this day' : ''}"><span>${i}</span></button>`;
+    }
+    return `<div class="cal-month"><h5>${m.toLocaleDateString('en-US', { month:'long', year:'numeric' })}</h5><div class="cal-grid">${cells}</div></div>`;
+  };
+  $('calMonths').innerHTML = month(CAL.month) + month(new Date(CAL.month.getFullYear(), CAL.month.getMonth()+1, 1));
+  $('calSel').textContent = !CAL.a ? 'Pick the first day' : !CAL.b ? `${fmtDate(CAL.a)}: now pick the last day` : periodName('custom', CAL.a, addDays(CAL.b, 1));
+  $('calApply').disabled = !(CAL.a && CAL.b);
+  $('calMonths').querySelectorAll('.cal-day').forEach(btn => {
+    const d = new Date(+btn.dataset.d);
+    btn.addEventListener('click', ev => {
+      ev.stopPropagation();
+      if(!CAL.a || CAL.b || d < CAL.a){ CAL.a = d; CAL.b = null; } else CAL.b = d;
+      renderCal();
+    });
+    btn.addEventListener('mouseenter', ()=>{ if(CAL.a && !CAL.b && !sameDay(CAL.hover, d)){ CAL.hover = d; renderCal(); } });
+  });
+}
+$('periodLabel').addEventListener('click', ev => { ev.stopPropagation(); $('calPop').classList.contains('show') ? closeCal() : openCal(); });
+$('calPop').addEventListener('click', ev => ev.stopPropagation());
+$('calPrev').addEventListener('click', ()=>{ CAL.month = new Date(CAL.month.getFullYear(), CAL.month.getMonth()-1, 1); renderCal(); });
+$('calNext').addEventListener('click', ()=>{ CAL.month = new Date(CAL.month.getFullYear(), CAL.month.getMonth()+1, 1); renderCal(); });
+$('calClear').addEventListener('click', ()=>{ CAL.a = CAL.b = CAL.hover = null; renderCal(); });
+$('calApply').addEventListener('click', ()=>{
+  CUSTOM_DAYS = Math.round((startOfDay(CAL.b) - startOfDay(CAL.a)) / 86400000) + 1;
+  ANCHOR = startOfDay(CAL.a); setPeriod('custom'); closeCal(); renderReport();
+});
+document.addEventListener('click', closeCal);
 
 /* ============================================================
    SUMMARY TEXT + PDF REPORT — built in the page from the selected period's tickets
@@ -814,7 +916,7 @@ const pct = (n, of) => of ? Math.round(n / of * 100) : 0;
 const d1 = v => v == null ? '–' : v.toFixed(1);
 const avgOf = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : null;
 const isBusiness = t => /business/i.test(t.priority || '');
-const PERIOD_ADJ = { week:'Weekly', month:'Monthly', quarter:'Quarterly', year:'Yearly' };
+const PERIOD_ADJ = { week:'Weekly ', month:'Monthly ', quarter:'Quarterly ', year:'Yearly ', custom:'' };
 const fmtLong = d => d.toLocaleDateString('en-US', { month:'long', day:'numeric' });
 const REPL_RE = /replacement\s+ticket\s*(?:#|number|no\.?)?\s*:?\s*(\d{5,})/i;
 
@@ -824,6 +926,7 @@ function statsFor(rows){
 }
 // Second comparison column: the month before a week, the same month/quarter a year earlier.
 function comparePeriod(s){
+  if(PERIOD === 'custom') return null;
   if(PERIOD === 'week'){ const ms = new Date(s.getFullYear(), s.getMonth()-1, 1); return { label: ms.toLocaleDateString('en-US', { month:'long' }), s: ms, e: new Date(ms.getFullYear(), ms.getMonth()+1, 1) }; }
   if(PERIOD === 'month' || PERIOD === 'quarter'){ const cs = new Date(s.getFullYear()-1, s.getMonth(), 1), [, ce] = bounds(PERIOD, cs); return { label: periodName(PERIOD, cs, ce), s: cs, e: ce }; }
   return null;
@@ -836,6 +939,11 @@ function rangeText(s, e, closed){
     return { during: `During the week of ${fmtLong(s)} to ${fmtLong(last)}`, title: `Week of ${fmtLong(s)} to ${fmtLong(last)}, ${last.getFullYear()}`, short: `${fmtLong(s)} to ${fmtLong(last)}`, last };
   }
   const last = new Date(e); last.setDate(last.getDate()-1);
+  if(PERIOD === 'custom'){
+    const one = +s === +last, yr = s.getFullYear() === last.getFullYear() ? '' : `, ${s.getFullYear()}`;
+    const span = one ? fmtLong(s) : `${fmtLong(s)}${yr} to ${fmtLong(last)}`;
+    return { during: one ? `On ${span}` : `From ${span}`, title: one ? `${fmtLong(s)}, ${s.getFullYear()}` : `${fmtLong(s)}${yr} to ${fmtLong(last)}, ${last.getFullYear()}`, short: span, last };
+  }
   const name = periodName(PERIOD, s, e);
   return { during: `During ${name}`, title: PERIOD === 'month' || PERIOD === 'year' ? name : `${name} (${fmtLong(s)} to ${fmtLong(last)})`, short: name, last };
 }
@@ -883,6 +991,7 @@ function reportData(){
     valid: stories.filter(x => x.validity === 'Valid').length,
     avoid: stories.filter(x => x.avoidable).length,
     parts: closed.filter(isPart).length,
+    csat: closed.filter(isCsat).length,
   };
 }
 
@@ -904,8 +1013,10 @@ function buildSummary(){
   const unset = n - R.valid - R.avoid;
   if(R.valid || R.avoid){
     const v = R.valid ? `${cap(word(R.valid))} of the ${word(n)} closed escalations ${R.valid === 1 ? 'was' : 'were'} marked valid` : `None of the ${word(n)} closed escalations ${n === 1 ? 'was' : 'were'} marked valid`;
-    p1.push(`${v} and ${word(R.avoid)} ${R.avoid === 1 ? 'was' : 'were'} classified as avoidable${unset ? `; ${word(unset)} ${unset === 1 ? 'has' : 'have'} no Avoidable value` : ''}.`);
+    p1.push(`${v} and ${R.avoid ? word(R.avoid) : 'none'} ${R.avoid === 1 ? 'was' : 'were'} classified as avoidable${unset ? `; ${word(unset)} ${unset === 1 ? 'has' : 'have'} no Avoidable value` : ''}.`);
   } else p1.push('None of the closed escalations has the Avoidable field filled in.');
+  if(n > 1) p1.push(R.csat ? `${cap(word(R.csat))} of the ${word(n)} ${R.csat === 1 ? 'was a customer satisfaction case' : 'were customer satisfaction cases'} (${pct(R.csat, n)}%).` : 'None were customer satisfaction cases.');
+  else p1.push(R.csat ? 'It was a customer satisfaction case.' : 'It was not a customer satisfaction case.');
 
   const p2 = [];
   if(cur.avg != null){
@@ -988,10 +1099,10 @@ function buildReportHtml(){
   const asOf = UPLOADS[0] ? ` Data as of the upload of ${fmtDateTime(new Date(UPLOADS[0].uploaded_at))}.` : '';
 
   const page1 = `<section class="page">
-    ${header(`${PERIOD_ADJ[PERIOD]} Escalations Executive Summary`, `Tickets closed this ${pw} and open escalations`)}
+    ${header(`${PERIOD_ADJ[PERIOD]}Escalations Executive Summary`, `Tickets closed this ${pw} and open escalations`)}
     <div class="body">
       <div class="kpis">
-        <div class="kpi navy"><div class="kl">Tickets closed</div><div class="kv">${n}</div><div class="kf">${R.valid} valid, ${R.avoid} avoidable${unset ? `, ${unset} not set` : ''}</div></div>
+        <div class="kpi navy"><div class="kl">Tickets closed</div><div class="kv">${n}</div><div class="kf">${R.valid} valid, ${R.avoid} avoidable${unset ? `, ${unset} not set` : ''}<br>${R.csat} customer satisfaction</div></div>
         <div class="kpi amber"><div class="kl">Avg resolution</div><div class="kv">${cur.avg == null ? '–' : d1(cur.avg) + ' days'}</div><div class="kf">${cur.avg == null ? '' : Math.round(cur.avg * 24) + ' hours on average'}</div></div>
         <div class="kpi green"><div class="kl">Median resolution</div><div class="kv">${cur.med == null ? '–' : d1(cur.med) + ' days'}</div><div class="kf">Half of tickets closed faster</div></div>
         <div class="kpi red"><div class="kl">Closed within 3 days</div><div class="kv">${pctOr(cur.in3, ofD)}</div><div class="kf">${cur.in3} of ${ofD} tickets</div></div>
@@ -1002,7 +1113,7 @@ function buildReportHtml(){
         ${ofD ? `<div class="dist">${dist.filter(b => b.value).map(b => `<span style="flex:${b.value};background:${b.color}">${pct(b.value, ofD)}%</span>`).join('')}</div>
         <div class="dist-l">${dist.map(b => `<span>${b.label} (${b.value})</span>`).join('')}</div>` : '<p class="note">Nothing closed in this period.</p>'}
       </div>
-      <div class="cols">${vol(t => t.issue_type, 'Volume by Issue Type')}
+      <div class="cols">${vol(t => t._sp.details.scanner, 'Volume by Model')}
         <div class="block"><h2>This ${PW} vs Previous ${PW}${cmp ? ` and ${esc(cmp.label)}` : ''}</h2>
           <table class="grid"><thead><tr><th>Metric</th><th>This ${pw}</th><th>Previous ${pw}</th>${cmp ? `<th>${esc(cmp.label)}</th>` : ''}</tr></thead><tbody>
           ${cmpRows.map(([label, f]) => `<tr><td>${label}</td><td class="hl">${f(cur)}</td><td>${f(prev)}</td>${cmp ? `<td>${f(cmp)}</td>` : ''}</tr>`).join('')}
@@ -1014,7 +1125,7 @@ function buildReportHtml(){
   </section>`;
 
   const page2 = `<section class="page">
-    ${header(`${PERIOD_ADJ[PERIOD]} Root Causes, Resolutions and Open Items`, 'What happened, how it was resolved and what remains open')}
+    ${header(`${PERIOD_ADJ[PERIOD]}Root Causes, Resolutions and Open Items`, 'What happened, how it was resolved and what remains open')}
     <div class="body">
       <div class="block"><h2>Root Cause and Resolution Summary</h2>
         ${causeRows.length ? `<table class="grid"><thead><tr><th style="width:17%">Root Cause</th><th style="width:7%">Tickets</th><th style="width:7%">Avg Days</th><th>What Happened</th><th style="width:27%">How It Was Resolved</th></tr></thead><tbody>
@@ -1024,8 +1135,8 @@ function buildReportHtml(){
         </tbody></table>` : '<p class="note">Nothing closed in this period.</p>'}
       </div>
       <div class="block"><h2>Closed This ${PW} (${n})</h2>
-        ${n ? `<table class="grid"><thead><tr><th style="width:10%">Ticket</th><th style="width:9%">Days</th><th style="width:9%">Validity</th><th>Specific Origin</th></tr></thead><tbody>
-        ${R.stories.map(x => `<tr><td>${esc(x.t.ticket_number)}</td><td class="b ${daysCls(x.days)}">${x.days == null ? '–' : d1(x.days) + ' days'}</td><td>${x.validity}</td><td>${esc(cap(x.origin || x.issue))}</td></tr>`).join('')}
+        ${n ? `<table class="grid"><thead><tr><th style="width:10%">Ticket</th><th style="width:9%">Days</th><th style="width:9%">Validity</th><th style="width:8%">Cust. sat.</th><th>Specific Origin</th></tr></thead><tbody>
+        ${R.stories.map(x => `<tr><td>${esc(x.t.ticket_number)}</td><td class="b ${daysCls(x.days)}">${x.days == null ? '–' : d1(x.days) + ' days'}</td><td>${x.validity}</td><td>${isCsat(x.t) ? 'Yes' : 'No'}</td><td>${esc(cap(x.origin || x.issue))}</td></tr>`).join('')}
         </tbody></table>
         <div class="legend"><span><i style="background:#2e8b57"></i>Under 7 days</span><span><i style="background:#d4801f"></i>7 to 13.9 days</span><span><i style="background:#c0392b"></i>14 days or more</span></div>` : '<p class="note">Nothing closed in this period.</p>'}
       </div>
@@ -1037,7 +1148,7 @@ function buildReportHtml(){
     <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity set on each ticket in the tracker. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
   </section>`;
 
-  const title = `${PERIOD_ADJ[PERIOD]} Escalations ${R.range.short}${PERIOD === 'week' ? ' ' + R.range.last.getFullYear() : ''}`;
+  const title = `${PERIOD_ADJ[PERIOD]}Escalations ${R.range.short}${PERIOD === 'week' || PERIOD === 'custom' ? ' ' + R.range.last.getFullYear() : ''}`;
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(title)}</title><style>
   @page{ size: letter landscape; margin: 0; }
   *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -1103,6 +1214,7 @@ function exportRows(rows, name){
     COLUMNS.forEach(c => { o[c.label] = c.date ? (t['_' + (c.key === 'opened_at' ? 'o' : 'c')] || '') : (t[c.key] || ''); });
     o['Days to close'] = daysToClose(t) == null ? '' : +daysToClose(t).toFixed(1);
     o['Reopened'] = t.reopen_count ? 'Yes' : '';
+    o['Customer satisfaction'] = isCsat(t) ? 'Yes' : 'No';
     o['Solution'] = t._sp.solution;
     DETAIL_FIELDS.forEach(f => { o[f.label] = t._sp.details[f.key] || ''; });
     Object.entries(t.extra || {}).forEach(([k,v]) => { o[k] = v; });
@@ -1218,7 +1330,7 @@ function renderDetailForm(t){
   if(!ME || !ME.can_upload){ box.innerHTML = ''; return; }
   const d = t._sp.details;
   box.innerHTML = `<h4>Escalation details</h4>` + DETAIL_FIELDS.map(f => `<div class="field"><label for="df-${f.key}">${esc(f.label)}</label>${
-      f.options ? `<select class="ctl" id="df-${f.key}"><option value="">Not set</option>${f.options.map(o => `<option${d[f.key] === o ? ' selected' : ''}>${o}</option>`).join('')}</select>`
+      f.options ? `<select class="ctl" id="df-${f.key}"><option value="">Not set</option>${f.options.concat(d[f.key] && !f.options.includes(d[f.key]) ? [d[f.key]] : []).map(o => `<option${d[f.key] === o ? ' selected' : ''}>${esc(o)}</option>`).join('')}</select>`
       : f.long ? `<textarea class="ctl" id="df-${f.key}" rows="3" placeholder="${esc(f.hint || '')}">${esc(d[f.key] || '')}</textarea>`
       : `<input class="ctl" id="df-${f.key}" value="${esc(d[f.key] || '')}" placeholder="${esc(f.hint || '')}">`}</div>`).join('')
     + `<div class="modal-actions"><button class="btn btn-primary" id="btnSaveDetails">Save</button></div>`;
@@ -1240,7 +1352,7 @@ async function saveDetails(t){
 function closeDrawer(){ $('scrim').classList.remove('show'); $('drawer').classList.remove('show'); }
 $('btnCloseDrawer').addEventListener('click', closeDrawer);
 $('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); closeSummary(); });
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); } });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); closeCal(); } });
 
 /* ============================================================
    UPLOADS
