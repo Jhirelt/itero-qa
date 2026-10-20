@@ -2936,8 +2936,6 @@ function openTextPicker(btn){
   pop.innerHTML = '<div class="txt-pick-title ' + (kind === 'yes' ? 'y' : asFeedback ? 'f' : 'n') + '">' + escapeHtml(cfg.label) + ' · ' +
     (kind === 'yes' ? 'add as accomplishment' : asFeedback ? 'feedback text' : 'not met text') + '</div>' +
     (asFeedback ? '<div class="txt-pick-hint">Same examples as the deduction, shown without points.</div>' : '') +
-    (kind === 'yes' && !added ? '<div class="txt-pick-hint">Choose the text to add to the accomplishments.</div>' : '') +
-    (cfg.subtitle && cfg.subtitle.trim() ? '<div class="txt-pick-hint">' + escapeHtml(cfg.subtitle.trim()) + '</div>' : '') +
     opts.map((t, i)=> i < start ? '' : '<button type="button" class="txt-pick-opt' + ((kind === 'no' || added) && i === current ? ' active' : '') + '" data-idx="' + i + '">' +
       '<span class="num">' + (i - start + 1) + '</span><span class="txt">' + escapeHtml(t) + '</span></button>').join('') +
     (added ? '<button type="button" class="txt-pick-remove">Remove from accomplishments</button>' : '');
@@ -2978,14 +2976,54 @@ function setSummaryManual(manual){
   updateSummaryManualNote();
 }
 
+function firstName(name){
+  return String(name || '').trim().split(/\s+/)[0] || '';
+}
+
+// Applies what changed between two generated summaries to text the evaluator
+// edited: paragraphs the rubrics removed go away if they are still there word
+// for word, and new ones go in right after the paragraph they follow (or at the
+// end), so nothing the evaluator wrote is lost.
+function mergeSummary(text, oldAuto, newAuto){
+  // Paragraphs, with each "____" heading line starting its own one.
+  const split = (t)=> t.split(/\n{2,}|\n(?=_{5,})/);
+  const A = split(oldAuto), B = split(newAuto);
+  const L = Array.from({ length: A.length + 1 }, ()=> new Array(B.length + 1).fill(0));
+  for(let i = A.length - 1; i >= 0; i--) for(let j = B.length - 1; j >= 0; j--)
+    L[i][j] = A[i] === B[j] ? L[i + 1][j + 1] + 1 : Math.max(L[i + 1][j], L[i][j + 1]);
+  let i = 0, j = 0, cursor = null;
+  const insert = (block)=>{
+    if(cursor === null){ text = text.replace(/\s+$/, '') + '\n\n' + block; cursor = text.length; return; }
+    text = text.slice(0, cursor) + '\n\n' + block + text.slice(cursor);
+    cursor += 2 + block.length;
+  };
+  while(i < A.length || j < B.length){
+    if(i < A.length && j < B.length && A[i] === B[j]){
+      const at = text.indexOf(A[i], cursor === null ? 0 : cursor);
+      const found = at >= 0 ? at : text.indexOf(A[i]);
+      if(found >= 0) cursor = found + A[i].length;
+      i++; j++;
+    } else if(i < A.length && (j >= B.length || L[i + 1][j] >= L[i][j + 1])){
+      const at = text.indexOf(A[i]);
+      if(at >= 0){
+        const start = text.slice(Math.max(0, at - 2), at) === '\n\n' ? at - 2 : text[at - 1] === '\n' ? at - 1 : at;
+        text = text.slice(0, start) + text.slice(at + A[i].length);
+        cursor = start;
+      }
+      i++;
+    } else {
+      insert(B[j]);
+      j++;
+    }
+  }
+  return text.replace(/^\s+/, '');
+}
+
 function updateSummaryManualNote(){
   const note = document.getElementById('summaryManualNote');
   if(!note) return;
   note.classList.toggle('show', SUMMARY_MANUAL);
-  const stale = SUMMARY_MANUAL && AUTO_SUMMARY_AT_EDIT && AUTO_SUMMARY_AT_EDIT !== LAST_AUTO_SUMMARY;
-  note.querySelector('span').textContent = stale
-    ? 'Rubrics changed since you edited the summary. Your text was kept; Regenerate to rebuild it (this replaces your edits).'
-    : 'You edited this summary by hand, so rubric changes won\'t overwrite it.';
+  note.querySelector('span').textContent = 'You edited this summary. Your text stays; rubric changes are added to it.';
 }
 
 function todayLocal(){
@@ -3523,7 +3561,6 @@ function buildOutput(score, earned, possible, zeroTriggered){
   const rawReason = document.getElementById('fReason').value.trim();
 
   let fieldsBlock = [];
-  fieldsBlock.push('QA Evaluator: ' + (rawEvaluator || 'N/A'));
   fieldsBlock.push('Caller: ' + (rawCaller || 'N/A'));
   fieldsBlock.push('Ticket ID: ' + (rawTicket || 'N/A'));
   fieldsBlock.push('Call Reason: ' + (rawReason || 'N/A'));
@@ -3537,7 +3574,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
       const items = pickItems(sec);
       if(!items.length) return;
       const lines = items.map(it=> formatLine(it.icon, { label: it.label, subtitle: it.subtitle, pts: it.pts, zeroType: sec.isZeroSection }, it.text, it.kind));
-      blocks.push('*' + sec.title + '*\n' + lines.join('\n\n'));
+      blocks.push(lines.join('\n\n'));
     });
     return blocks;
   }
@@ -3567,7 +3604,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
 
   const out = CONFIG.summaryTemplate
     .replace(/{{fields}}/g, fieldsBlock.join('\n'))
-    .replace(/{{agent}}/g, rawAgent || 'there')
+    .replace(/{{agent}}/g, firstName(rawAgent) || 'there')
     .replace(/{{evaluator}}/g, rawEvaluator || 'N/A')
     .replace(/{{caller}}/g, rawCaller || 'N/A')
     .replace(/{{ticket}}/g, rawTicket || 'N/A')
@@ -3583,7 +3620,13 @@ function buildOutput(score, earned, possible, zeroTriggered){
     .replace(/{{zeroline}}/g, zeroline);
 
   LAST_AUTO_SUMMARY = out.trim();
-  if(!SUMMARY_MANUAL) document.getElementById('output').value = LAST_AUTO_SUMMARY;
+  const outBox = document.getElementById('output');
+  if(!SUMMARY_MANUAL) outBox.value = LAST_AUTO_SUMMARY;
+  else{
+    // The evaluator's own text stays; what the rubrics changed is applied around it.
+    if(AUTO_SUMMARY_AT_EDIT && AUTO_SUMMARY_AT_EDIT !== LAST_AUTO_SUMMARY) outBox.value = mergeSummary(outBox.value, AUTO_SUMMARY_AT_EDIT, LAST_AUTO_SUMMARY);
+    AUTO_SUMMARY_AT_EDIT = LAST_AUTO_SUMMARY;
+  }
   updateSummaryManualNote();
  }catch(e){ console.error('buildOutput failed', e); }
 }
@@ -5523,18 +5566,16 @@ async function renderOutcomeCanvas(targetId){
 function buildEmailBody(){
   const sections = computeSectionBreakdown();
   const rawAgent = document.getElementById('fAgent').value.trim();
-  const rawEvaluator = (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : 'N/A';
   const rawCaller = document.getElementById('fCaller').value.trim();
   const rawTicket = document.getElementById('fTicket').value.trim();
   const rawOrder = document.getElementById('fOrder').value.trim();
   const rawReason = document.getElementById('fReason').value.trim();
 
   let lines = [];
-  lines.push('Hello ' + (rawAgent || 'there') + ',');
+  lines.push('Hello ' + (firstName(rawAgent) || 'there') + ',');
   lines.push('');
   lines.push('You can find the details about your evaluation below:');
   lines.push('');
-  lines.push('QA Evaluator: ' + rawEvaluator);
   lines.push('Caller: ' + (rawCaller || 'N/A'));
   lines.push('Ticket ID: ' + (rawTicket || 'N/A'));
   lines.push('Call Reason: ' + (rawReason || 'N/A'));
