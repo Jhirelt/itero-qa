@@ -2705,6 +2705,9 @@ const RUBRIC_SUBTITLES = {
   "5.11": "The part(s) requested are coherent based on previous ticket history.",
 };
 
+// Every summary ends with this.
+const SUMMARY_CLOSING = 'Thanks for reading your feedback.\nKeep checking your metrics:\nhttps://apps.powerapps.com/play/5195f0c7-73f5-4350-bd49-dfedf64c3c17';
+
 const DEFAULT_NAMES = [
   "Aaron Ramirez Loria","Adrian Quesada",
   "Andrea Trejos Flores","Angelo Miguel Espinoza Flores",
@@ -3619,7 +3622,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
     .replace(/{{feedback}}/g, feedback)
     .replace(/{{zeroline}}/g, zeroline);
 
-  LAST_AUTO_SUMMARY = out.trim();
+  LAST_AUTO_SUMMARY = out.trim() + '\n\n' + SUMMARY_CLOSING;
   const outBox = document.getElementById('output');
   if(!SUMMARY_MANUAL) outBox.value = LAST_AUTO_SUMMARY;
   else{
@@ -5601,6 +5604,7 @@ function buildEmailBody(){
   lines.push('____________________________');
   lines.push('Score: ' + LAST_STATE.score + ' / 100  (100 - ' + (LAST_STATE.possible - LAST_STATE.earned) + ' pts lost)');
   if(LAST_STATE.zeroTriggered) lines.push('AUTOMATIC ZERO — zero call driver triggered.');
+  lines.push('', SUMMARY_CLOSING);
 
   return lines.join('\n');
 }
