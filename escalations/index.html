@@ -278,6 +278,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div class="tabs">
     <button class="tab-btn active" data-view="report">Report</button>
     <button class="tab-btn" data-view="tickets">Tickets</button>
+    <button class="tab-btn" data-view="open">Open tickets</button>
     <button class="tab-btn" data-view="uploads">Uploads</button>
   </div>
   <button class="btn btn-primary" id="btnUpload"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20V9m0 0-4 4m4-4 4 4M5 4h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Upload Excel</button>
@@ -405,6 +406,17 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
   </div>
 
+  <!-- =============== OPEN TICKETS =============== -->
+  <div id="view-open" class="hidden">
+    <div class="panel">
+      <div class="list-head" style="margin:0"><h4 style="margin:0">Open tickets</h4><span class="count" id="openCount"></span><button class="btn btn-primary" id="btnAddOpen">Add open ticket</button></div>
+      <p class="sub">The Salesforce export only has closed escalations, so open ones are listed here. The Summary and the PDF report count them as open until the same ticket comes in closed in an upload.</p>
+      <div class="table-wrap" style="border:none;">
+        <table class="data" id="openTable" style="min-width:760px;"><thead><tr><th>Ticket</th><th>Type</th><th>Opened</th><th style="text-align:right">Days open</th><th>Account</th><th>Subject</th><th>Scanner model</th><th>Status</th><th class="open-actions"></th></tr></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+
   <!-- =============== UPLOADS =============== -->
   <div id="view-uploads" class="hidden">
     <div class="panel">
@@ -426,6 +438,25 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
   <div class="drawer-body"><div class="detail-form" id="detailForm"></div><dl class="kv" id="drawerBody"></dl></div>
 </aside>
+
+<!-- =============== OPEN TICKET FORM =============== -->
+<div class="modal" id="openModal" role="dialog" aria-label="Open ticket">
+  <h3 id="openModalTitle">Add open ticket</h3>
+  <p>It counts as open in the report from the day it was opened until the ticket shows up closed in an upload.</p>
+  <div class="detail-form" style="margin:0">
+    <div class="field"><label for="of-ticket">Ticket number</label><input class="ctl" id="of-ticket" inputmode="numeric" placeholder="e.g. 69426962"></div>
+    <div class="field"><label for="of-type">Type</label><select class="ctl" id="of-type"><option>CSC</option><option>Business</option></select></div>
+    <div class="field"><label for="of-opened">Opened</label><input class="ctl" id="of-opened" type="date"></div>
+    <div class="field"><label for="of-account">Account</label><input class="ctl" id="of-account"></div>
+    <div class="field"><label for="of-subject">Subject</label><input class="ctl" id="of-subject"></div>
+    <div class="field"><label for="of-scanner">Scanner model</label><select class="ctl" id="of-scanner"></select></div>
+    <div class="field"><label for="of-note">Status</label><textarea class="ctl" id="of-note" rows="2" placeholder="Where it stands, who has it"></textarea></div>
+  </div>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" id="btnOpenCancel">Cancel</button>
+    <button class="btn btn-primary" id="btnOpenSave">Save</button>
+  </div>
+</div>
 
 <!-- =============== SUMMARY =============== -->
 <div class="modal" id="summaryModal" role="dialog" aria-label="Summary" style="width:min(760px, calc(100% - 32px));">
@@ -545,6 +576,7 @@ const DETAIL_FIELDS = [
   { key:'prevtickets', col:'previous_tickets',  label:'Previous tickets' },
   { key:'handlers',    col:'previous_handlers', label:'Previous case handlers' },
 ];
+let OPEN = [];             // escalation_open_tickets rows (entered on the page)
 let DETAILS = new Map();   // ticket_number -> escalation_ticket_details row
 function applyDetails(t){
   const d = DETAILS.get(t.ticket_number) || {};
@@ -628,7 +660,8 @@ async function fetchAll(table, order){
 }
 async function loadAll(resetPeriod){
   try{
-    const [tickets, uploads, details] = await Promise.all([ fetchAll('escalation_tickets', 'ticket_number'), fetchAll('escalation_uploads', 'uploaded_at'), fetchAll('escalation_ticket_details', 'ticket_number') ]);
+    const [tickets, uploads, details, open] = await Promise.all([ fetchAll('escalation_tickets', 'ticket_number'), fetchAll('escalation_uploads', 'uploaded_at'), fetchAll('escalation_ticket_details', 'ticket_number'), fetchAll('escalation_open_tickets', 'ticket_number') ]);
+    OPEN = open.map(o => Object.assign(o, { _o: parseTs(o.opened_on) }));
     DETAILS = new Map(details.map(d => [d.ticket_number, d]));
     T = tickets.map(t => applyDetails(Object.assign(t, { _o: parseTs(t.opened_at), _c: parseTs(t.closed_at), _sol: solutionOf(t) })));
     UPLOADS = uploads;
@@ -640,7 +673,7 @@ async function loadAll(resetPeriod){
   const empty = !T.length;
   $('firstRun').classList.toggle('hidden', !empty);
   document.querySelector('.tabs').classList.toggle('hidden', empty);
-  if(empty){ ['report','tickets','uploads'].forEach(v => $('view-'+v).classList.add('hidden')); return; }
+  if(empty){ ['report','tickets','open','uploads'].forEach(v => $('view-'+v).classList.add('hidden')); return; }
   switchView(currentView());
 }
 function latestClosed(){ return T.reduce((m,t) => t._c && (!m || t._c > m) ? t._c : m, null); }
@@ -942,6 +975,17 @@ const pct = (n, of) => of ? Math.round(n / of * 100) : 0;
 const d1 = v => v == null ? '–' : v.toFixed(1);
 const avgOf = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : null;
 const isBusiness = t => /business/i.test(t.priority || '');
+// Escalations open when the period ends: the ones entered in Open tickets (until the same ticket closes in an upload),
+// plus uploaded tickets opened before the end and closed after it.
+function openAt(e){
+  const closedOn = new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
+  const listed = OPEN.filter(o => (!o._o || o._o < e) && !(closedOn.get(o.ticket_number) < e))
+    .map(o => ({ ticket_number: o.ticket_number, _o: o._o, business: o.escalation_type === 'Business', subject: o.subject }));
+  const have = new Set(listed.map(o => o.ticket_number));
+  const fromData = T.filter(t => !have.has(t.ticket_number) && t._o && t._o < e && (!t._c || t._c >= e))
+    .map(t => ({ ticket_number: t.ticket_number, _o: t._o, business: isBusiness(t), subject: t.subject }));
+  return listed.concat(fromData);
+}
 const PERIOD_ADJ = { week:'Weekly ', month:'Monthly ', quarter:'Quarterly ', year:'Yearly ', custom:'' };
 const fmtLong = d => d.toLocaleDateString('en-US', { month:'long', day:'numeric' });
 const REPL_RE = /replacement\s+ticket\s*(?:#|number|no\.?)?\s*:?\s*(\d{5,})/i;
@@ -1006,14 +1050,13 @@ function ticketStory(t){
 function reportData(){
   const { s, e, closed, prevClosed } = periodData();
   const cmp = comparePeriod(s);
-  // Open at the end of the period, as far as the uploaded data shows: opened before it ended, not closed by then.
-  const open = T.filter(t => t._o && t._o < e && (!t._c || t._c >= e));
+  const open = openAt(e);
   const stories = closed.map(ticketStory).sort((a,b) => (b.days ?? -1) - (a.days ?? -1));
   return {
     s, e, closed, open, stories, range: rangeText(s, e, closed),
     cur: statsFor(closed), prev: statsFor(prevClosed),
     cmp: cmp ? Object.assign({ label: cmp.label }, statsFor(T.filter(t => inRange(t._c, cmp.s, cmp.e)))) : null,
-    openBiz: open.filter(isBusiness).length,
+    openBiz: open.filter(o => o.business).length,
     valid: stories.filter(x => x.validity === 'Valid').length,
     avoid: stories.filter(x => x.avoidable).length,
     parts: closed.filter(isPart).length,
@@ -1168,7 +1211,7 @@ function buildReportHtml(){
       </div>
       <div class="block"><h2>Open Escalations (${R.open.length})</h2>
         <div class="open"><div class="big">${ob} Business &nbsp;/&nbsp; ${oc} CSC</div>
-        <p>${R.open.length ? `Of the ${R.open.length} escalation${R.open.length === 1 ? '' : 's'} open at the end of the period, ${ob} ${ob === 1 ? 'is a Business Escalation' : 'are Business Escalations'} and ${oc} ${oc === 1 ? 'is a CSC Escalation' : 'are CSC Escalations'}.` : 'No escalation in the uploaded data was open at the end of the period.'}</p>${R.open.length ? `<p>Tickets: ${R.open.slice().sort((x,y) => x._o - y._o).map(t => `${esc(t.ticket_number)} (${isBusiness(t) ? 'Business' : 'CSC'}, opened ${esc(fmtShort(t._o))})`).join(', ')}.</p>` : ''}</div>
+        <p>${R.open.length ? `Of the ${R.open.length} escalation${R.open.length === 1 ? '' : 's'} open at the end of the period, ${ob} ${ob === 1 ? 'is a Business Escalation' : 'are Business Escalations'} and ${oc} ${oc === 1 ? 'is a CSC Escalation' : 'are CSC Escalations'}.` : 'No escalation was open at the end of the period.'}</p>${R.open.length ? `<p>Tickets: ${R.open.slice().sort((x,y) => (x._o || 0) - (y._o || 0)).map(t => `${esc(t.ticket_number)} (${t.business ? 'Business' : 'CSC'}${t._o ? ', opened ' + esc(fmtShort(t._o)) : ''})`).join(', ')}.</p>` : ''}</div>
       </div>
     </div>
     <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity set on each ticket in the tracker. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
@@ -1262,8 +1305,8 @@ $('btnExportAll').addEventListener('click', ()=> exportRows(ticketRows(), 'Escal
 function currentView(){ return (document.querySelector('.tab-btn.active') || {}).dataset?.view || 'report'; }
 function switchView(v){
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  ['report','tickets','uploads'].forEach(x => $('view-'+x).classList.toggle('hidden', x !== v));
-  if(v === 'report') renderReport(); else if(v === 'tickets') renderTickets(); else renderUploads();
+  ['report','tickets','open','uploads'].forEach(x => $('view-'+x).classList.toggle('hidden', x !== v));
+  if(v === 'report') renderReport(); else if(v === 'tickets') renderTickets(); else if(v === 'open') renderOpen(); else renderUploads();
 }
 document.querySelectorAll('.tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
@@ -1376,8 +1419,79 @@ async function saveDetails(t){
 }
 function closeDrawer(){ $('scrim').classList.remove('show'); $('drawer').classList.remove('show'); }
 $('btnCloseDrawer').addEventListener('click', closeDrawer);
-$('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); closeSummary(); });
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); closeCal(); } });
+$('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); closeSummary(); closeOpenForm(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); closeCal(); closeOpenForm(); } });
+
+/* ============================================================
+   OPEN TICKETS — entered by hand, used by the Summary and the PDF report
+   ============================================================ */
+let OPEN_EDIT = null;   // row being edited, null when adding
+function renderOpen(){
+  const canEdit = ME && ME.can_upload;
+  $('btnAddOpen').classList.toggle('hidden', !canEdit);
+  document.querySelector('#openTable th.open-actions').classList.toggle('hidden', !canEdit);
+  const closedOn = new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
+  const rows = OPEN.slice().sort((a,b) => (a._o || 0) - (b._o || 0));
+  const stillOpen = rows.filter(o => !closedOn.has(o.ticket_number)).length;
+  $('openCount').textContent = rows.length ? `${stillOpen} open` + (stillOpen < rows.length ? `, ${rows.length - stillOpen} already closed in an upload` : '') : '';
+  const today = startOfDay(new Date());
+  $('openTable').querySelector('tbody').innerHTML = rows.length ? rows.map(o => {
+    const c = closedOn.get(o.ticket_number);
+    return `<tr${c ? ' style="opacity:.55"' : ''}>
+      <td class="ticket nowrap">${esc(o.ticket_number)}${c ? `<span class="tag-reopened" title="This ticket is in an upload as closed">Closed ${esc(fmtShort(c))}</span>` : ''}</td>
+      <td>${esc(o.escalation_type)}</td><td class="nowrap">${o._o ? esc(fmtDate(o._o)) : ''}</td>
+      <td class="num">${o._o && !c ? Math.max(0, Math.round((today - o._o) / 86400000)) : ''}</td>
+      <td>${esc(o.account_name || '')}</td><td class="wide"><span class="clip">${esc(o.subject || '')}</span></td>
+      <td>${esc(o.scanner_model || '')}</td><td>${esc(o.status_note || '')}</td>
+      ${canEdit ? `<td class="num nowrap"><div style="display:flex;gap:4px;justify-content:flex-end"><button class="icon-btn" data-edit="${esc(o.ticket_number)}" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button> <button class="icon-btn danger" data-rm="${esc(o.ticket_number)}" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>` : ''}</tr>`;
+  }).join('') : `<tr><td colspan="${canEdit ? 9 : 8}" class="empty">No open tickets yet${canEdit ? '. Use Add open ticket.' : ''}</td></tr>`;
+  $('openTable').querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', ()=> openOpenForm(OPEN.find(o => o.ticket_number === b.dataset.edit))));
+  $('openTable').querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', ()=> removeOpen(b.dataset.rm)));
+}
+function openOpenForm(row){
+  if(!ME || !ME.can_upload) return;
+  OPEN_EDIT = row || null;
+  $('openModalTitle').textContent = row ? `Edit open ticket ${row.ticket_number}` : 'Add open ticket';
+  $('of-scanner').innerHTML = '<option value="">Not set</option>' + SCANNER_MODELS.concat(row && row.scanner_model && !SCANNER_MODELS.includes(row.scanner_model) ? [row.scanner_model] : []).map(m => `<option>${esc(m)}</option>`).join('');
+  $('of-ticket').value = row ? row.ticket_number : ''; $('of-ticket').disabled = !!row;
+  $('of-type').value = row ? row.escalation_type : 'CSC';
+  $('of-opened').value = row && row.opened_on ? row.opened_on.slice(0, 10) : '';
+  $('of-account').value = row ? row.account_name || '' : '';
+  $('of-subject').value = row ? row.subject || '' : '';
+  $('of-scanner').value = row ? row.scanner_model || '' : '';
+  $('of-note').value = row ? row.status_note || '' : '';
+  $('scrim').classList.add('show'); $('openModal').classList.add('show');
+  (row ? $('of-type') : $('of-ticket')).focus();
+}
+function closeOpenForm(){ $('openModal').classList.remove('show'); if(!$('drawer').classList.contains('show')) $('scrim').classList.remove('show'); }
+$('btnAddOpen').addEventListener('click', ()=> openOpenForm(null));
+$('btnOpenCancel').addEventListener('click', closeOpenForm);
+$('btnOpenSave').addEventListener('click', async ()=>{
+  const num = $('of-ticket').value.trim().replace(/\.0$/, '');
+  if(!num){ toast('Enter the ticket number.'); $('of-ticket').focus(); return; }
+  if(!OPEN_EDIT && OPEN.some(o => o.ticket_number === num)){ toast(`Ticket ${num} is already in the list.`); return; }
+  const row = { ticket_number: num, escalation_type: $('of-type').value, opened_on: $('of-opened').value || null,
+    account_name: $('of-account').value.trim() || null, subject: $('of-subject').value.trim() || null,
+    scanner_model: $('of-scanner').value || null, status_note: $('of-note').value.trim() || null,
+    updated_by: ME.id, updated_at: new Date().toISOString() };
+  const btn = $('btnOpenSave'); btn.disabled = true;
+  try{
+    const { error } = await sb.from('escalation_open_tickets').upsert(row, { onConflict:'ticket_number' });
+    if(error) throw error;
+    const i = OPEN.findIndex(o => o.ticket_number === num), saved = Object.assign(row, { _o: parseTs(row.opened_on) });
+    if(i >= 0) OPEN[i] = saved; else OPEN.push(saved);
+    closeOpenForm(); renderOpen(); toast(`Saved ticket ${num}.`);
+  }catch(err){ console.error(err); toast('Could not save. Try again.'); }
+  finally{ btn.disabled = false; }
+});
+async function removeOpen(num){
+  if(!ME || !ME.can_upload || !confirm(`Remove ticket ${num} from the open list?`)) return;
+  try{
+    const { error } = await sb.from('escalation_open_tickets').delete().eq('ticket_number', num);
+    if(error) throw error;
+    OPEN = OPEN.filter(o => o.ticket_number !== num); renderOpen(); toast(`Removed ticket ${num}.`);
+  }catch(err){ console.error(err); toast('Could not remove it. Try again.'); }
+}
 
 /* ============================================================
    UPLOADS
