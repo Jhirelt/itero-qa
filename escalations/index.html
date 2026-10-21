@@ -412,7 +412,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="list-head" style="margin:0"><h4 style="margin:0">Open tickets</h4><span class="count" id="openCount"></span><button class="btn btn-primary" id="btnAddOpen">Add open ticket</button></div>
       <p class="sub">The Salesforce export only has closed escalations, so open ones are listed here. The Summary and the PDF report count them as open until the same ticket comes in closed in an upload.</p>
       <div class="table-wrap" style="border:none;">
-        <table class="data" id="openTable" style="min-width:760px;"><thead><tr><th>Ticket</th><th>Type</th><th>Opened</th><th style="text-align:right">Days open</th><th>Account</th><th>Subject</th><th>Scanner model</th><th>Status</th><th class="open-actions"></th></tr></thead><tbody></tbody></table>
+        <table class="data" id="openTable" style="min-width:600px;"><thead><tr><th>Ticket</th><th>Type</th><th>Opened</th><th>Subject</th><th>Status</th><th class="open-actions"></th></tr></thead><tbody></tbody></table>
       </div>
     </div>
   </div>
@@ -447,9 +447,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     <div class="field"><label for="of-ticket">Ticket number</label><input class="ctl" id="of-ticket" inputmode="numeric" placeholder="e.g. 69426962"></div>
     <div class="field"><label for="of-type">Type</label><select class="ctl" id="of-type"><option>CSC</option><option>Business</option></select></div>
     <div class="field"><label for="of-opened">Opened</label><input class="ctl" id="of-opened" type="date"></div>
-    <div class="field"><label for="of-account">Account</label><input class="ctl" id="of-account"></div>
     <div class="field"><label for="of-subject">Subject</label><input class="ctl" id="of-subject"></div>
-    <div class="field"><label for="of-scanner">Scanner model</label><select class="ctl" id="of-scanner"></select></div>
     <div class="field"><label for="of-note">Status</label><textarea class="ctl" id="of-note" rows="2" placeholder="Where it stands, who has it"></textarea></div>
   </div>
   <div class="modal-actions">
@@ -566,7 +564,7 @@ function solutionOf(t){ const s = solutionText(t.solution_provided); return s.le
 
 /* Details filled in on the page for each ticket (table escalation_ticket_details).
    They live apart from the uploaded data, so a new upload of the same ticket keeps them. */
-const SCANNER_MODELS = ['Office PC', 'Element 2', 'Element 2 5D', '5D Plus - Cart', '5D Plus Lite - Cart', 'Lumina - Cart', 'Lumina Pro - Cart',
+const SCANNER_MODELS = ['Office PC', 'Lumina PC', 'Element 2', 'Element 2 5D', '5D Plus - Cart', '5D Plus Lite - Cart', 'Lumina - Cart', 'Lumina Pro - Cart',
   '5D Plus - Mobile', '5D Plus Lite - Mobile', 'Lumina - Mobile', 'Lumina Pro - Mobile', 'Flex', '5D Flex', '5D Plus LC', '5D Plus Lite LC'];
 const DETAIL_FIELDS = [
   { key:'avoidable',   col:'avoidable',         label:'Avoidable', options:['Yes','No'] },
@@ -1434,17 +1432,14 @@ function renderOpen(){
   const rows = OPEN.slice().sort((a,b) => (a._o || 0) - (b._o || 0));
   const stillOpen = rows.filter(o => !closedOn.has(o.ticket_number)).length;
   $('openCount').textContent = rows.length ? `${stillOpen} open` + (stillOpen < rows.length ? `, ${rows.length - stillOpen} already closed in an upload` : '') : '';
-  const today = startOfDay(new Date());
   $('openTable').querySelector('tbody').innerHTML = rows.length ? rows.map(o => {
     const c = closedOn.get(o.ticket_number);
     return `<tr${c ? ' style="opacity:.55"' : ''}>
       <td class="ticket nowrap">${esc(o.ticket_number)}${c ? `<span class="tag-reopened" title="This ticket is in an upload as closed">Closed ${esc(fmtShort(c))}</span>` : ''}</td>
       <td>${esc(o.escalation_type)}</td><td class="nowrap">${o._o ? esc(fmtDate(o._o)) : ''}</td>
-      <td class="num">${o._o && !c ? Math.max(0, Math.round((today - o._o) / 86400000)) : ''}</td>
-      <td>${esc(o.account_name || '')}</td><td class="wide"><span class="clip">${esc(o.subject || '')}</span></td>
-      <td>${esc(o.scanner_model || '')}</td><td>${esc(o.status_note || '')}</td>
+      <td class="wide"><span class="clip">${esc(o.subject || '')}</span></td><td>${esc(o.status_note || '')}</td>
       ${canEdit ? `<td class="num nowrap"><div style="display:flex;gap:4px;justify-content:flex-end"><button class="icon-btn" data-edit="${esc(o.ticket_number)}" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button> <button class="icon-btn danger" data-rm="${esc(o.ticket_number)}" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>` : ''}</tr>`;
-  }).join('') : `<tr><td colspan="${canEdit ? 9 : 8}" class="empty">No open tickets yet${canEdit ? '. Use Add open ticket.' : ''}</td></tr>`;
+  }).join('') : `<tr><td colspan="${canEdit ? 6 : 5}" class="empty">No open tickets yet${canEdit ? '. Use Add open ticket.' : ''}</td></tr>`;
   $('openTable').querySelectorAll('[data-edit]').forEach(b => b.addEventListener('click', ()=> openOpenForm(OPEN.find(o => o.ticket_number === b.dataset.edit))));
   $('openTable').querySelectorAll('[data-rm]').forEach(b => b.addEventListener('click', ()=> removeOpen(b.dataset.rm)));
 }
@@ -1452,13 +1447,10 @@ function openOpenForm(row){
   if(!ME || !ME.can_upload) return;
   OPEN_EDIT = row || null;
   $('openModalTitle').textContent = row ? `Edit open ticket ${row.ticket_number}` : 'Add open ticket';
-  $('of-scanner').innerHTML = '<option value="">Not set</option>' + SCANNER_MODELS.concat(row && row.scanner_model && !SCANNER_MODELS.includes(row.scanner_model) ? [row.scanner_model] : []).map(m => `<option>${esc(m)}</option>`).join('');
   $('of-ticket').value = row ? row.ticket_number : ''; $('of-ticket').disabled = !!row;
   $('of-type').value = row ? row.escalation_type : 'CSC';
   $('of-opened').value = row && row.opened_on ? row.opened_on.slice(0, 10) : '';
-  $('of-account').value = row ? row.account_name || '' : '';
   $('of-subject').value = row ? row.subject || '' : '';
-  $('of-scanner').value = row ? row.scanner_model || '' : '';
   $('of-note').value = row ? row.status_note || '' : '';
   $('scrim').classList.add('show'); $('openModal').classList.add('show');
   (row ? $('of-type') : $('of-ticket')).focus();
@@ -1471,8 +1463,7 @@ $('btnOpenSave').addEventListener('click', async ()=>{
   if(!num){ toast('Enter the ticket number.'); $('of-ticket').focus(); return; }
   if(!OPEN_EDIT && OPEN.some(o => o.ticket_number === num)){ toast(`Ticket ${num} is already in the list.`); return; }
   const row = { ticket_number: num, escalation_type: $('of-type').value, opened_on: $('of-opened').value || null,
-    account_name: $('of-account').value.trim() || null, subject: $('of-subject').value.trim() || null,
-    scanner_model: $('of-scanner').value || null, status_note: $('of-note').value.trim() || null,
+    subject: $('of-subject').value.trim() || null, status_note: $('of-note').value.trim() || null,
     updated_by: ME.id, updated_at: new Date().toISOString() };
   const btn = $('btnOpenSave'); btn.disabled = true;
   try{
