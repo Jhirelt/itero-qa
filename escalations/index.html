@@ -333,7 +333,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="kpis">
       <div class="kpi"><div class="k-label">Closed</div><div class="k-value" id="kClosed">–</div><div class="k-foot" id="kClosedFoot"></div></div>
-      <div class="kpi"><div class="k-label">Opened</div><div class="k-value" id="kOpened">–</div><div class="k-foot" id="kOpenedFoot"></div></div>
       <div class="kpi"><div class="k-label">Avg. days to close</div><div class="k-value" id="kAvg">–</div><div class="k-foot" id="kAvgFoot"></div></div>
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="kParts">–</div><div class="k-foot" id="kPartsFoot"></div></div>
       <div class="kpi"><div class="k-label">Avoidable</div><div class="k-value" id="kAvoid">–</div><div class="k-foot" id="kAvoidFoot"></div></div>
@@ -366,8 +365,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
 
     <details class="panel more-stats" id="moreStats">
-      <summary><h4>More breakdowns</h4><span class="sub">Sub-issue type, ticket type, priority, requestor, avoidable, root cause and median days, for the same period</span></summary>
-      <p class="sub" id="moreMedian"></p>
+      <summary><h4>More breakdowns</h4><span class="sub">Sub-issue type, ticket type, priority, requestor, avoidable and root cause, for the same period</span></summary>
       <div class="grid-3" id="moreBars"></div>
     </details>
 
@@ -784,7 +782,6 @@ function renderHbars(el, rows, onClick, max = 8){
       <span class="hb-val">${r.value}</span></div>`).join('');
   if(onClick) el.querySelectorAll('.hbar.clickable').forEach(n => n.addEventListener('click', ()=> onClick(list[+n.dataset.i])));
 }
-function median(a){ if(!a.length) return null; const s = a.slice().sort((x,y)=>x-y), h = s.length >> 1; return s.length % 2 ? s[h] : (s[h-1]+s[h])/2; }
 function deltaText(cur, prev){
   const d = cur - prev;
   return d === 0 ? `Same as previous ${PERIOD_WORD[PERIOD]}` : `${d > 0 ? '+' : '−'}${Math.abs(d)} vs previous ${PERIOD_WORD[PERIOD]} (${prev})`;
@@ -800,15 +797,13 @@ function periodData(){
   return {
     s, e, base,
     closed: base.filter(t => inRange(t._c, s, e)).sort((a,b)=> b._c - a._c),
-    opened: base.filter(t => inRange(t._o, s, e)),
     prevClosed: base.filter(t => inRange(t._c, ps, pe)),
-    prevOpened: base.filter(t => inRange(t._o, ps, pe)),
   };
 }
 
 function renderReport(){
   if(!T.length || !ANCHOR) return;
-  const { s, e, base, closed, opened, prevClosed, prevOpened } = periodData();
+  const { s, e, base, closed, prevClosed } = periodData();
   $('periodLabel').textContent = periodName(PERIOD, s, e);
   $('btnNext').disabled = s > new Date();
 
@@ -817,8 +812,6 @@ function renderReport(){
   const reo = closed.filter(t => t.reopen_count).length;
   $('kClosedFoot').innerHTML = esc(deltaText(closed.length, prevClosed.length)) + (reo ? ` · <a href="#" id="kReopenedLink" title="See the reopened tickets closed in this period">${reo} reopened</a>` : '');
   if(reo) $('kReopenedLink').addEventListener('click', ev => { ev.preventDefault(); openTicketsWith({ reopened:true, period:true }); });
-  $('kOpened').textContent = opened.length;
-  $('kOpenedFoot').textContent = deltaText(opened.length, prevOpened.length);
   const durs = closed.map(daysToClose).filter(v => v != null);
   $('kAvg').textContent = durs.length ? (durs.reduce((a,b)=>a+b,0)/durs.length).toFixed(1) : '–';
   const prevD = prevClosed.map(daysToClose).filter(v => v != null);
@@ -855,8 +848,6 @@ function renderReport(){
 
 // Breakdowns kept out of the main view, in the collapsed "More breakdowns" panel.
 function renderMoreStats(closed, durs, toTickets){
-  const med = median(durs);
-  $('moreMedian').textContent = med == null ? 'Median days to close: –' : `Median days to close: ${med.toFixed(1)} (half of the tickets closed faster). Longest: ${Math.max(...durs).toFixed(1)} days.`;
   const ids = ['tSubIssue','tTicketType','tPriority','tRequestor','tAvoidable','tRootCause'];
   $('moreBars').innerHTML = ids.map(id => `<div><h5>${TFILTERS.find(f => f.id === id).label}</h5><div class="hbars" id="more-${id}"></div></div>`).join('');
   ids.forEach(id => { const f = TFILTERS.find(x => x.id === id); renderHbars($('more-' + id), countBy(closed, f.get), toTickets(id), 6); });
@@ -980,14 +971,7 @@ const pct = (n, of) => of ? Math.round(n / of * 100) : 0;
 const d1 = v => v == null ? '–' : v.toFixed(1);
 const avgOf = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : null;
 const isBusiness = t => /business/i.test(t.priority || '');
-// Escalations open when the period ends: the ones entered in Open tickets, until the same ticket closes in an upload.
 const closedOnMap = () => new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
-function openAt(e){
-  const closedOn = closedOnMap();
-  return OPEN.filter(o => (!o._o || o._o < e) && !(closedOn.get(o.ticket_number) < e))
-    .map(o => Object.assign({}, o, { business: o.escalation_type === 'Business' }))
-    .sort((a,b) => (a._o || 0) - (b._o || 0));
-}
 // Open tickets right now: the list minus the ones already closed in an upload.
 const openNow = () => { const closedOn = closedOnMap(); return OPEN.filter(o => !closedOn.has(o.ticket_number)).sort((a,b) => (a._o || 0) - (b._o || 0)); };
 const PERIOD_ADJ = { week:'Weekly ', month:'Monthly ', quarter:'Quarterly ', year:'Yearly ', custom:'' };
@@ -996,7 +980,7 @@ const REPL_RE = /replacement\s+ticket\s*(?:#|number|no\.?)?\s*:?\s*(\d{5,})/i;
 
 function statsFor(rows){
   const d = rows.map(daysToClose).filter(v => v != null);
-  return { n: rows.length, durs: d, avg: avgOf(d), med: median(d), in3: d.filter(v => v < 3).length, over14: d.filter(v => v >= 14).length };
+  return { n: rows.length, durs: d, avg: avgOf(d), in3: d.filter(v => v < 3).length, over14: d.filter(v => v >= 14).length };
 }
 // Second comparison column: the month before a week, the same month/quarter a year earlier.
 function comparePeriod(s){
@@ -1054,7 +1038,7 @@ function ticketStory(t){
 function reportData(){
   const { s, e, closed, prevClosed } = periodData();
   const cmp = comparePeriod(s);
-  const open = openAt(e);
+  const open = openNow().map(o => Object.assign({}, o, { business: o.escalation_type === 'Business' }));
   const stories = closed.map(ticketStory).sort((a,b) => (b.days ?? -1) - (a.days ?? -1));
   return {
     s, e, closed, open, stories, range: rangeText(s, e, closed),
@@ -1071,10 +1055,10 @@ function reportData(){
 function buildSummary(){
   const R = reportData(), { cur, prev, cmp } = R, n = cur.n, pw = PERIOD_WORD[PERIOD];
   const o = R.open.length;
-  const openPart = o ? `${word(o)} ${o === 1 ? 'remains' : 'remain'} open` : 'none remain open';
-  if(!n) return `${R.range.during}, no escalations were closed and ${openPart}.`;
+  const openTxt = o ? `${cap(word(o))} ${o === 1 ? 'escalation is' : 'escalations are'} currently open.` : 'No escalations are currently open.';
+  if(!n) return `${R.range.during}, no escalations were closed. ${openTxt}`;
 
-  const p1 = [`${R.range.during}, ${word(n)} ${n === 1 ? 'escalation was' : 'escalations were'} closed and ${openPart}.`];
+  const p1 = [`${R.range.during}, ${word(n)} ${n === 1 ? 'escalation was' : 'escalations were'} closed. ${openTxt}`];
   const tt = countBy(R.closed, t => t.ticket_type)[0];
   let s2 = tt.label === NOT_SET ? '' : tt.value === n ? `All closed escalations were ${tt.label} issues` : `${tt.label} issues accounted for ${pct(tt.value, n)}% of closed escalations`;
   const partTxt = n === 1 ? (R.parts ? 'it was resolved with a part replacement' : 'it was not resolved with a part replacement')
@@ -1093,8 +1077,8 @@ function buildSummary(){
     if(prev.avg != null){
       const r = cur.avg / prev.avg;
       const verb = r <= 0.6 ? 'improved sharply' : r < 0.9 ? 'improved' : r <= 1.1 ? 'held steady' : r < 1.5 ? 'slowed' : 'slowed sharply';
-      p2.push(`Resolution time ${verb} from the previous ${pw}, averaging ${d1(cur.avg)} days with a median of ${d1(cur.med)} days, compared with ${d1(prev.avg)} and ${d1(prev.med)} days the ${pw} before.`);
-    } else p2.push(`Resolution time averaged ${d1(cur.avg)} days with a median of ${d1(cur.med)} days; nothing closed the previous ${pw} to compare with.`);
+      p2.push(`Resolution time ${verb} from the previous ${pw}, averaging ${d1(cur.avg)} days compared with ${d1(prev.avg)} days the ${pw} before.`);
+    } else p2.push(`Resolution time averaged ${d1(cur.avg)} days; nothing closed the previous ${pw} to compare with.`);
     const d = cur.durs.length;
     let s = cur.in3 ? `${cap(word(cur.in3))} of the ${word(d)} ${d === 1 ? 'ticket was' : 'tickets were'} resolved within 3 days` : `No ticket was resolved within 3 days`;
     const normal = cur.durs.filter(v => v < 14), slow = cur.durs.filter(v => v >= 14);
@@ -1153,7 +1137,6 @@ function buildReportHtml(){
   const pctOr = (k, of) => of ? `${pct(k, of)}%` : '–';
   const cmpRows = [
     ['Avg resolution', x => x.avg == null ? '–' : `${d1(x.avg)} days`],
-    ['Median resolution', x => x.med == null ? '–' : `${d1(x.med)} days`],
     ['Closed within 3 days', x => pctOr(x.in3, x.durs.length)],
     ['Took 14 days or more', x => pctOr(x.over14, x.durs.length)],
   ];
@@ -1174,7 +1157,6 @@ function buildReportHtml(){
       <div class="kpis">
         <div class="kpi navy"><div class="kl">Tickets closed</div><div class="kv">${n}</div><div class="kf">${R.valid} valid, ${R.avoid} avoidable${unset ? `, ${unset} not set` : ''}<br>${R.csat} customer satisfaction</div></div>
         <div class="kpi amber"><div class="kl">Avg resolution</div><div class="kv">${cur.avg == null ? '–' : d1(cur.avg) + ' days'}</div><div class="kf">${cur.avg == null ? '' : Math.round(cur.avg * 24) + ' hours on average'}</div></div>
-        <div class="kpi green"><div class="kl">Median resolution</div><div class="kv">${cur.med == null ? '–' : d1(cur.med) + ' days'}</div><div class="kf">Half of tickets closed faster</div></div>
         <div class="kpi red"><div class="kl">Closed within 3 days</div><div class="kv">${pctOr(cur.in3, ofD)}</div><div class="kf">${cur.in3} of ${ofD} tickets</div></div>
         <div class="kpi teal"><div class="kl">Open escalations</div><div class="kv">${R.open.length}</div><div class="kf">${ob} Business, ${oc} CSC</div></div>
       </div>
@@ -1191,7 +1173,7 @@ function buildReportHtml(){
         </div>
       </div>
     </div>
-    <footer>Source: escalations uploaded to the tracker, tickets closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}. Open escalations are the tickets listed in Open tickets that had not closed by the end of the period.${asOf} Resolution time is calendar time from ticket opening to closure.</footer>
+    <footer>Source: escalations uploaded to the tracker, tickets closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}. Open escalations are the tickets currently listed in Open tickets.${asOf} Resolution time is calendar time from ticket opening to closure.</footer>
   </section>`;
 
   const page2 = `<section class="page">
@@ -1200,7 +1182,7 @@ function buildReportHtml(){
       <div class="block"><h2>Root Cause and Resolution Summary</h2>
         ${causeRows.length ? `<table class="grid"><thead><tr><th style="width:17%">Root Cause</th><th style="width:7%">Tickets</th><th style="width:7%">Avg Days</th><th>What Happened</th><th style="width:27%">How It Was Resolved</th></tr></thead><tbody>
         ${causeRows.map(c => { const a = avgOf(c.items.map(x => x.days).filter(v => v != null)); return `<tr><td class="b">${esc(c.title)}</td><td>${c.items.length} (${pct(c.items.length, n)}%)</td><td class="b ${daysCls(a)}">${fd(a)}</td>
-          <td>${c.items.map(x => `${esc(x.issue)} (${esc(x.t.ticket_number)})${x.t._o ? `, open since ${esc(fmtLong(x.t._o))}` : ''}.${x.origin ? ' ' + esc(cap(x.origin).replace(/[.\s]*$/, '.')) : ''}`).join('<br>')}</td>
+          <td>${c.items.map(x => `${esc(x.issue)} (${esc(x.t.ticket_number)}).${x.origin ? ' ' + esc(cap(x.origin).replace(/[.\s]*$/, '.')) : ''}`).join('<br>')}</td>
           <td>${c.items.map(x => { const r = x.resolution + (x.notes ? ' ' + x.notes : ''); return esc(r.length > 170 ? r.slice(0, 167).replace(/\s+\S*$/, '') + '…' : r); }).join('<br>')}</td></tr>`; }).join('')}
         </tbody></table>` : '<p class="note">Nothing closed in this period.</p>'}
       </div>
@@ -1212,7 +1194,7 @@ function buildReportHtml(){
       </div>
       <div class="block"><h2>Open Escalations (${R.open.length})</h2>
         <div class="open"><div class="big">${ob} Business &nbsp;/&nbsp; ${oc} CSC</div>
-        ${R.open.length ? '' : '<p>No escalation was open at the end of the period.</p>'}</div>
+        ${R.open.length ? '' : '<p>No escalations are currently open.</p>'}</div>
         ${R.open.length ? `<table class="grid" style="margin-top:8px"><thead><tr><th style="width:12%">Ticket</th><th style="width:10%">Type</th><th style="width:12%">Opened</th><th>Subject</th><th style="width:26%">Status</th></tr></thead><tbody>
         ${R.open.map(t => `<tr><td>${esc(t.ticket_number)}</td><td>${esc(t.escalation_type)}</td><td>${t._o ? esc(fmtShort(t._o)) : ''}</td><td>${esc(t.subject || '')}</td><td>${esc(t.status_note || '')}</td></tr>`).join('')}
         </tbody></table>` : ''}
@@ -1235,7 +1217,7 @@ function buildReportHtml(){
   header p{ margin:0; font-size:10px; color:#c9d6e6; }
   .pg{ font-size:9px; color:#c9d6e6; white-space:nowrap; }
   .body{ padding:14px 34px 6px; flex:1; }
-  .kpis{ display:grid; grid-template-columns:repeat(5,1fr); gap:12px; margin-bottom:16px; }
+  .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:16px; }
   .kpi{ background:#f3f5f8; border-left:4px solid #1f3a5f; padding:10px 12px; }
   .kl{ font-size:8px; font-weight:800; letter-spacing:.6px; text-transform:uppercase; color:#1f3a5f; }
   .kv{ font-size:22px; font-weight:800; margin:4px 0 3px; }
