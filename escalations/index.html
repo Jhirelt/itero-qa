@@ -338,6 +338,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="kParts">–</div><div class="k-foot" id="kPartsFoot"></div></div>
       <div class="kpi"><div class="k-label">Avoidable</div><div class="k-value" id="kAvoid">–</div><div class="k-foot" id="kAvoidFoot"></div></div>
       <div class="kpi"><div class="k-label">Customer satisfaction</div><div class="k-value" id="kCsat">–</div><div class="k-foot" id="kCsatFoot"></div></div>
+      <div class="kpi"><div class="k-label">Open tickets</div><div class="k-value" id="kOpenNow">–</div><div class="k-foot" id="kOpenNowFoot"></div></div>
+    </div>
+
+    <div class="panel hidden" id="openPanel" style="margin-bottom:12px">
+      <div class="list-head" style="margin:0"><h4 style="margin:0">Open tickets</h4><span class="count" id="openPanelCount"></span><a href="#" id="openPanelLink" class="sub">Manage</a></div>
+      <div class="table-wrap"><table class="data" id="openPanelTable" style="min-width:600px;"><thead><tr><th>Ticket</th><th>Type</th><th>Opened</th><th>Subject</th><th>Status</th></tr></thead><tbody></tbody></table></div>
     </div>
 
     <div class="grid-2">
@@ -824,6 +830,7 @@ function renderReport(){
   $('kAvoid').textContent = avYes;
   $('kAvoidFoot').textContent = avSet ? `${Math.round(avYes / avSet * 100)}% of the ${avSet} with Avoidable filled` : 'None with Avoidable filled';
   const csat = closed.filter(isCsat).length;
+  renderOpenNow();
   $('kCsat').textContent = csat;
   $('kCsatFoot').textContent = closed.length ? `${Math.round(csat / closed.length * 100)}% of closed (sub-issue type)` : 'Sub-issue type "Customer satisfaction"';
 
@@ -973,17 +980,16 @@ const pct = (n, of) => of ? Math.round(n / of * 100) : 0;
 const d1 = v => v == null ? '–' : v.toFixed(1);
 const avgOf = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : null;
 const isBusiness = t => /business/i.test(t.priority || '');
-// Escalations open when the period ends: the ones entered in Open tickets (until the same ticket closes in an upload),
-// plus uploaded tickets opened before the end and closed after it.
+// Escalations open when the period ends: the ones entered in Open tickets, until the same ticket closes in an upload.
+const closedOnMap = () => new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
 function openAt(e){
-  const closedOn = new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
-  const listed = OPEN.filter(o => (!o._o || o._o < e) && !(closedOn.get(o.ticket_number) < e))
-    .map(o => ({ ticket_number: o.ticket_number, _o: o._o, business: o.escalation_type === 'Business', subject: o.subject }));
-  const have = new Set(listed.map(o => o.ticket_number));
-  const fromData = T.filter(t => !have.has(t.ticket_number) && t._o && t._o < e && (!t._c || t._c >= e))
-    .map(t => ({ ticket_number: t.ticket_number, _o: t._o, business: isBusiness(t), subject: t.subject }));
-  return listed.concat(fromData);
+  const closedOn = closedOnMap();
+  return OPEN.filter(o => (!o._o || o._o < e) && !(closedOn.get(o.ticket_number) < e))
+    .map(o => Object.assign({}, o, { business: o.escalation_type === 'Business' }))
+    .sort((a,b) => (a._o || 0) - (b._o || 0));
 }
+// Open tickets right now: the list minus the ones already closed in an upload.
+const openNow = () => { const closedOn = closedOnMap(); return OPEN.filter(o => !closedOn.has(o.ticket_number)).sort((a,b) => (a._o || 0) - (b._o || 0)); };
 const PERIOD_ADJ = { week:'Weekly ', month:'Monthly ', quarter:'Quarterly ', year:'Yearly ', custom:'' };
 const fmtLong = d => d.toLocaleDateString('en-US', { month:'long', day:'numeric' });
 const REPL_RE = /replacement\s+ticket\s*(?:#|number|no\.?)?\s*:?\s*(\d{5,})/i;
@@ -1064,11 +1070,8 @@ function reportData(){
 
 function buildSummary(){
   const R = reportData(), { cur, prev, cmp } = R, n = cur.n, pw = PERIOD_WORD[PERIOD];
-  const o = R.open.length, ob = R.openBiz, oc = o - ob;
-  const kind = (k, one, many) => k === 1 ? one : many;
-  let openPart = o ? `${word(o)} ${o === 1 ? 'remains' : 'remain'} open` : 'none remain open';
-  if(o && ob && oc) openPart += `, ${word(ob)} of them ${kind(ob, 'a Business Escalation', 'Business Escalations')} and ${word(oc)} ${kind(oc, 'a CSC Escalation', 'CSC Escalations')}`;
-  else if(o) openPart += o === 1 ? `, ${ob ? 'a Business Escalation' : 'a CSC Escalation'}` : `, all of them ${ob ? 'Business Escalations' : 'CSC Escalations'}`;
+  const o = R.open.length;
+  const openPart = o ? `${word(o)} ${o === 1 ? 'remains' : 'remain'} open` : 'none remain open';
   if(!n) return `${R.range.during}, no escalations were closed and ${openPart}.`;
 
   const p1 = [`${R.range.during}, ${word(n)} ${n === 1 ? 'escalation was' : 'escalations were'} closed and ${openPart}.`];
@@ -1188,7 +1191,7 @@ function buildReportHtml(){
         </div>
       </div>
     </div>
-    <footer>Source: escalations uploaded to the tracker, tickets closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}. Open escalations are tickets opened before the end of the period and not closed by then.${asOf} Resolution time is calendar time from ticket opening to closure.</footer>
+    <footer>Source: escalations uploaded to the tracker, tickets closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}. Open escalations are the tickets listed in Open tickets that had not closed by the end of the period.${asOf} Resolution time is calendar time from ticket opening to closure.</footer>
   </section>`;
 
   const page2 = `<section class="page">
@@ -1209,7 +1212,10 @@ function buildReportHtml(){
       </div>
       <div class="block"><h2>Open Escalations (${R.open.length})</h2>
         <div class="open"><div class="big">${ob} Business &nbsp;/&nbsp; ${oc} CSC</div>
-        <p>${R.open.length ? `Of the ${R.open.length} escalation${R.open.length === 1 ? '' : 's'} open at the end of the period, ${ob} ${ob === 1 ? 'is a Business Escalation' : 'are Business Escalations'} and ${oc} ${oc === 1 ? 'is a CSC Escalation' : 'are CSC Escalations'}.` : 'No escalation was open at the end of the period.'}</p>${R.open.length ? `<p>Tickets: ${R.open.slice().sort((x,y) => (x._o || 0) - (y._o || 0)).map(t => `${esc(t.ticket_number)} (${t.business ? 'Business' : 'CSC'}${t._o ? ', opened ' + esc(fmtShort(t._o)) : ''})`).join(', ')}.</p>` : ''}</div>
+        ${R.open.length ? '' : '<p>No escalation was open at the end of the period.</p>'}</div>
+        ${R.open.length ? `<table class="grid" style="margin-top:8px"><thead><tr><th style="width:12%">Ticket</th><th style="width:10%">Type</th><th style="width:12%">Opened</th><th>Subject</th><th style="width:26%">Status</th></tr></thead><tbody>
+        ${R.open.map(t => `<tr><td>${esc(t.ticket_number)}</td><td>${esc(t.escalation_type)}</td><td>${t._o ? esc(fmtShort(t._o)) : ''}</td><td>${esc(t.subject || '')}</td><td>${esc(t.status_note || '')}</td></tr>`).join('')}
+        </tbody></table>` : ''}
       </div>
     </div>
     <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity set on each ticket in the tracker. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
@@ -1423,7 +1429,19 @@ document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawe
 /* ============================================================
    OPEN TICKETS — entered by hand, used by the Summary and the PDF report
    ============================================================ */
-let OPEN_EDIT = null;   // row being edited, null when adding
+let OPEN_EDIT = null;
+// Main screen: the open tickets as they are now.
+function renderOpenNow(){
+  const rows = openNow(), biz = rows.filter(o => o.escalation_type === 'Business').length;
+  $('kOpenNow').textContent = rows.length;
+  $('kOpenNowFoot').textContent = rows.length ? `${biz} Business, ${rows.length - biz} CSC` : 'None listed in Open tickets';
+  $('openPanel').classList.toggle('hidden', !rows.length);
+  $('openPanelCount').textContent = rows.length;
+  $('openPanelTable').querySelector('tbody').innerHTML = rows.map(o => `<tr>
+      <td class="ticket nowrap">${esc(o.ticket_number)}</td><td>${esc(o.escalation_type)}</td><td class="nowrap">${o._o ? esc(fmtDate(o._o)) : ''}</td>
+      <td class="wide"><span class="clip">${esc(o.subject || '')}</span></td><td>${esc(o.status_note || '')}</td></tr>`).join('');
+}
+$('openPanelLink').addEventListener('click', ev => { ev.preventDefault(); switchView('open'); });   // row being edited, null when adding
 function renderOpen(){
   const canEdit = ME && ME.can_upload;
   $('btnAddOpen').classList.toggle('hidden', !canEdit);
