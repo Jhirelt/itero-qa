@@ -149,6 +149,8 @@
   .field.field-wide{ width:280px; }
   .field.field-med{ width:220px; }
   .field.field-narrow{ width:150px; }
+  .fields-4 .field{ width:auto; flex:1 1 120px; }
+  .fields-4 .field.field-wide{ flex:2 1 200px; }
   .field label{ display:block; font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); margin-bottom:6px; font-weight:700;}
   .field input{
     width:100%; padding:10px 12px; border-radius:var(--radius-sm);
@@ -288,9 +290,16 @@
     gap:1px; background:var(--border);
   }
   .item-card{
-    display:flex; align-items:center; gap:8px; padding:9px 12px;
+    display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:9px 12px;
     background:var(--bg-elev);
   }
+  .ic-notes{ display:none; flex:1 1 100%; flex-direction:column; gap:6px; margin-top:2px; }
+  .item-card.has-notes .ic-notes{ display:flex; }
+  .ic-notes textarea{
+    width:100%; box-sizing:border-box; min-height:34px; resize:vertical; padding:6px 8px; border-radius:var(--radius-sm);
+    border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font:inherit; font-size:12px; line-height:1.4; outline:none;
+  }
+  .ic-notes textarea:focus{ border-color:var(--accent); }
   .item-card.not-applicable{ opacity:.45; }
   .item-card.not-applicable:hover{ opacity:.8; }
   .item-card .lbl{ flex-grow:1; font-size:12.5px; line-height:1.25; }
@@ -705,6 +714,7 @@
   .tasks-table col.c-action{ width:24%; }
   .tasks-table col.c-resp{ width:170px; }
   .tasks-table col.c-status{ width:150px; }
+  .tasks-table col.c-time{ width:110px; }
   .tasks-table col.c-del{ width:84px; }
   .tasks-table col.c-reopen{ width:190px; }
   .tasks-table th, .tasks-table td{ border:1px solid var(--border); text-align:center; vertical-align:middle; }
@@ -856,6 +866,20 @@
   .user-badge #bellMenu .vm-item{ text-align:left; }
   .user-badge #bellMenu .vm-item small{ text-transform:none; letter-spacing:0; font-size:11.5px; }
   .user-badge .bell-menu .vm-item span{ font-weight:700; }
+  .rn-body{ white-space:pre-wrap; font-size:13px; line-height:1.6; color:var(--text); margin-top:12px; }
+  .rn-date{ font-size:12px; color:var(--text-dim); }
+  .rn-form{ display:flex; flex-direction:column; gap:8px; margin-top:10px; }
+  .rn-form input, .rn-form textarea{ width:100%; box-sizing:border-box; padding:8px 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text); font:inherit; font-size:12.5px; outline:none; }
+  .rn-form textarea{ min-height:150px; resize:vertical; line-height:1.5; }
+  .rn-form input:focus, .rn-form textarea:focus{ border-color:var(--accent); }
+  .rn-list{ display:flex; flex-direction:column; gap:6px; margin-top:12px; }
+  .rn-item{ display:flex; align-items:center; gap:10px; padding:8px 10px; border:1px solid var(--border); border-radius:var(--radius-sm); background:var(--bg-elev-2); font-size:12.5px; }
+  .rn-item b{ flex:1; min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .rn-item small{ color:var(--text-dim); white-space:nowrap; }
+  .rn-item button{ background:none; border:none; color:var(--text-faint); cursor:pointer; padding:2px; display:flex; }
+  .rn-item button:hover{ color:var(--accent); }
+  .rn-item button.danger:hover{ color:var(--no); }
+  .rn-item button svg{ width:14px; height:14px; }
   .bell-menu .bell-empty{ font-size:12px; color:var(--text-faint); padding:6px 4px; }
   .user-badge .bell-menu .bell-all{ width:100%; height:auto; border-radius:var(--radius-sm); font-size:11.5px; font-weight:700; color:var(--accent); padding:6px; margin-top:4px; }
   .team-focus-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(220px, 1fr)); gap:16px; }
@@ -1079,9 +1103,10 @@
   .field-error{ display:none; font-size:11px; color:var(--no); margin-top:4px; font-weight:600; }
   .field-error.show{ display:block; }
   .call-date-row{ display:flex; align-items:center; gap:8px; margin-top:12px; }
-  .call-date-row label{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:700; }
+  .call-date-row input.invalid{ border-color:var(--no); }
+  .call-date-row label{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:700; white-space:nowrap; min-width:78px; }
   .call-date-row input{
-    flex-grow:1; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    flex-grow:1; min-width:0; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
     background:var(--bg-elev-2); color:var(--text); font-size:12.5px; outline:none; color-scheme: light dark;
   }
 
@@ -1101,6 +1126,23 @@
 
   /* ---------- Monthly scores grid (Agents tab) ---------- */
   .monthly-card{ margin-bottom:18px; }
+  .eff-card{ margin-bottom:18px; }
+  .eff-head{ display:flex; align-items:baseline; gap:10px; flex-wrap:wrap; margin-bottom:14px; }
+  .eff-head h3{ margin:0; }
+  .eff-sub{ font-size:12px; color:var(--text-dim); }
+  .eff-tiles{ display:grid; grid-template-columns:repeat(auto-fit, minmax(170px, 1fr)); gap:10px; margin-bottom:16px; }
+  .eff-tile{ background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; }
+  .eff-tile .lbl{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
+  .eff-tile .val{ font-size:22px; font-weight:800; color:var(--accent); margin-top:4px; }
+  .eff-tile .sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+  .eff-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; }
+  .eff-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .eff-table th{ text-align:right; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); padding:6px 8px; border-bottom:1px solid var(--border); }
+  .eff-table td{ text-align:right; padding:7px 8px; border-bottom:1px solid var(--border); }
+  .eff-table th:first-child, .eff-table td:first-child{ text-align:left; }
+  .eff-table tfoot td{ font-weight:800; border-bottom:none; }
+  .eff-empty{ font-size:12.5px; color:var(--text-dim); padding:6px 0; }
+  .eval-item .time{ font-size:11.5px; color:var(--text-dim); white-space:nowrap; }
   .monthly-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .monthly-head h3{ margin:0; }
   .monthly-head .monthly-sub{ font-size:11.5px; color:var(--text-faint); }
@@ -1296,7 +1338,7 @@
   /* ---------- Agent portal (an agent sees only their own data) ---------- */
   body.is-agent #tabEvalBtn, body.is-agent #tabConfigBtn, body.is-agent #tabTasksBtn, body.is-agent #btnBell,
   body.is-agent .agents-filter-row > .agents-filter-field:nth-child(-n+2), body.is-agent .team-switch-row,
-  body.is-agent .monthly-card, body.is-agent #teamHeadRow, body.is-agent #teamDataWrap,
+  body.is-agent .monthly-card, body.is-agent .eff-card, body.is-agent #teamHeadRow, body.is-agent #teamDataWrap,
   body.is-agent .agent-meta-row, body.is-agent #agentsScopeNote{ display:none !important; }
   .agent-meta-text{ display:none; font-size:12.5px; color:var(--text-dim); margin:2px 0 14px; }
   body.is-agent .agent-meta-text{ display:block; }
@@ -1337,6 +1379,9 @@
   .quick-notes textarea:focus{ border-color:var(--accent); }
   .qn-clear{ background:none; border:none; color:var(--text-faint); font-size:11.5px; cursor:pointer; padding:0; }
   .qn-clear:hover{ color:var(--no); }
+  .qn-actions{ display:flex; align-items:center; gap:10px; }
+  .qn-add{ background:var(--accent-soft); border:1px solid var(--accent-dim); color:var(--accent); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; cursor:pointer; }
+  .qn-add:hover{ border-color:var(--accent); }
 
   /* ---------- Repeated error alerts ---------- */
   .repeat-alert{ display:none; margin-top:10px; border:1px solid var(--no); background:var(--no-soft); border-radius:var(--radius-sm); padding:9px 11px; font-size:12px; }
@@ -1495,6 +1540,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           <div class="field field-wide"><label for="fReason">Call reason <span class="req" title="Required">*</span></label><input id="fReason" placeholder="Call reason"></div>
           <div class="field field-med"><label for="fCaller">Caller's name</label><input id="fCaller" placeholder="Caller's name"></div>
           <div class="field field-narrow"><label for="fTicket">Ticket ID <span class="req" title="Required">*</span></label><input id="fTicket" placeholder="Ticket ID"></div>
+          <div class="field field-narrow"><label for="fCallId">Call ID</label><input id="fCallId" placeholder="Call ID"></div>
           <div class="field field-narrow"><label for="fOrder">Order ID</label><input id="fOrder" placeholder="Order ID"></div>
         </div>
         <div class="search-scenario-row">
@@ -1534,6 +1580,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <input type="date" id="fCallDate">
           </div>
           <div class="field-error" id="errCallDate"></div>
+          <div class="call-date-row">
+            <label for="fTimeSpent">Time spent</label>
+            <input id="fTimeSpent" placeholder="e.g. 25m" autocomplete="off" title="How long the evaluation took">
+          </div>
+          <div class="field-error" id="errTimeSpent"></div>
           <div class="sched-banner" id="schedBanner"></div>
           <div class="repeat-alert" id="evalRepeatAlert"></div>
         </div>
@@ -1583,7 +1634,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </div>
         <div class="side-row">
         <div class="panel quick-notes" id="quickNotesPanel" style="display:none;">
-          <div class="extras-head"><h4>Quick notes</h4><button type="button" class="qn-clear" id="btnClearQuickNotes" title="Clear your notes">Clear</button></div>
+          <div class="extras-head"><h4>Quick notes</h4><div class="qn-actions"><button type="button" class="qn-add" id="btnQuickNotesToEval" title="Add these notes to the evaluation summary">+ Add to evaluation</button><button type="button" class="qn-clear" id="btnClearQuickNotes" title="Clear your notes">Clear</button></div></div>
           <textarea id="quickNotes"></textarea>
         </div>
         <div class="panel" id="focusPanel">
@@ -1696,6 +1747,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           <div class="grid-pane" id="assignTable" data-pane="assign"></div>
         </div>
       </div>
+    </div>
+
+    <div class="team-card eff-card" id="effCard">
+      <div class="eff-head"><h3>Efficiency</h3><span class="eff-sub" id="effSub"></span></div>
+      <div id="effBody"><div class="eff-empty">Loading...</div></div>
     </div>
 
     <div id="agentCard" class="agent-stat-card" style="display:none;">
@@ -2068,6 +2124,17 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
     </div>
 
+    <div class="cfg-block admin-only" id="cfgReleaseNotesBlock">
+      <h4>Release notes</h4>
+      <p class="hint">Write what changed in the app. When you publish, every evaluator gets it in their notifications (the bell) the next time they open the app, until they read it.</p>
+      <div class="rn-form">
+        <input id="rnTitle" maxlength="200" placeholder="Title (e.g. What's new · October 28)">
+        <textarea id="rnBody" maxlength="20000" placeholder="What changed"></textarea>
+        <div><button type="button" class="btn btn-primary" id="btnPublishNote">Publish to evaluators</button></div>
+      </div>
+      <div class="rn-list" id="rnList"></div>
+    </div>
+
     <div class="cfg-block admin-only" id="cfgTestDataBlock" style="display:none;">
       <h4>Test data</h4>
       <div class="hint" id="cfgTestDataText"></div>
@@ -2078,6 +2145,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </div>
   </div>
 
+</div>
+
+<div class="modal-overlay" id="releaseNoteOverlay">
+  <div class="modal-box">
+    <button class="modal-close" id="btnCloseReleaseNote">&times;</button>
+    <h3 id="rnViewTitle"></h3>
+    <div class="rn-date" id="rnViewDate"></div>
+    <div class="rn-body" id="rnViewBody"></div>
+  </div>
 </div>
 
 <div class="save-toast" id="saveToast">Saved</div>
@@ -2746,6 +2822,52 @@ let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zer
 // Which text option the evaluator picked per rubric: { id: { yes: n, no: n } },
 // 0 being the main text and 1-3 the extra options from Configuration.
 let CHOICES = {};
+// What the evaluator wrote on a rubric that goes in the summary: { id: { impact, comment } }.
+let RUBRIC_NOTES = {};
+
+function rubricNote(id){
+  const n = RUBRIC_NOTES[id] || {};
+  return { impact: String(n.impact || '').trim(), comment: String(n.comment || '').trim() };
+}
+function cleanRubricNotes(src){
+  const out = {};
+  if(src && typeof src === 'object') Object.keys(src).forEach(id=>{
+    const n = src[id] || {};
+    const impact = typeof n.impact === 'string' ? n.impact : '', comment = typeof n.comment === 'string' ? n.comment : '';
+    if(impact.trim() || comment.trim()) out[id] = { impact, comment };
+  });
+  return out;
+}
+function rubricNoteLines(id){
+  const n = rubricNote(id);
+  return (n.impact ? '\nHow this affects the customer: ' + n.impact : '') + (n.comment ? '\nComments: ' + n.comment : '');
+}
+
+// Time spent: "25m", "1h 10m", "90s", "25:30" (min:sec), "1:05:00" or a plain number of minutes.
+function parseDuration(text){
+  const str = String(text || '').trim().toLowerCase();
+  if(!str) return null;
+  if(/^\d+(\.\d+)?$/.test(str)) return Math.round(parseFloat(str) * 60);
+  const clock = str.match(/^(\d+):([0-5]?\d)(?::([0-5]?\d))?$/);
+  if(clock) return clock[3] !== undefined ? (+clock[1]) * 3600 + (+clock[2]) * 60 + (+clock[3]) : (+clock[1]) * 60 + (+clock[2]);
+  let total = 0, found = false;
+  const rest = str.replace(/(\d+(?:\.\d+)?)\s*(hours?|hrs?|h|minutes?|mins?|m|seconds?|secs?|s)(?![a-z])/g, (all, n, unit)=>{
+    found = true;
+    total += parseFloat(n) * (unit[0] === 'h' ? 3600 : unit[0] === 'm' ? 60 : 1);
+    return ' ';
+  });
+  return found && !rest.replace(/[\s,]|and/g, '') ? Math.round(total) : NaN;
+}
+function formatDuration(sec){
+  if(sec === null || sec === undefined || sec === '' || isNaN(sec)) return '';
+  sec = Math.max(0, Math.round(Number(sec)));
+  const h = Math.floor(sec / 3600), m = Math.floor(sec % 3600 / 60), x = sec % 60;
+  const parts = [];
+  if(h) parts.push(h + 'h');
+  if(m) parts.push(m + 'm');
+  if(x) parts.push(x + 's');
+  return parts.join(' ') || '0m';
+}
 
 // Accomplishments are picked by hand (up to MAX_ACCOMPLISHMENTS) from the
 // rubrics marked as met; focus points come from a fixed list.
@@ -3348,6 +3470,17 @@ function applyRubricSearch(){
   });
 }
 
+const RUBRIC_NOTES_HTML = `
+            <div class="ic-notes">
+              <textarea data-note="impact" rows="1" maxlength="1000" placeholder="How does this affect the customer?"></textarea>
+              <textarea data-note="comment" rows="1" maxlength="1000" placeholder="Comments"></textarea>
+            </div>`;
+// The two note boxes show on the rubrics that go in the summary.
+function rubricInSummary(id, cfg){
+  const val = ANSWERS[id];
+  return val === 'no' || val === 'feedback' || (val === 'yes' && !cfg.zeroType && ACCOMPLISHMENTS.includes(id));
+}
+
 function renderSections(){
   const root = document.getElementById('sections');
   root.innerHTML = '';
@@ -3408,6 +3541,7 @@ function renderSections(){
               </button>
               ${fbBtn}
             </div>
+            ${RUBRIC_NOTES_HTML}
           `;
         }else{
           row.innerHTML = `
@@ -3423,8 +3557,12 @@ function renderSections(){
               </button>
               ${fbBtn}
             </div>
+            ${RUBRIC_NOTES_HTML}
           `;
         }
+        const note = RUBRIC_NOTES[id] || {};
+        row.querySelector('textarea[data-note="impact"]').value = note.impact || '';
+        row.querySelector('textarea[data-note="comment"]').value = note.comment || '';
         itemsWrap.appendChild(row);
       }catch(e){ console.error('Skipping broken item', id, e); }
     });
@@ -3432,6 +3570,13 @@ function renderSections(){
 
   root.querySelectorAll('.txt-pick').forEach(btn=>{
     btn.addEventListener('click', (e)=>{ e.stopPropagation(); openTextPicker(btn); });
+  });
+  root.querySelectorAll('.ic-notes textarea').forEach(ta=>{
+    ta.addEventListener('input', ()=>{
+      const id = ta.closest('.item-card').dataset.id;
+      RUBRIC_NOTES[id] = Object.assign({}, RUBRIC_NOTES[id], { [ta.dataset.note]: ta.value });
+      refreshEval();
+    });
   });
 
   root.querySelectorAll('.pill').forEach(btn=>{
@@ -3482,6 +3627,7 @@ function refreshEval(){
           : val === 'feedback' ? 'Choose the feedback text (same examples as deductions, no points)' : 'Choose which text goes in the summary';
       }
     }
+    row.classList.toggle('has-notes', rubricInSummary(id, cfg));
     if(cfg.zeroType) return;
     row.classList.toggle('not-applicable', !val);
   });
@@ -3560,12 +3706,14 @@ function buildOutput(score, earned, possible, zeroTriggered){
   const rawEvaluator = (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : '';
   const rawCaller = document.getElementById('fCaller').value.trim();
   const rawTicket = document.getElementById('fTicket').value.trim();
+  const rawCallId = document.getElementById('fCallId').value.trim();
   const rawOrder = document.getElementById('fOrder').value.trim();
   const rawReason = document.getElementById('fReason').value.trim();
 
   let fieldsBlock = [];
   fieldsBlock.push('Caller: ' + (rawCaller || 'N/A'));
   fieldsBlock.push('Ticket ID: ' + (rawTicket || 'N/A'));
+  if(rawCallId) fieldsBlock.push('Call ID: ' + rawCallId);
   fieldsBlock.push('Call Reason: ' + (rawReason || 'N/A'));
   if(rawOrder) fieldsBlock.push('Order ID: ' + rawOrder);
 
@@ -3576,7 +3724,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
     sections.forEach(sec=>{
       const items = pickItems(sec);
       if(!items.length) return;
-      const lines = items.map(it=> formatLine(it.icon, { label: it.label, subtitle: it.subtitle, pts: it.pts, zeroType: sec.isZeroSection }, it.text, it.kind));
+      const lines = items.map(it=> formatLine(it.icon, { label: it.label, subtitle: it.subtitle, pts: it.pts, zeroType: sec.isZeroSection }, it.text, it.kind) + rubricNoteLines(it.id));
       blocks.push(lines.join('\n\n'));
     });
     return blocks;
@@ -4688,16 +4836,16 @@ function computeSectionBreakdown(){
       if(!cfg) return;
       const val = ANSWERS[id];
       if(cfg.zeroType){
-        if(val === 'no') zeroList.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
-        else if(val === 'feedback') zeroFeedback.push({ label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
+        if(val === 'no') zeroList.push({ id, label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
+        else if(val === 'feedback') zeroFeedback.push({ id, label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
         return;
       }
       if(val === 'yes'){
         earned += cfg.pts; possible += cfg.pts;
-        if(ACCOMPLISHMENTS.includes(id)) accomplishments.push({ label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'yes'), pts: cfg.pts });
+        if(ACCOMPLISHMENTS.includes(id)) accomplishments.push({ id, label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'yes'), pts: cfg.pts });
       }
-      else if(val === 'no'){ possible += cfg.pts; deductions.push({ label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
-      else if(val === 'feedback'){ feedbacks.push({ label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
+      else if(val === 'no'){ possible += cfg.pts; deductions.push({ id, label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
+      else if(val === 'feedback'){ feedbacks.push({ id, label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
     });
     return {
       key: sec.key, title: sec.title, earned, possible,
@@ -4839,7 +4987,17 @@ async function init(){
     document.getElementById('iconSun').classList.toggle('on', next==='light');
   });
 
-  ['fAgent','fCaller','fTicket','fOrder','fReason'].forEach(id=>{
+  document.getElementById('fTimeSpent').addEventListener('input', ()=>{
+    setFieldError('fTimeSpent', 'errTimeSpent', '');
+    saveCurrentDraftToLocal();
+  });
+  document.getElementById('fTimeSpent').addEventListener('change', (e)=>{
+    const sec = parseDuration(e.target.value);
+    if(Number.isNaN(sec)) setFieldError('fTimeSpent', 'errTimeSpent', 'Write the time like 25m, 1h 10m or 90s.');
+    else if(sec !== null) e.target.value = formatDuration(sec);
+    saveCurrentDraftToLocal();
+  });
+  ['fAgent','fCaller','fTicket','fCallId','fOrder','fReason'].forEach(id=>{
     document.getElementById(id).addEventListener('input', ()=>{
       document.getElementById(id).classList.remove('invalid');
       refreshEval();
@@ -5362,6 +5520,11 @@ function validateEvaluationForm(){
     if(empty) problems.push(label);
   });
 
+  if(Number.isNaN(parseDuration(document.getElementById('fTimeSpent').value))){
+    setFieldError('fTimeSpent', 'errTimeSpent', 'Write the time like 25m, 1h 10m or 90s.');
+    problems.push('a valid time spent');
+  }else setFieldError('fTimeSpent', 'errTimeSpent', '');
+
   return { ok: problems.length === 0, problems, agent, callDate };
 }
 
@@ -5377,6 +5540,10 @@ function buildDetailItems(){
         id, section: sec.key, sectionTitle: sec.title, label: cfg.label, pts: cfg.pts, zero: !!cfg.zeroType,
         result: val, text: chosenText(id, cfg, val === 'yes' ? 'yes' : 'no'),
       });
+      const note = rubricNote(id);
+      const item = items[items.length - 1];
+      if(rubricInSummary(id, cfg) && note.impact) item.impact = note.impact;
+      if(rubricInSummary(id, cfg) && note.comment) item.comment = note.comment;
     });
   });
   return items;
@@ -5393,6 +5560,7 @@ function buildEvaluationDetails(){
     scenarioId, scenarioName: scenario ? scenario.name : null,
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
+    rubricNotes: cleanRubricNotes(RUBRIC_NOTES),
     accomplishments: ACCOMPLISHMENTS.slice(),
     focusPoints: FOCUS_POINTS.slice(),
     summary: document.getElementById('output').value,
@@ -5422,6 +5590,8 @@ function buildEvaluationPayload(agent, callDate, schedule){
       evaluator_name: (CURRENT_USER && CURRENT_USER.display_name) || null,
       call_date: callDate,
       ticket_id: document.getElementById('fTicket').value.trim() || null,
+      call_id: document.getElementById('fCallId').value.trim() || null,
+      time_spent_seconds: parseDuration(document.getElementById('fTimeSpent').value),
       call_reason: document.getElementById('fReason').value.trim() || null,
       score: LAST_STATE.score,
       points_earned: LAST_STATE.earned,
@@ -5448,7 +5618,7 @@ async function insertEvaluationAtomic(payload){
 // Fallback for databases where save_evaluation has not been created yet.
 async function insertEvaluationSequential(payload){
   const row = Object.assign({}, payload.evaluation);
-  if(!EVAL_LINK_AVAILABLE){ delete row.assignment_id; delete row.kind; delete row.details; }
+  if(!EVAL_LINK_AVAILABLE){ delete row.assignment_id; delete row.kind; delete row.details; delete row.call_id; delete row.time_spent_seconds; }
   const { data: evalRow, error: evalErr } = await supabaseClient
     .from('evaluations').insert(row).select('id').single();
   if(evalErr) throw evalErr;
@@ -5581,6 +5751,8 @@ function buildEmailBody(){
   lines.push('');
   lines.push('Caller: ' + (rawCaller || 'N/A'));
   lines.push('Ticket ID: ' + (rawTicket || 'N/A'));
+  const rawCallId = document.getElementById('fCallId').value.trim();
+  if(rawCallId) lines.push('Call ID: ' + rawCallId);
   lines.push('Call Reason: ' + (rawReason || 'N/A'));
   if(rawOrder) lines.push('Order ID: ' + rawOrder);
   lines.push('____________________________');
@@ -5591,8 +5763,8 @@ function buildEmailBody(){
   let anyDeduction = false;
   sections.forEach(sec=>{
     const items = [];
-    sec.deductions.forEach(d=> items.push({ label: d.label, text: d.text, tag: '(-' + d.pts + 'pts)' }));
-    sec.zeroList.forEach(d=> items.push({ label: d.label, text: d.text, tag: '(Auto-Zero)' }));
+    sec.deductions.forEach(d=> items.push({ label: d.label, text: d.text + rubricNoteLines(d.id), tag: '(-' + d.pts + 'pts)' }));
+    sec.zeroList.forEach(d=> items.push({ label: d.label, text: d.text + rubricNoteLines(d.id), tag: '(Auto-Zero)' }));
     if(!items.length) return;
     anyDeduction = true;
     lines.push('▸ ' + sec.title);
@@ -5628,7 +5800,8 @@ document.getElementById('btnSendEmail').addEventListener('click', async ()=>{
     showToast('Opening email — could not copy the report image automatically');
   }
 
-  const subject = 'QA Evaluation';
+  const callId = document.getElementById('fCallId').value.trim();
+  const subject = 'QA Evaluation' + (callId ? ' - Call ID ' + callId : '');
   const body = SUMMARY_MANUAL ? document.getElementById('output').value : buildEmailBody();
   window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 
@@ -5733,7 +5906,7 @@ function getAgentsDateRange(){
 }
 
 const EVAL_COLUMNS = 'id, agent_id, score, points_earned, points_possible, call_date, ticket_id, call_reason, evaluator_name, created_at, zero_triggered, agents(name)';
-const EVAL_LINK_COLUMNS = ', evaluator_id, assignment_id, kind, updated_at';
+const EVAL_LINK_COLUMNS = ', evaluator_id, assignment_id, kind, updated_at, call_id, time_spent_seconds';
 let EVAL_LINK_AVAILABLE = true;
 
 async function fetchEvaluations(opts){
@@ -5907,6 +6080,57 @@ function evalScoreClass(score){
 function currentMonthValue(){
   const now = new Date();
   return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+}
+
+/* ---------- Efficiency: time spent on evaluations and tasks (month of the table above, both teams) ---------- */
+function effRows(groups){
+  return Object.keys(groups).sort((a, b)=> groups[b].count - groups[a].count || a.localeCompare(b)).map(name=>{
+    const g = groups[name];
+    return '<tr><td>' + escapeHtml(name) + '</td><td>' + g.count + '</td><td>' + g.timed + '</td><td>' + (g.timed ? formatDuration(g.total) : '—') + '</td><td>' + (g.timed ? formatDuration(g.total / g.timed) : '—') + '</td></tr>';
+  }).join('');
+}
+function effGroup(list, nameOf, secondsOf){
+  const groups = {}, all = { count: 0, timed: 0, total: 0 };
+  list.forEach(x=>{
+    const name = nameOf(x) || 'Nobody';
+    const g = groups[name] = groups[name] || { count: 0, timed: 0, total: 0 };
+    const sec = secondsOf(x);
+    g.count++; all.count++;
+    if(sec !== null && sec !== undefined){ g.timed++; g.total += sec; all.timed++; all.total += sec; }
+  });
+  return { groups, all };
+}
+function effTable(title, who, countLabel, data){
+  if(!data.all.count) return '<div><div class="agent-fail-title">' + title + '</div><div class="eff-empty">Nothing in this month.</div></div>';
+  return '<div><div class="agent-fail-title">' + title + '</div><table class="eff-table"><thead><tr><th>' + who + '</th><th>' + countLabel + '</th><th>With time</th><th>Total time</th><th>Average</th></tr></thead>' +
+    '<tbody>' + effRows(data.groups) + '</tbody>' +
+    '<tfoot><tr><td>Total</td><td>' + data.all.count + '</td><td>' + data.all.timed + '</td><td>' + (data.all.timed ? formatDuration(data.all.total) : '—') + '</td><td>' + (data.all.timed ? formatDuration(data.all.total / data.all.timed) : '—') + '</td></tr></tfoot></table></div>';
+}
+function effTile(label, data, noun){
+  return '<div class="eff-tile"><div class="lbl">' + label + '</div><div class="val">' + (data.all.timed ? formatDuration(data.all.total / data.all.timed) : '—') + '</div>' +
+    '<div class="sub">' + (data.all.timed ? 'average of ' + data.all.timed + ' ' + noun + (data.all.timed === 1 ? '' : 's') + ' with time' : 'no times entered yet') + '</div></div>';
+}
+async function renderEfficiency(monthEvals, scope){
+  const body = document.getElementById('effBody');
+  document.getElementById('effSub').textContent = scope.label + ' · NA and CALA together';
+  if(TASKS_AVAILABLE && !TASKS.length) await loadTasks();
+  const end = scope.endDate;
+  const doneTasks = TASKS.filter(t=> t.status === 'completed' && t.completed_at && (()=>{
+    const d = new Date(t.completed_at);
+    const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+    return day >= scope.startDate && day <= end;
+  })());
+  const evalData = effGroup(monthEvals, evaluatorLabel, e=> e.time_spent_seconds);
+  const taskData = effGroup(doneTasks, t=> taskResponsible(t) || profileName(t.completed_by), t=> t.time_spent_seconds);
+  const totalSec = evalData.all.total + taskData.all.total;
+  body.innerHTML = '<div class="eff-tiles">' +
+    effTile('Average per evaluation', evalData, 'evaluation') +
+    effTile('Average per task', taskData, 'task') +
+    '<div class="eff-tile"><div class="lbl">Time logged</div><div class="val">' + (totalSec ? formatDuration(totalSec) : '—') + '</div>' +
+    '<div class="sub">evaluations ' + (evalData.all.total ? formatDuration(evalData.all.total) : '0m') + ' · tasks ' + (taskData.all.total ? formatDuration(taskData.all.total) : '0m') + '</div></div>' +
+    '</div><div class="eff-grid">' +
+    effTable('Evaluations by evaluator', 'Evaluator', 'Evaluations', evalData) +
+    effTable('Completed tasks by person', 'Responsible', 'Tasks', taskData) + '</div>';
 }
 
 function monthlyGridScope(){
@@ -6303,7 +6527,9 @@ async function openViewEvalModal(evalId, fromProfile){
           const pts = it.zero ? (it.result === 'no' ? 'Auto-Zero' : '') : (it.result === 'no' ? '-' + it.pts + 'pts' : it.result === 'yes' ? it.pts + 'pts' : 'feedback');
           return '<div class="ve-row res-' + it.result + '"><span class="ic">' + (RESULT_ICON[it.result] || '') + '</span><div>' +
             '<span class="lbl">' + escapeHtml(it.label) + '</span> <span class="pts">' + escapeHtml(pts) + '</span>' +
-            (it.text ? '<span class="txt">' + escapeHtml(it.text) + '</span>' : '') + '</div></div>';
+            (it.text ? '<span class="txt">' + escapeHtml(it.text) + '</span>' : '') +
+            (it.impact ? '<span class="txt"><b>How this affects the customer:</b> ' + escapeHtml(it.impact) + '</span>' : '') +
+            (it.comment ? '<span class="txt"><b>Comments:</b> ' + escapeHtml(it.comment) + '</span>' : '') + '</div></div>';
         }).join('') + '</div>').join('');
     }else{
       // Saved before full details were kept: show section scores and deductions.
@@ -6321,7 +6547,8 @@ async function openViewEvalModal(evalId, fromProfile){
     }
     const score = Math.round(Number(row.score));
     const meta = [
-      ['Call date', row.call_date], ['Ticket ID', row.ticket_id], ['Call reason', row.call_reason],
+      ['Call date', row.call_date], ['Ticket ID', row.ticket_id], ['Call ID', row.call_id], ['Call reason', row.call_reason],
+      ['Time spent', formatDuration(row.time_spent_seconds)],
       ['Caller', d && d.caller], ['Order ID', d && d.orderId],
       ['Evaluated by', evaluatorLabel(row)], ['Assignment', row.assignment_id || row.kind ? (kindLabel(row.kind) || 'Yes') : 'Not scheduled'],
       ['Saved', row.created_at ? new Date(row.created_at).toLocaleString() : ''],
@@ -6370,18 +6597,22 @@ function startEditingEvaluation(row){
   document.getElementById('fAgent').readOnly = true;
   document.getElementById('fCaller').value = d.caller || '';
   document.getElementById('fTicket').value = row.ticket_id || '';
+  document.getElementById('fCallId').value = row.call_id || '';
+  document.getElementById('fTimeSpent').value = formatDuration(row.time_spent_seconds);
   document.getElementById('fOrder').value = d.orderId || '';
   document.getElementById('fReason').value = row.call_reason || '';
   document.getElementById('fCallDate').value = row.call_date || todayLocal();
-  ['fAgent', 'fCaller', 'fTicket', 'fOrder', 'fReason'].forEach(id=> document.getElementById(id).classList.remove('invalid'));
+  ['fAgent', 'fCaller', 'fTicket', 'fCallId', 'fOrder', 'fReason'].forEach(id=> document.getElementById(id).classList.remove('invalid'));
   setFieldError('fAgent', 'errAgent', '');
   setFieldError('fCallDate', 'errCallDate', '');
+  setFieldError('fTimeSpent', 'errTimeSpent', '');
   if(d.scenarioId && CONFIG.scenarios.items[d.scenarioId]){
     CONFIG.activeScenarioId = d.scenarioId;
     document.getElementById('scenarioSelect').value = d.scenarioId;
   }
   ANSWERS = Object.assign({}, d.answers);
   CHOICES = d.choices && typeof d.choices === 'object' ? JSON.parse(JSON.stringify(d.choices)) : {};
+  RUBRIC_NOTES = cleanRubricNotes(d.rubricNotes);
   ACCOMPLISHMENTS = Array.isArray(d.accomplishments) ? d.accomplishments.slice() : [];
   FOCUS_POINTS = focusList(d.focusPoints);
   SUMMARY_MANUAL = !!(d.summaryManual && typeof d.summary === 'string');
@@ -6425,16 +6656,18 @@ function stopEditingEvaluation(){
 // Back to a blank evaluation (everything marked as Met).
 function resetEvaluationForm(){
   resetAnswersToDefault();
-  ['fAgent', 'fCaller', 'fTicket', 'fOrder', 'fReason'].forEach(id=>{
+  ['fAgent', 'fCaller', 'fTicket', 'fCallId', 'fOrder', 'fReason', 'fTimeSpent'].forEach(id=>{
     document.getElementById(id).value = '';
     document.getElementById(id).classList.remove('invalid');
   });
   document.getElementById('fCallDate').value = todayLocal();
   setFieldError('fAgent', 'errAgent', '');
   setFieldError('fCallDate', 'errCallDate', '');
+  setFieldError('fTimeSpent', 'errTimeSpent', '');
   setSummaryManual(false);
   LAST_SAVED_SIGNATURE = null;
   CHOICES = {};
+  RUBRIC_NOTES = {};
   ACCOMPLISHMENTS = [];
   FOCUS_POINTS = [];
   renderSections();
@@ -6816,10 +7049,12 @@ async function refreshAgentsView(){
     if(!isAgentUser()){
       const teamEvals = (await fetchEvaluations({ startDate, endDate })).filter(inTeam);
       const gridScope = monthlyGridScope();
-      const gridEvals = (await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate })).filter(inTeam);
+      const monthEvals = await fetchEvaluations({ startDate: gridScope.startDate, endDate: gridScope.endDate });
+      const gridEvals = monthEvals.filter(inTeam);
       await ensureProfilesLoaded();
       const gridAssignments = await fetchAssignments(gridScope.month);
       renderMonthlyGrid(gridEvals, gridScope, gridAssignments);
+      await renderEfficiency(monthEvals, gridScope);
       await renderTeamOverview(teamEvals);
       await renderTeamFocus(teamEvals);
       renderRanking(teamEvals);
@@ -7061,6 +7296,7 @@ function renderEvalList(evals, details){
       '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
       (visibleDisputes(details[e.id]).length ? '<span class="disputed-tag" title="This evaluation was disputed">Disputed</span>' : '') +
       '<span class="by" title="Evaluated by">' + escapeHtml(evaluatorLabel(e)) + '</span>' +
+      (e.time_spent_seconds !== null && e.time_spent_seconds !== undefined ? '<span class="time" title="Time spent on the evaluation">' + formatDuration(e.time_spent_seconds) + '</span>' : '') +
       '<span class="score ' + evalScoreClass(Math.round(e.score)) + '">' + Math.round(e.score) + '%</span>' +
       actions +
       '</div>';
@@ -7268,6 +7504,8 @@ function captureDraftSnapshot(){
     agentName: document.getElementById('fAgent').value.trim(),
     callerName: document.getElementById('fCaller').value.trim(),
     ticketId: document.getElementById('fTicket').value.trim(),
+    callId: document.getElementById('fCallId').value.trim(),
+    timeSpent: document.getElementById('fTimeSpent').value.trim(),
     orderId: document.getElementById('fOrder').value.trim(),
     callReason: document.getElementById('fReason').value.trim(),
     callDate: document.getElementById('fCallDate').value,
@@ -7277,6 +7515,7 @@ function captureDraftSnapshot(){
     scenarioId: CONFIG ? CONFIG.activeScenarioId : null,
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
+    rubricNotes: cleanRubricNotes(RUBRIC_NOTES),
     accomplishments: ACCOMPLISHMENTS.slice(),
     focusPoints: FOCUS_POINTS.slice(),
     updatedAt: new Date().toISOString(),
@@ -7324,6 +7563,9 @@ function applyDraftSnapshot(snap){
   document.getElementById('fAgent').value = snap.agentName || '';
   document.getElementById('fCaller').value = snap.callerName || '';
   document.getElementById('fTicket').value = snap.ticketId || '';
+  document.getElementById('fCallId').value = snap.callId || '';
+  document.getElementById('fTimeSpent').value = snap.timeSpent || '';
+  setFieldError('fTimeSpent', 'errTimeSpent', '');
   document.getElementById('fOrder').value = snap.orderId || '';
   document.getElementById('fReason').value = snap.callReason || '';
   document.getElementById('fCallDate').value = snap.callDate || todayLocal();
@@ -7337,6 +7579,7 @@ function applyDraftSnapshot(snap){
   }
   ANSWERS = Object.assign({}, snap.answers || {});
   CHOICES = (snap.choices && typeof snap.choices === 'object') ? JSON.parse(JSON.stringify(snap.choices)) : {};
+  RUBRIC_NOTES = cleanRubricNotes(snap.rubricNotes);
   ACCOMPLISHMENTS = Array.isArray(snap.accomplishments) ? snap.accomplishments.slice() : [];
   FOCUS_POINTS = focusList(snap.focusPoints);
   SECTIONS.forEach(sec=> sortByApplicability(sec.key));
@@ -7704,8 +7947,8 @@ function renderTasks(highlightId){
   const done = TASKS.filter(t=> t.status === 'completed')
     .sort((a, b)=> String(b.completed_at || b.updated_at).localeCompare(String(a.completed_at || a.updated_at)));
 
-  const cols = '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-status"><col class="c-del"></colgroup>';
-  const head = '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Status</th><th></th></tr></thead>';
+  const cols = '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-time"><col class="c-status"><col class="c-del"></colgroup>';
+  const head = '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th title="How long the task took">Time</th><th>Status</th><th></th></tr></thead>';
   const rows = pending.map(t=> '<tr data-task="' + t.id + '" class="' + (t.id === highlightId ? 'task-new' : '') + (t.on_hold ? ' task-hold' : '') + '">' +
     '<td class="t-left"><input class="t-input" data-f="title" value="' + escapeHtml(t.title || '') + '" placeholder="Task name" maxlength="200"></td>' +
     '<td><button type="button" class="tsel t-prio p-' + t.priority + '" data-menu="priority"><span class="tsel-text">' +
@@ -7713,10 +7956,11 @@ function renderTasks(highlightId){
     '<td><button type="button" class="tsel t-date" data-menu="date">' + TASK_CAL + '<span class="tsel-text">' + taskDateLabel(t.due_date) + '</span></button></td>' +
     '<td><input class="t-input t-center" data-f="action" value="' + escapeHtml(t.action || '') + '" placeholder="Type or pick" maxlength="300" autocomplete="off"></td>' +
     '<td><button type="button" class="tsel t-person" data-menu="responsible">' + taskPersonHtml(taskResponsible(t)) + TASK_CHEV + '</button></td>' +
+    '<td><input class="t-input t-center" data-f="time" value="' + escapeHtml(formatDuration(t.time_spent_seconds)) + '" placeholder="e.g. 45m" maxlength="40" autocomplete="off" title="How long the task took: 45m, 1h 30m, 90s"></td>' +
     '<td><button type="button" class="tsel t-status ' + (t.on_hold ? 's-on_hold' : 's-pending') + '" data-menu="status"><span class="t-dot"></span><span class="tsel-text">' + (t.on_hold ? 'On hold' : 'Pending') + '</span>' + TASK_CHEV + '</button></td>' +
     '<td><button type="button" class="task-del" data-del title="Delete task">' + TASK_X_ICON + '</button></td></tr>').join('');
   document.getElementById('tasksTable').innerHTML = cols + head + '<tbody>' +
-    (rows || '<tr><td colspan="7" class="tasks-empty">No pending tasks. Click Add task to create one.</td></tr>') + '</tbody>';
+    (rows || '<tr><td colspan="8" class="tasks-empty">No pending tasks. Click Add task to create one.</td></tr>') + '</tbody>';
 
   document.getElementById('doneTasksCount').textContent = done.length;
   const tally = {};
@@ -7724,13 +7968,14 @@ function renderTasks(highlightId){
   document.getElementById('doneTasksTally').innerHTML = Object.keys(tally).sort((a, b)=> tally[b] - tally[a] || a.localeCompare(b))
     .map(n=> '<span><span class="t-avatar">' + taskInitial(n) + '</span>' + escapeHtml(n) + '<b>' + tally[n] + '</b></span>').join('');
   document.getElementById('doneTasksTable').innerHTML = done.length
-    ? '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-status"><col class="c-del"></colgroup>' +
-      '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Completed</th><th></th></tr></thead><tbody>' +
+    ? '<colgroup><col class="c-title"><col class="c-prio"><col class="c-date"><col class="c-action"><col class="c-resp"><col class="c-time"><col class="c-status"><col class="c-del"></colgroup>' +
+      '<thead><tr><th class="t-left">Task</th><th>Priority</th><th>Date</th><th>Action</th><th>Responsible</th><th>Time</th><th>Completed</th><th></th></tr></thead><tbody>' +
       done.map(t=> '<tr data-task="' + t.id + '"><td class="t-left t-title">' + escapeHtml(t.title || '(untitled)') + '</td>' +
         '<td><span class="task-prio-tag p-' + t.priority + '">' + escapeHtml((TASK_PRIORITIES.find(p=> p[0] === t.priority) || ['', t.priority])[1]) + '</span></td>' +
         '<td>' + escapeHtml(t.due_date ? taskDateLabel(t.due_date) : '—') + '</td>' +
         '<td>' + escapeHtml(t.action || '—') + '</td>' +
         '<td><span class="t-person-static">' + taskPersonHtml(taskResponsible(t)) + '</span></td>' +
+        '<td><input class="t-input t-center" data-f="time" value="' + escapeHtml(formatDuration(t.time_spent_seconds)) + '" placeholder="e.g. 45m" maxlength="40" autocomplete="off" title="How long the task took: 45m, 1h 30m, 90s"></td>' +
         '<td><span class="t-done-stamp"><span class="t-dot"></span>' + escapeHtml(taskStampLabel(t.completed_at)) + '</span></td>' +
         '<td><div class="t-actions"><button type="button" class="task-del t-reopen" data-reopen title="Move back to pending"><svg viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 0 2.4-5.7M4 4v4.5h4.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>' +
         '<button type="button" class="task-del" data-del title="Delete task">' + TASK_X_ICON + '</button></div></td></tr>').join('') + '</tbody>'
@@ -7777,6 +8022,13 @@ async function setTaskField(id, f, value){
     const v = String(value).trim();
     if(v === (t[f] || '')) return;
     await updateTask(id, { [f]: v });
+  }else if(f === 'time'){
+    const sec = parseDuration(value);
+    const input = document.querySelector('#view-tasks tr[data-task="' + id + '"] input[data-f="time"]');
+    const show = ()=>{ if(input) input.value = formatDuration(t.time_spent_seconds); };
+    if(Number.isNaN(sec)){ showToast('Write the time like 45m, 1h 30m or 90s.'); show(); return; }
+    if(sec !== (t.time_spent_seconds === undefined ? null : t.time_spent_seconds)) await updateTask(id, { time_spent_seconds: sec });
+    show();
   }else if(f === 'priority'){
     if(value === t.priority) return;
     if(await updateTask(id, { priority: value })) renderTasks();
@@ -7933,11 +8185,17 @@ document.addEventListener('scroll', (e)=>{
 
 const tasksTableEl = document.getElementById('tasksTable');
 tasksTableEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
+const doneTasksTableEl = document.getElementById('doneTasksTable');
+doneTasksTableEl.addEventListener('keydown', (e)=>{ if(e.key === 'Enter' && e.target.matches('input[data-f]')) e.target.blur(); });
+doneTasksTableEl.addEventListener('focusout', (e)=>{
+  const row = e.target.matches('input[data-f="time"]') && e.target.closest('tr[data-task]');
+  if(row) setTaskField(row.dataset.task, 'time', e.target.value);
+});
 tasksTableEl.addEventListener('focusin', (e)=>{ if(e.target.matches('input[data-f="action"]')) openActionSuggest(e.target); });
 tasksTableEl.addEventListener('input', (e)=>{ if(e.target.matches('input[data-f="action"]')) openActionSuggest(e.target); });
 tasksTableEl.addEventListener('focusout', (e)=>{
   const input = e.target;
-  if(!input.matches('input[data-f="title"], input[data-f="action"]')) return;
+  if(!input.matches('input[data-f="title"], input[data-f="action"], input[data-f="time"]')) return;
   if(input.dataset.f === 'action' && TASK_POP_STATE && TASK_POP_STATE.anchor === input) closeTaskPop();
   const row = input.closest('tr[data-task]');
   if(row) setTaskField(row.dataset.task, input.dataset.f, input.value);
@@ -8018,21 +8276,101 @@ document.getElementById('newTaskPersonInput').addEventListener('keydown', (e)=>{
   });
 });
 
-/* ---------- Bell: tasks someone else gave you ---------- */
+/* ---------- Bell: tasks someone else gave you, and release notes not read yet ---------- */
 let BELL_ITEMS = [];
+let BELL_NOTES = [];
+let RELEASE_NOTES = [];
+let NOTES_AVAILABLE = true;
 let BELL_TIMER = null;
-async function refreshBell(){
-  if(!supabaseClient || !CURRENT_USER || isAgentUser() || !TASKS_AVAILABLE) return;
-  const { data, error } = await supabaseClient.from('tasks').select('id, title, assigned_by, updated_at')
-    .eq('responsible_id', CURRENT_USER.id).eq('seen_by_assignee', false).eq('status', 'pending')
-    .order('updated_at', { ascending: false });
-  if(error){ if(error.code === '42P01' || error.code === 'PGRST205') TASKS_AVAILABLE = false; return; }
-  BELL_ITEMS = data || [];
+function updateBellCount(){
+  const n = BELL_ITEMS.length + BELL_NOTES.length;
   const count = document.getElementById('bellCount');
-  count.textContent = BELL_ITEMS.length > 9 ? '9+' : String(BELL_ITEMS.length);
-  count.classList.toggle('show', BELL_ITEMS.length > 0);
+  count.textContent = n > 9 ? '9+' : String(n);
+  count.classList.toggle('show', n > 0);
+}
+async function loadReleaseNotes(){
+  if(!supabaseClient || !CURRENT_USER || isAgentUser() || !NOTES_AVAILABLE) return;
+  const [notes, reads] = await Promise.all([
+    supabaseClient.from('release_notes').select('id, title, body, created_by, created_at').order('created_at', { ascending: false }),
+    supabaseClient.from('release_note_reads').select('note_id').eq('user_id', CURRENT_USER.id),
+  ]);
+  if(notes.error){ if(notes.error.code === '42P01' || notes.error.code === 'PGRST205') NOTES_AVAILABLE = false; return; }
+  RELEASE_NOTES = notes.data || [];
+  const read = new Set(((reads && reads.data) || []).map(r=> r.note_id));
+  BELL_NOTES = RELEASE_NOTES.filter(n=> !read.has(n.id) && n.created_by !== CURRENT_USER.id);
+  if(isAdminUser()) renderReleaseNotesConfig();
+}
+async function refreshBell(){
+  if(!supabaseClient || !CURRENT_USER || isAgentUser()) return;
+  await loadReleaseNotes();
+  if(TASKS_AVAILABLE){
+    const { data, error } = await supabaseClient.from('tasks').select('id, title, assigned_by, updated_at')
+      .eq('responsible_id', CURRENT_USER.id).eq('seen_by_assignee', false).eq('status', 'pending')
+      .order('updated_at', { ascending: false });
+    if(error){ if(error.code === '42P01' || error.code === 'PGRST205') TASKS_AVAILABLE = false; }
+    else BELL_ITEMS = data || [];
+  }
+  updateBellCount();
   if(document.getElementById('bellMenu').classList.contains('show')) renderBellMenu();
 }
+function noteDateLabel(ts){
+  return ts ? new Date(ts).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }) : '';
+}
+async function markNotesRead(ids){
+  if(!ids.length) return;
+  BELL_NOTES = BELL_NOTES.filter(n=> !ids.includes(n.id));
+  updateBellCount();
+  if(CURRENT_USER && CURRENT_USER.viewAs) return; // read-only session
+  const results = await Promise.all(ids.map(id=> supabaseClient.from('release_note_reads').insert({ note_id: id, user_id: CURRENT_USER.id })));
+  results.forEach(r=>{ if(r.error && r.error.code !== '23505') console.error('Could not mark the release notes as read', r.error); });
+}
+function openReleaseNote(id){
+  const n = RELEASE_NOTES.find(x=> x.id === id);
+  if(!n) return;
+  document.getElementById('rnViewTitle').textContent = n.title || 'What\'s new';
+  document.getElementById('rnViewDate').textContent = noteDateLabel(n.created_at);
+  document.getElementById('rnViewBody').textContent = n.body || '';
+  document.getElementById('releaseNoteOverlay').classList.add('show');
+  markNotesRead([id]);
+}
+document.getElementById('btnCloseReleaseNote').addEventListener('click', ()=> document.getElementById('releaseNoteOverlay').classList.remove('show'));
+document.getElementById('releaseNoteOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'releaseNoteOverlay') e.target.classList.remove('show'); });
+
+// Admin: publish and remove release notes (Configuration).
+function renderReleaseNotesConfig(){
+  const list = document.getElementById('rnList');
+  list.innerHTML = RELEASE_NOTES.map(n=> '<div class="rn-item" data-note="' + n.id + '"><b>' + escapeHtml(n.title || 'What\'s new') + '</b><small>' + escapeHtml(noteDateLabel(n.created_at)) + '</small>' +
+    '<button type="button" data-rn-view title="Read"><svg viewBox="0 0 24 24" fill="none"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="1.8"/></svg></button>' +
+    '<button type="button" class="danger" data-rn-del title="Delete"><svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button></div>').join('');
+}
+document.getElementById('btnPublishNote').addEventListener('click', async ()=>{
+  const title = document.getElementById('rnTitle').value.trim();
+  const body = document.getElementById('rnBody').value.trim();
+  if(!body){ showToast('Write the release notes first.'); return; }
+  if(!confirm('Publish these notes? Every evaluator will get them in their notifications.')) return;
+  const btn = document.getElementById('btnPublishNote');
+  btn.disabled = true;
+  const { error } = await supabaseClient.from('release_notes').insert({ title: title || 'What\'s new', body });
+  btn.disabled = false;
+  if(error){ if(error.code !== 'VIEW_AS') showToast('Could not publish the notes: ' + (error.message || 'unknown error')); return; }
+  document.getElementById('rnTitle').value = '';
+  document.getElementById('rnBody').value = '';
+  showToast('Published. Evaluators will see it in their notifications.');
+  loadReleaseNotes();
+});
+document.getElementById('rnList').addEventListener('click', async (e)=>{
+  const row = e.target.closest('[data-note]');
+  if(!row) return;
+  const n = RELEASE_NOTES.find(x=> x.id === row.dataset.note);
+  if(!n) return;
+  if(e.target.closest('[data-rn-view]')){ openReleaseNote(n.id); return; }
+  if(e.target.closest('[data-rn-del]')){
+    if(!confirm('Delete "' + (n.title || 'these notes') + '"? Evaluators who have not read it will no longer see it.')) return;
+    const { error } = await supabaseClient.from('release_notes').delete().eq('id', n.id);
+    if(error){ if(error.code !== 'VIEW_AS') showToast('Could not delete the notes.'); return; }
+    loadReleaseNotes();
+  }
+});
 function startTaskBell(){
   if(isAgentUser() || BELL_TIMER) return;
   ensureProfilesLoaded().then(refreshBell);
@@ -8040,8 +8378,10 @@ function startTaskBell(){
 }
 function renderBellMenu(){
   const menu = document.getElementById('bellMenu');
-  menu.innerHTML = '<div class="vm-title">Notifications</div>' + (BELL_ITEMS.length
-    ? BELL_ITEMS.map(n=> '<button type="button" class="vm-item" data-bell="' + n.id + '"><span>' +
+  menu.innerHTML = '<div class="vm-title">Notifications</div>' + (BELL_ITEMS.length || BELL_NOTES.length
+    ? BELL_NOTES.map(n=> '<button type="button" class="vm-item" data-bell-note="' + n.id + '"><span>' + escapeHtml(n.title || 'What\'s new') + '</span><small>Release notes · ' +
+        escapeHtml(noteDateLabel(n.created_at)) + '</small></button>').join('') +
+      BELL_ITEMS.map(n=> '<button type="button" class="vm-item" data-bell="' + n.id + '"><span>' +
         escapeHtml(profileName(n.assigned_by) || 'Someone') + ' assigned you a task</span><small>' +
         escapeHtml(n.title || '(untitled)') + ' · ' + escapeHtml(taskStampLabel(n.updated_at)) + '</small></button>').join('') +
       '<button type="button" class="bell-all" data-bell-all>Mark all as read</button>'
@@ -8050,9 +8390,7 @@ function renderBellMenu(){
 async function markTasksSeen(ids){
   if(!ids.length) return;
   BELL_ITEMS = BELL_ITEMS.filter(n=> !ids.includes(n.id));
-  const count = document.getElementById('bellCount');
-  count.textContent = String(BELL_ITEMS.length);
-  count.classList.toggle('show', BELL_ITEMS.length > 0);
+  updateBellCount();
   if(CURRENT_USER && CURRENT_USER.viewAs) return; // read-only session
   const { error } = await supabaseClient.from('tasks').update({ seen_by_assignee: true }).in('id', ids);
   if(error) console.error('Could not mark the notification as read', error);
@@ -8069,7 +8407,9 @@ document.getElementById('btnBell').addEventListener('click', async (e)=>{
 document.getElementById('bellMenu').addEventListener('click', (e)=>{
   e.stopPropagation();
   const menu = document.getElementById('bellMenu');
-  if(e.target.closest('[data-bell-all]')){ markTasksSeen(BELL_ITEMS.map(n=> n.id)); menu.classList.remove('show'); return; }
+  if(e.target.closest('[data-bell-all]')){ markTasksSeen(BELL_ITEMS.map(n=> n.id)); markNotesRead(BELL_NOTES.map(n=> n.id)); menu.classList.remove('show'); return; }
+  const note = e.target.closest('[data-bell-note]');
+  if(note){ menu.classList.remove('show'); openReleaseNote(note.dataset.bellNote); return; }
   const item = e.target.closest('[data-bell]');
   if(!item) return;
   const id = item.dataset.bell;
@@ -8465,6 +8805,20 @@ function renderQuickNotes(){
 }
 document.getElementById('quickNotes').addEventListener('input', (e)=>{
   try{ localStorage.setItem(draftKey(LS_QUICK_NOTES_KEY), e.target.value); }catch(err){}
+});
+// Puts the quick notes in the summary as their own paragraph, above the closing lines.
+document.getElementById('btnQuickNotesToEval').addEventListener('click', ()=>{
+  const notes = document.getElementById('quickNotes').value.trim();
+  if(!notes){ showToast('Write something in the quick notes first.'); return; }
+  const out = document.getElementById('output');
+  if(!SUMMARY_MANUAL) setSummaryManual(true);
+  const text = out.value.replace(/\s+$/, '');
+  const at = text.lastIndexOf(SUMMARY_CLOSING);
+  out.value = at >= 0 ? text.slice(0, at).replace(/\s+$/, '') + '\n\n' + notes + '\n\n' + text.slice(at) : text + '\n\n' + notes;
+  updateSummaryManualNote();
+  saveCurrentDraftToLocal();
+  if(out.classList.contains('summary-collapsed')) document.getElementById('btnToggleSummary').click();
+  showToast('Quick notes added to the summary.');
 });
 document.getElementById('btnClearQuickNotes').addEventListener('click', ()=>{
   const ta = document.getElementById('quickNotes');
