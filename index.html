@@ -6684,6 +6684,11 @@ async function saveEditedEvaluation(btn, check){
     throw new Error('the database is missing its latest update (update_evaluation). Ask an admin to apply it.');
   }
   if(error) throw error;
+  // update_evaluation predates these two columns, so they are saved separately.
+  const ev = payload.evaluation;
+  const { error: extraErr } = await supabaseClient.from('evaluations')
+    .update({ call_id: ev.call_id, time_spent_seconds: ev.time_spent_seconds }).eq('id', EDITING_EXISTING.id);
+  if(extraErr && extraErr.code !== 'VIEW_AS') throw new Error('the Call ID or time spent could not be saved (' + (extraErr.message || 'unknown error') + ')');
   showToast('Changes saved for ' + check.agent.name);
   clearCurrentDraftFromLocal();
   refreshEvalRepeatAlert(true);
@@ -8291,7 +8296,7 @@ function updateBellCount(){
 async function loadReleaseNotes(){
   if(!supabaseClient || !CURRENT_USER || isAgentUser() || !NOTES_AVAILABLE) return;
   const [notes, reads] = await Promise.all([
-    supabaseClient.from('release_notes').select('id, title, body, created_by, created_at').order('created_at', { ascending: false }),
+    supabaseClient.from('release_notes').select('id, title, body, created_by, created_at').eq('archived', false).order('created_at', { ascending: false }),
     supabaseClient.from('release_note_reads').select('note_id').eq('user_id', CURRENT_USER.id),
   ]);
   if(notes.error){ if(notes.error.code === '42P01' || notes.error.code === 'PGRST205') NOTES_AVAILABLE = false; return; }
@@ -8366,7 +8371,7 @@ document.getElementById('rnList').addEventListener('click', async (e)=>{
   if(e.target.closest('[data-rn-view]')){ openReleaseNote(n.id); return; }
   if(e.target.closest('[data-rn-del]')){
     if(!confirm('Delete "' + (n.title || 'these notes') + '"? Evaluators who have not read it will no longer see it.')) return;
-    const { error } = await supabaseClient.from('release_notes').delete().eq('id', n.id);
+    const { error } = await supabaseClient.from('release_notes').update({ archived: true }).eq('id', n.id);
     if(error){ if(error.code !== 'VIEW_AS') showToast('Could not delete the notes.'); return; }
     loadReleaseNotes();
   }
