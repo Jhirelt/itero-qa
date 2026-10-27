@@ -786,17 +786,18 @@ $('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Da
 function reportBase(){ return T; }
 const inRange = (d, s, e) => d && d >= s && d < e;
 
+// Empty values and "Other" don't count in any stat (user rule).
+const notCounted = v => { const k = String(v ?? '').trim().toLowerCase(); return !k || k === 'other' || k === 'not set' || k === 'n/a' || k === 'na'; };
 function countBy(rows, get){
   const m = new Map();
-  rows.forEach(t => { const raw = (get(t) || '').trim(); const k = raw.toLowerCase(); const cur = m.get(k) || { label: raw || NOT_SET, value:0 }; cur.value++; m.set(k, cur); });
+  rows.forEach(t => { const raw = String(get(t) ?? '').trim(); if(notCounted(raw)) return; const k = raw.toLowerCase(); const cur = m.get(k) || { label: raw, value:0 }; cur.value++; m.set(k, cur); });
   return [...m.values()].sort((a,b)=> b.value - a.value || a.label.localeCompare(b.label));
 }
 function renderHbars(el, rows, onClick, max = 8){
-  if(!rows.length){ el.innerHTML = '<div class="empty">Nothing in this period</div>'; return; }
-  let list = rows;
-  if(rows.length > max){ const rest = rows.slice(max-1).reduce((s,r)=>s+r.value, 0); list = rows.slice(0, max-1).concat([{ label:'Other', value:rest, other:true }]); }
+  if(!rows.length){ el.innerHTML = '<div class="empty">Nothing set in this period</div>'; return; }
+  const list = rows.slice(0, max);
   const top = Math.max(...list.map(r=>r.value));
-  el.innerHTML = list.map((r,i) => `<div class="hbar${onClick && !r.other ? ' clickable' : ''}" data-i="${i}" title="${esc(r.label)}: ${r.value}">
+  el.innerHTML = list.map((r,i) => `<div class="hbar${onClick ? ' clickable' : ''}" data-i="${i}" title="${esc(r.label)}: ${r.value}">
       <span class="hb-label">${esc(r.label)}</span>
       <span class="hb-track"><span class="hb-fill" style="display:block;width:${(r.value/top*100).toFixed(1)}%${r.value ? '' : ';min-width:0'}"></span></span>
       <span class="hb-val">${r.value}</span></div>`).join('');
@@ -1053,7 +1054,7 @@ function ticketStory(t){
     issue: issue ? `${issue} issue` : 'Escalation',
     origin: det.origin || '',
     avoidable: det.avoidable === 'Yes',
-    validity: det.avoidable === 'Yes' ? 'Avoidable' : det.avoidable === 'No' ? 'Valid' : 'Not set',
+    validity: det.avoidable === 'Yes' ? 'Avoidable' : det.avoidable === 'No' ? 'Valid' : '–',
     repl: replM ? replM[1] : '',
     notes: extraNotes.map(sentence).join(' '),
     // "Resolved in 7.3 days with a PPC part replacement under replacement ticket 69289577."
@@ -1088,16 +1089,17 @@ function buildSummary(){
   if(!n) return `${R.range.during}, no escalations were closed. ${openTxt}`;
 
   const p1 = [`${R.range.during}, ${word(n)} ${n === 1 ? 'escalation was' : 'escalations were'} closed. ${openTxt}`];
-  const tt = countBy(R.closed, t => t.ticket_type)[0];
-  let s2 = tt.label === NOT_SET ? '' : tt.value === n ? `All closed escalations were ${tt.label} issues` : `${tt.label} issues accounted for ${pct(tt.value, n)}% of closed escalations`;
+  const types = countBy(R.closed, t => t.ticket_type), tt = types[0], nt = types.reduce((a, x) => a + x.value, 0);
+  let s2 = !tt ? '' : tt.value === nt ? `All closed escalations were ${tt.label} issues` : `${tt.label} issues accounted for ${pct(tt.value, nt)}% of closed escalations`;
   const partTxt = n === 1 ? (R.parts ? 'it was resolved with a part replacement' : 'it was not resolved with a part replacement')
     : R.parts ? `part replacement was the resolution for ${word(R.parts)} of the ${word(n)} cases (${pct(R.parts, n)}%)` : 'none were resolved with a part replacement';
   p1.push(s2 ? `${s2}, and ${partTxt}.` : `${cap(partTxt)}.`);
-  const unset = n - R.valid - R.avoid;
-  if(R.valid || R.avoid){
-    const v = R.valid ? `${cap(word(R.valid))} of the ${word(n)} closed escalations ${R.valid === 1 ? 'was' : 'were'} marked valid` : `None of the ${word(n)} closed escalations ${n === 1 ? 'was' : 'were'} marked valid`;
-    p1.push(`${v} and ${R.avoid ? word(R.avoid) : 'none'} ${R.avoid === 1 ? 'was' : 'were'} classified as avoidable${unset ? `; ${word(unset)} ${unset === 1 ? 'has' : 'have'} no Avoidable value` : ''}.`);
-  } else p1.push('None of the closed escalations has the Avoidable field filled in.');
+  // Only tickets with Avoidable set count here.
+  const classed = R.valid + R.avoid;
+  if(classed){
+    p1.push(classed === 1 ? `The one classified escalation was ${R.avoid ? 'avoidable' : 'valid'}.`
+      : `Of the ${word(classed)} classified escalations, ${R.valid ? word(R.valid) : 'none'} ${R.valid === 1 ? 'was' : 'were'} valid and ${R.avoid ? word(R.avoid) : 'none'} ${R.avoid === 1 ? 'was' : 'were'} avoidable (${pct(R.avoid, classed)}%).`);
+  }
   if(n > 1) p1.push(R.csat ? `${cap(word(R.csat))} of the ${word(n)} ${R.csat === 1 ? 'was a customer satisfaction case' : 'were customer satisfaction cases'} (${pct(R.csat, n)}%).` : 'None were customer satisfaction cases.');
   else p1.push(R.csat ? 'It was a customer satisfaction case.' : 'It was not a customer satisfaction case.');
 
@@ -1153,12 +1155,13 @@ function buildReportHtml(){
   const avgDays = rows => avgOf(rows.map(daysToClose).filter(v => v != null));
   const vol = (get, label) => {
     const groups = new Map();
-    R.closed.forEach(t => { const raw = (get(t) || '').trim() || NOT_SET, k = raw.toLowerCase(); if(!groups.has(k)) groups.set(k, { label: raw, rows: [] }); groups.get(k).rows.push(t); });
+    R.closed.forEach(t => { const raw = String(get(t) ?? '').trim(); if(notCounted(raw)) return; const k = raw.toLowerCase(); if(!groups.has(k)) groups.set(k, { label: raw, rows: [] }); groups.get(k).rows.push(t); });
+    const nv = [...groups.values()].reduce((a, g) => a + g.rows.length, 0);
     const list = [...groups.values()].sort((a,b) => b.rows.length - a.rows.length || (avgDays(b.rows) ?? 0) - (avgDays(a.rows) ?? 0));
     const top = Math.max(1, ...list.map(g => g.rows.length));
     return `<div class="block"><h2>${esc(label)}</h2>${list.length ? `<table class="vol"><thead><tr><th></th><th></th><th class="r">Tickets (%)</th><th class="r">Avg days</th></tr></thead><tbody>${list.slice(0, 10).map(g => `<tr>
       <td class="vl">${esc(g.label)}</td><td class="vb"><span class="track"><span class="fill" style="width:${(g.rows.length / top * 100).toFixed(1)}%"></span></span></td>
-      <td class="r b">${g.rows.length} (${pct(g.rows.length, n)}%)</td><td class="r dim">${fd(avgDays(g.rows))}</td></tr>`).join('')}</tbody></table>${list.length > 10 ? `<p class="note">${list.length - 10} more not shown.</p>` : ''}` : '<p class="note">Nothing closed in this period.</p>'}</div>`;
+      <td class="r b">${g.rows.length} (${pct(g.rows.length, nv)}%)</td><td class="r dim">${fd(avgDays(g.rows))}</td></tr>`).join('')}</tbody></table>${list.length > 10 ? `<p class="note">${list.length - 10} more not shown.</p>` : ''}` : `<p class="note">${n ? 'Not set on the tickets closed in this period.' : 'Nothing closed in this period.'}</p>`}</div>`;
   };
   const BUCKETS = [['Under 1 day',0,1,'#7fa8c9'],['1-3 days',1,3,'#2a9d8f'],['3-7 days',3,7,'#5aa66f'],['7-14 days',7,14,'#d4801f'],['14+ days',14,Infinity,'#c0392b']];
   const dist = BUCKETS.map(([label,lo,hi,color]) => ({ label, color, value: cur.durs.filter(v => v >= lo && v < hi).length }));
@@ -1170,7 +1173,6 @@ function buildReportHtml(){
     ['Took 14 days or more', x => pctOr(x.over14, x.durs.length)],
   ];
   const ob = R.openBiz, oc = R.open.length - ob;
-  const unset = n - R.valid - R.avoid;
 
   // Root causes: tickets grouped by their root cause (or sub-issue type when the template has none).
   const causes = new Map();
@@ -1184,7 +1186,7 @@ function buildReportHtml(){
     ${header(`${PERIOD_ADJ[PERIOD]}Escalations Executive Summary`, `Tickets closed this ${pw} and open escalations`)}
     <div class="body">
       <div class="kpis">
-        <div class="kpi navy"><div class="kl">Tickets closed</div><div class="kv">${n}</div><div class="kf">${R.valid} valid, ${R.avoid} avoidable${unset ? `, ${unset} not set` : ''}<br>${R.csat} customer satisfaction</div></div>
+        <div class="kpi navy"><div class="kl">Tickets closed</div><div class="kv">${n}</div><div class="kf">${R.valid} valid, ${R.avoid} avoidable<br>${R.csat} customer satisfaction</div></div>
         <div class="kpi amber"><div class="kl">Avg resolution</div><div class="kv">${cur.avg == null ? '–' : d1(cur.avg) + ' days'}</div><div class="kf">${cur.avg == null ? '' : Math.round(cur.avg * 24) + ' hours on average'}</div></div>
         <div class="kpi red"><div class="kl">Closed within 3 days</div><div class="kv">${pctOr(cur.in3, ofD)}</div><div class="kf">${cur.in3} of ${ofD} tickets</div></div>
         <div class="kpi teal"><div class="kl">Open escalations</div><div class="kv">${R.open.length}</div><div class="kf">${ob} Business, ${oc} CSC</div></div>
@@ -1229,7 +1231,7 @@ function buildReportHtml(){
         </tbody></table>` : ''}
       </div>
     </div>
-    <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity set on each ticket in the tracker. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable${unset ? `; ${unset} had no Avoidable value` : ''}. Resolution time is calendar time from ticket opening to closure.</footer>
+    <footer>Source: escalations uploaded to the tracker, with root cause, origin and validity set on each ticket in the tracker. ${R.valid} closed tickets were classified Valid and ${R.avoid} Avoidable. Resolution time is calendar time from ticket opening to closure.</footer>
   </section>`;
 
   const title = `${PERIOD_ADJ[PERIOD]}Escalations ${R.range.short}${PERIOD === 'week' || PERIOD === 'custom' ? ' ' + R.range.last.getFullYear() : ''}`;
