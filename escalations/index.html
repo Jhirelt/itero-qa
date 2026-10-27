@@ -1542,10 +1542,33 @@ function tableFromHtml(text){
   doc.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
   return trs.map(tr => [...tr.querySelectorAll('th,td')].map(c => c.textContent.replace(/ /g,' ').trim()));
 }
-function tableFromWorkbook(buf){
+// Every sheet of the workbook; parseTable picks the one with a Ticket Number column.
+function tablesFromWorkbook(buf){
   const wb = XLSX.read(buf, { type:'array', cellDates:true });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+  return wb.SheetNames.map(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header:1, raw:true, defval:'' }));
+}
+// Header text compared loosely: case, spaces, accents and punctuation don't matter ("Ticket #", "TICKET  NUMBER:").
+const normHead = h => String(h ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const COL_ALIASES = COLUMNS.map(c => ({ col: c, names: c.aliases.map(normHead) }));
+function columnFor(h){
+  const n = normHead(h);
+  if(!n) return null;
+  const exact = COL_ALIASES.find(a => a.names.includes(n));
+  if(exact) return exact.col;
+  // "Case: Ticket Number" or "Ticket Number (SF)": the longest multi-word alias inside the header wins.
+  let best = null, len = 0;
+  COL_ALIASES.forEach(a => a.names.forEach(x => { if(x.length > len && x.includes(' ') && (' ' + n + ' ').includes(' ' + x + ' ')){ best = a.col; len = x.length; } }));
+  return best;
+}
+// The header row is the one, among the first rows, that matches the most known columns.
+function findHeader(table){
+  let best = -1, score = 0;
+  table.slice(0, 30).forEach((r, i) => {
+    const cols = new Set(r.map(columnFor).filter(Boolean).map(c => c.key));
+    const sc = cols.size + (cols.has('ticket_number') ? 5 : 0);
+    if(sc > score){ best = i; score = sc; }
+  });
+  return best;
 }
 
 async function readFile(file){
@@ -1556,7 +1579,17 @@ async function readFile(file){
     const head = new TextDecoder('latin1').decode(buf.slice(0, 512)).trimStart().toLowerCase();
     const isHtml = head.startsWith('<');
     if(!isHtml && !window.XLSX){ sum.innerHTML = '<span class="err">The Excel reader could not load. Check your connection and reload.</span>'; return; }
-    const table = isHtml ? tableFromHtml(new TextDecoder('windows-1252').decode(buf)) : tableFromWorkbook(buf);
+    const text = isHtml ? new TextDecoder('windows-1252').decode(buf) : '';
+    // Excel's "Save as Web Page" keeps the cells in a separate folder, so this file alone has no data.
+    if(isHtml && /<frameset/i.test(text) && !/<td[\s>]/i.test(text.replace(/<script[\s\S]*?<\/script>/gi, ''))){
+      const src = (text.match(/WorksheetSource\s+HRef="([^"]+)"/i) || text.match(/<frame\s+src="([^"]+)"\s+name="frSheet"/i) || [])[1] || '';
+      const [folder, sheet] = decodeURIComponent(src).split('/');
+      sum.innerHTML = '<span class="err">This file is only the cover page of an Excel Web Page; the ticket data is in a separate file.</span>'
+        + (folder && sheet ? `<br>Upload <b>${esc(sheet)}</b> from the folder <b>${esc(folder)}</b> next to it, or open this file in Excel and use Save As, Excel Workbook (.xlsx).` : '<br>Open it in Excel and use Save As, Excel Workbook (.xlsx), then upload that.');
+      return;
+    }
+    const tables = isHtml ? [tableFromHtml(text)] : tablesFromWorkbook(buf);
+    const table = tables.find(t => { const h = findHeader(t); return h >= 0 && t[h].some(c => (columnFor(c) || {}).key === 'ticket_number'); }) || tables[0];
     PARSED = parseTable(table, file.name);
   }catch(err){ console.error(err); sum.innerHTML = '<span class="err">Could not read this file.</span>'; return; }
 
@@ -1575,9 +1608,11 @@ async function readFile(file){
 
 function parseTable(table, fileName){
   const problems = [];
-  const hIdx = table.findIndex(r => r.some(c => /ticket/i.test(String(c))));
-  const header = (table[hIdx] || []).map(h => String(h).trim());
-  const map = header.map(h => COLUMNS.find(c => c.aliases.includes(h.toLowerCase())) || null);
+  const hIdx = findHeader(table);
+  const header = (table[hIdx] || []).map(h => String(h ?? '').trim());
+  // Each known column is taken once, from the first header that matches it; the rest are kept as extra columns.
+  const taken = new Set();
+  const map = header.map(h => { const c = columnFor(h); if(!c || taken.has(c.key)) return null; taken.add(c.key); return c; });
   const unknown = header.filter((h, i) => h && !map[i]);
   const missing = map.some(c => c && c.key === 'ticket_number') ? [] : ['Ticket Number'];
   const byTicket = new Map();
@@ -1589,14 +1624,14 @@ function parseTable(table, fileName){
       if(!col){ if(h && String(v ?? '').trim()) row.extra[h] = String(v).trim(); return; }
       if(col.date){
         const t = toTimestamp(v);
-        if(t === undefined){ problems.push(`Row ${n+2}: couldn't read ${col.label} "${v}"`); row[col.key] = null; }
+        if(t === undefined){ problems.push(`Row ${n+hIdx+2}: couldn't read ${col.label} "${v}"`); row[col.key] = null; }
         else row[col.key] = t;
       }else{
         const s = String(v ?? '').trim();
         row[col.key] = s === '' ? null : fixDash(s);
       }
     });
-    if(!row.ticket_number){ problems.push(`Row ${n+2}: no ticket number, skipped`); return; }
+    if(!row.ticket_number){ problems.push(`Row ${n+hIdx+2}: no ticket number, skipped`); return; }
     row.ticket_number = String(row.ticket_number).replace(/\.0$/, '');
     if(byTicket.has(row.ticket_number)) problems.push(`Ticket ${row.ticket_number} appears twice; the last row is used`);
     byTicket.set(row.ticket_number, row);
