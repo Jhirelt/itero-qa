@@ -197,6 +197,9 @@
   .muted{ color:var(--text-faint); }
   .nowrap{ white-space:nowrap; }
   .ticket{ font-weight:700; font-variant-numeric:tabular-nums; }
+  .copy-btn{ display:inline-flex; vertical-align:-3px; margin-left:4px; width:20px; height:20px; padding:0; border:none; border-radius:5px; background:transparent; color:var(--text-faint); cursor:pointer; align-items:center; justify-content:center; }
+  .copy-btn:hover{ color:var(--accent); background:var(--accent-soft, rgba(80,190,190,.12)); }
+  .copy-btn svg{ width:14px; height:14px; }
   .tag-reopened{ display:inline-block; margin-left:6px; font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; color:var(--warn); background:var(--warn-soft); border:1px solid var(--warn); padding:1px 6px; border-radius:999px; vertical-align:1px; white-space:nowrap; }
   .more-stats summary{ cursor:pointer; list-style:none; display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 12px; }
   .more-stats summary::-webkit-details-marker{ display:none; }
@@ -474,7 +477,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 <!-- =============== UPLOAD =============== -->
 <div class="modal" id="uploadModal" role="dialog" aria-label="Upload Excel">
   <h3>Upload escalations export</h3>
-  <p>Use the "Closed CSC escalations" export from Salesforce (.xls), or any .xlsx / .csv with the same columns. It adds to the data already here.</p>
+  <p>Use a Salesforce export of closed escalations or of open tickets (.xls, .xlsx or .csv). Columns are found by their titles, in any order. Tickets are matched by number with the ones already here.</p>
+  <div class="field" style="margin-bottom:10px"><label for="uploadKind">This file has</label><select class="ctl" id="uploadKind"><option value="auto">Detect automatically</option><option value="closed">Closed escalations</option><option value="open">Open tickets</option></select></div>
   <label class="drop" id="dropZone">Choose a file or drop it here<input type="file" id="uploadFile" accept=".xls,.xlsx,.csv,.htm,.html" hidden></label>
   <div class="import-summary" id="uploadSummary"></div>
   <div class="modal-actions">
@@ -561,6 +565,16 @@ function toTimestamp(v){
 
 // The Salesforce export loses the en dash: "Part Replacement ? PPC".
 const fixDash = s => s == null ? s : String(s).replace(/ \? /g, ' – ');
+// Small button next to a ticket number that copies it; the click doesn't open the row.
+const copyBtn = num => `<button class="copy-btn" data-copy="${esc(num)}" title="Copy ticket number" aria-label="Copy ticket number ${esc(num)}"><svg viewBox="0 0 24 24" fill="none"><rect x="9" y="9" width="11" height="11" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M5 15V5a1 1 0 0 1 1-1h10" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>`;
+document.addEventListener('click', async ev => {
+  const b = ev.target.closest('[data-copy]');
+  if(!b) return;
+  ev.preventDefault(); ev.stopPropagation();
+  try{ await navigator.clipboard.writeText(b.dataset.copy); }
+  catch{ const ta = document.createElement('textarea'); ta.value = b.dataset.copy; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }
+  toast(`Copied ${b.dataset.copy}`);
+}, true);
 const reopenedTag = t => t.reopen_count ? `<span class="tag-reopened" title="This ticket came again in a later upload${t.reopened_at ? ' (' + fmtDate(new Date(t.reopened_at)) + ')' : ''}">Reopened</span>` : '';
 // Solution Provided is a standard outcome ("Part Replacement – PPC"). Older rows may carry more text after "|": only the outcome counts.
 const solutionText = text => { const raw = String(text || ''), cut = raw.search(/[|\n]/); return (cut < 0 ? raw : raw.slice(0, cut)).trim(); };
@@ -663,7 +677,7 @@ async function fetchAll(table, order){
 async function loadAll(resetPeriod){
   try{
     const [tickets, uploads, details, open] = await Promise.all([ fetchAll('escalation_tickets', 'ticket_number'), fetchAll('escalation_uploads', 'uploaded_at'), fetchAll('escalation_ticket_details', 'ticket_number'), fetchAll('escalation_open_tickets', 'ticket_number') ]);
-    OPEN = open.map(o => Object.assign(o, { _o: parseTs(o.opened_on) }));
+    OPEN = open.map(prepOpen);
     DETAILS = new Map(details.map(d => [d.ticket_number, d]));
     T = tickets.map(t => applyDetails(Object.assign(t, { _o: parseTs(t.opened_at), _c: parseTs(t.closed_at), _sol: solutionOf(t) })));
     UPLOADS = uploads;
@@ -839,7 +853,7 @@ function renderReport(){
 
   $('closedTitle').textContent = `Closed in ${periodName(PERIOD, s, e)}`;
   $('closedTable').querySelector('tbody').innerHTML = closed.length ? closed.map(t => `<tr class="row" data-id="${esc(t.ticket_number)}">
-      <td class="ticket nowrap">${esc(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._c))}</td><td class="num">${esc(fmtDays(daysToClose(t)))}</td>
+      <td class="ticket nowrap">${esc(t.ticket_number)}${copyBtn(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._c))}</td><td class="num">${esc(fmtDays(daysToClose(t)))}</td>
       <td>${esc(t.account_name || '')}</td><td class="wide"><span class="clip">${esc(t.subject || '')}</span></td>
       <td>${esc(t._sol)}</td></tr>`).join('')
     : '<tr><td colspan="6" class="empty">Nothing closed in this period</td></tr>';
@@ -973,7 +987,10 @@ const avgOf = a => a.length ? a.reduce((x,y)=>x+y,0) / a.length : null;
 const isBusiness = t => /business/i.test(t.priority || '');
 const closedOnMap = () => new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
 // Open tickets right now: the list minus the ones already closed in an upload.
-const openNow = () => { const closedOn = closedOnMap(); return OPEN.filter(o => !closedOn.has(o.ticket_number)).sort((a,b) => (a._o || 0) - (b._o || 0)); };
+// An open ticket counts as closed once an upload closes it after it was (re)opened.
+const closedAfter = (o, closedOn) => { const c = closedOn.get(o.ticket_number); return c && (!o._pc || c > o._pc) ? c : null; };
+const openNow = () => { const closedOn = closedOnMap(); return OPEN.filter(o => !closedAfter(o, closedOn)).sort((a,b) => (a._o || 0) - (b._o || 0)); };
+const REOPENED_OPEN = '<span class="tag-reopened" title="This ticket was closed before and came back open">Reopened</span>';
 const PERIOD_ADJ = { week:'Weekly ', month:'Monthly ', quarter:'Quarterly ', year:'Yearly ', custom:'' };
 const fmtLong = d => d.toLocaleDateString('en-US', { month:'long', day:'numeric' });
 const REPL_RE = /replacement\s+ticket\s*(?:#|number|no\.?)?\s*:?\s*(\d{5,})/i;
@@ -1346,7 +1363,7 @@ function renderTickets(){
   $('tCount').innerHTML = `${rows.length} of ${T.length} tickets` + (TICKET_PERIOD ? ` closed in ${esc(periodName(PERIOD, TICKET_PERIOD[0], TICKET_PERIOD[1]))} · <a href="#" id="clearPeriod" style="color:var(--accent)">show all dates</a>` : '');
   if(TICKET_PERIOD) $('clearPeriod').addEventListener('click', ev => { ev.preventDefault(); TICKET_PERIOD = null; renderTickets(); });
   $('ticketsTable').querySelector('tbody').innerHTML = rows.length ? rows.map(t => `<tr class="row" data-id="${esc(t.ticket_number)}">
-      <td class="ticket nowrap">${esc(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._o))}</td><td class="nowrap">${esc(fmtDate(t._c))}</td>
+      <td class="ticket nowrap">${esc(t.ticket_number)}${copyBtn(t.ticket_number)}${reopenedTag(t)}</td><td class="nowrap">${esc(fmtDate(t._o))}</td><td class="nowrap">${esc(fmtDate(t._c))}</td>
       <td class="num">${esc(fmtDays(daysToClose(t)))}</td><td>${esc(t.account_name || '')}</td>
       <td class="wide"><span class="clip">${esc(t.subject || '')}</span></td><td>${esc(t.issue_type || '')}</td><td>${esc(t.ticket_type || '')}</td>
       <td>${esc(t._sol)}</td><td>${esc(t.internal_requestor || '')}</td></tr>`).join('')
@@ -1360,7 +1377,7 @@ function bindRows(table){
 /* ---------- Ticket detail ---------- */
 function openDrawer(t){
   if(!t) return;
-  $('drawerTitle').innerHTML = `Ticket ${esc(t.ticket_number)}${reopenedTag(t)}`;
+  $('drawerTitle').innerHTML = `Ticket ${esc(t.ticket_number)}${copyBtn(t.ticket_number)}${reopenedTag(t)}`;
   const rows = [
     ['Account', t.account_name], ['Subject', t.subject],
     ['Opened', fmtDateTime(t._o)], ['Closed', fmtDateTime(t._c)], ['Days to close', fmtDays(daysToClose(t))],
@@ -1412,6 +1429,7 @@ document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawe
    OPEN TICKETS — entered by hand, used by the Summary and the PDF report
    ============================================================ */
 let OPEN_EDIT = null;
+const prepOpen = o => Object.assign(o, { _o: parseTs(o.opened_on), _pc: parseTs(o.prev_closed_at) });
 // Main screen: the open tickets as they are now.
 function renderOpenNow(){
   const rows = openNow(), biz = rows.filter(o => o.escalation_type === 'Business').length;
@@ -1420,7 +1438,7 @@ function renderOpenNow(){
   $('openPanel').classList.toggle('hidden', !rows.length);
   $('openPanelCount').textContent = rows.length;
   $('openPanelTable').querySelector('tbody').innerHTML = rows.map(o => `<tr>
-      <td class="ticket nowrap">${esc(o.ticket_number)}</td><td>${esc(o.escalation_type)}</td><td class="nowrap">${o._o ? esc(fmtDate(o._o)) : ''}</td>
+      <td class="ticket nowrap">${esc(o.ticket_number)}${copyBtn(o.ticket_number)}${o.reopened_at ? REOPENED_OPEN : ''}</td><td>${esc(o.escalation_type)}</td><td class="nowrap">${o._o ? esc(fmtDate(o._o)) : ''}</td>
       <td class="wide"><span class="clip">${esc(o.subject || '')}</span></td><td>${esc(o.status_note || '')}</td></tr>`).join('');
 }
 $('openPanelLink').addEventListener('click', ev => { ev.preventDefault(); switchView('open'); });   // row being edited, null when adding
@@ -1430,12 +1448,12 @@ function renderOpen(){
   document.querySelector('#openTable th.open-actions').classList.toggle('hidden', !canEdit);
   const closedOn = new Map(T.filter(t => t._c).map(t => [t.ticket_number, t._c]));
   const rows = OPEN.slice().sort((a,b) => (a._o || 0) - (b._o || 0));
-  const stillOpen = rows.filter(o => !closedOn.has(o.ticket_number)).length;
+  const stillOpen = rows.filter(o => !closedAfter(o, closedOn)).length;
   $('openCount').textContent = rows.length ? `${stillOpen} open` + (stillOpen < rows.length ? `, ${rows.length - stillOpen} already closed in an upload` : '') : '';
   $('openTable').querySelector('tbody').innerHTML = rows.length ? rows.map(o => {
-    const c = closedOn.get(o.ticket_number);
+    const c = closedAfter(o, closedOn);
     return `<tr${c ? ' style="opacity:.55"' : ''}>
-      <td class="ticket nowrap">${esc(o.ticket_number)}${c ? `<span class="tag-reopened" title="This ticket is in an upload as closed">Closed ${esc(fmtShort(c))}</span>` : ''}</td>
+      <td class="ticket nowrap">${esc(o.ticket_number)}${copyBtn(o.ticket_number)}${c ? `<span class="tag-reopened" title="This ticket is in an upload as closed">Closed ${esc(fmtShort(c))}</span>` : o.reopened_at ? REOPENED_OPEN : ''}</td>
       <td>${esc(o.escalation_type)}</td><td class="nowrap">${o._o ? esc(fmtDate(o._o)) : ''}</td>
       <td class="wide"><span class="clip">${esc(o.subject || '')}</span></td><td>${esc(o.status_note || '')}</td>
       ${canEdit ? `<td class="num nowrap"><div style="display:flex;gap:4px;justify-content:flex-end"><button class="icon-btn" data-edit="${esc(o.ticket_number)}" title="Edit"><svg viewBox="0 0 24 24" fill="none"><path d="M4 20h4L19 9l-4-4L4 16v4z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg></button> <button class="icon-btn danger" data-rm="${esc(o.ticket_number)}" title="Remove"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div></td>` : ''}</tr>`;
@@ -1469,7 +1487,7 @@ $('btnOpenSave').addEventListener('click', async ()=>{
   try{
     const { error } = await sb.from('escalation_open_tickets').upsert(row, { onConflict:'ticket_number' });
     if(error) throw error;
-    const i = OPEN.findIndex(o => o.ticket_number === num), saved = Object.assign(row, { _o: parseTs(row.opened_on) });
+    const i = OPEN.findIndex(o => o.ticket_number === num), saved = prepOpen(Object.assign({}, OPEN[i] || {}, row));
     if(i >= 0) OPEN[i] = saved; else OPEN.push(saved);
     closeOpenForm(); renderOpen(); toast(`Saved ticket ${num}.`);
   }catch(err){ console.error(err); toast('Could not save. Try again.'); }
@@ -1522,7 +1540,7 @@ let PARSED = null;   // { fileName, rows: [ticket payloads], problems: [] }
 
 function openUpload(){
   if(!ME || !ME.can_upload) return;
-  PARSED = null; $('uploadFile').value = ''; $('uploadSummary').innerHTML = ''; $('btnUploadGo').disabled = true;
+  PARSED = null; $('uploadFile').value = ''; $('uploadSummary').innerHTML = ''; $('btnUploadGo').disabled = true; $('uploadKind').value = 'auto';
   $('scrim').classList.add('show'); $('uploadModal').classList.add('show');
 }
 function closeUpload(){ $('uploadModal').classList.remove('show'); if(!$('drawer').classList.contains('show')) $('scrim').classList.remove('show'); }
@@ -1542,10 +1560,33 @@ function tableFromHtml(text){
   doc.querySelectorAll('br').forEach(br => br.replaceWith('\n'));
   return trs.map(tr => [...tr.querySelectorAll('th,td')].map(c => c.textContent.replace(/ /g,' ').trim()));
 }
-function tableFromWorkbook(buf){
+// Every sheet of the workbook; parseTable picks the one with a Ticket Number column.
+function tablesFromWorkbook(buf){
   const wb = XLSX.read(buf, { type:'array', cellDates:true });
-  const ws = wb.Sheets[wb.SheetNames[0]];
-  return XLSX.utils.sheet_to_json(ws, { header:1, raw:true, defval:'' });
+  return wb.SheetNames.map(n => XLSX.utils.sheet_to_json(wb.Sheets[n], { header:1, raw:true, defval:'' }));
+}
+// Header text compared loosely: case, spaces, accents and punctuation don't matter ("Ticket #", "TICKET  NUMBER:").
+const normHead = h => String(h ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+const COL_ALIASES = COLUMNS.map(c => ({ col: c, names: c.aliases.map(normHead) }));
+function columnFor(h){
+  const n = normHead(h);
+  if(!n) return null;
+  const exact = COL_ALIASES.find(a => a.names.includes(n));
+  if(exact) return exact.col;
+  // "Case: Ticket Number" or "Ticket Number (SF)": the longest multi-word alias inside the header wins.
+  let best = null, len = 0;
+  COL_ALIASES.forEach(a => a.names.forEach(x => { if(x.length > len && x.includes(' ') && (' ' + n + ' ').includes(' ' + x + ' ')){ best = a.col; len = x.length; } }));
+  return best;
+}
+// The header row is the one, among the first rows, that matches the most known columns.
+function findHeader(table){
+  let best = -1, score = 0;
+  table.slice(0, 30).forEach((r, i) => {
+    const cols = new Set(r.map(columnFor).filter(Boolean).map(c => c.key));
+    const sc = cols.size + (cols.has('ticket_number') ? 5 : 0);
+    if(sc > score){ best = i; score = sc; }
+  });
+  return best;
 }
 
 async function readFile(file){
@@ -1556,28 +1597,72 @@ async function readFile(file){
     const head = new TextDecoder('latin1').decode(buf.slice(0, 512)).trimStart().toLowerCase();
     const isHtml = head.startsWith('<');
     if(!isHtml && !window.XLSX){ sum.innerHTML = '<span class="err">The Excel reader could not load. Check your connection and reload.</span>'; return; }
-    const table = isHtml ? tableFromHtml(new TextDecoder('windows-1252').decode(buf)) : tableFromWorkbook(buf);
+    const text = isHtml ? new TextDecoder('windows-1252').decode(buf) : '';
+    // Excel's "Save as Web Page" keeps the cells in a separate folder, so this file alone has no data.
+    if(isHtml && /<frameset/i.test(text) && !/<td[\s>]/i.test(text.replace(/<script[\s\S]*?<\/script>/gi, ''))){
+      const src = (text.match(/WorksheetSource\s+HRef="([^"]+)"/i) || text.match(/<frame\s+src="([^"]+)"\s+name="frSheet"/i) || [])[1] || '';
+      const [folder, sheet] = decodeURIComponent(src).split('/');
+      sum.innerHTML = '<span class="err">This file is only the cover page of an Excel Web Page; the ticket data is in a separate file.</span>'
+        + (folder && sheet ? `<br>Upload <b>${esc(sheet)}</b> from the folder <b>${esc(folder)}</b> next to it, or open this file in Excel and use Save As, Excel Workbook (.xlsx).` : '<br>Open it in Excel and use Save As, Excel Workbook (.xlsx), then upload that.');
+      return;
+    }
+    const tables = isHtml ? [tableFromHtml(text)] : tablesFromWorkbook(buf);
+    const table = tables.find(t => { const h = findHeader(t); return h >= 0 && t[h].some(c => (columnFor(c) || {}).key === 'ticket_number'); }) || tables[0];
     PARSED = parseTable(table, file.name);
   }catch(err){ console.error(err); sum.innerHTML = '<span class="err">Could not read this file.</span>'; return; }
 
   const { rows, problems, unknown, missing } = PARSED;
   if(missing.length){ sum.innerHTML = `<span class="err">This file has no ${missing.map(esc).join(' or ')} column, so it can't be matched to tickets.</span>`; PARSED = null; return; }
-  const existing = new Set(T.map(t => t.ticket_number));
-  const nNew = rows.filter(r => !existing.has(r.ticket_number)).length;
-  const closedDates = rows.map(r => r.closed_at).filter(Boolean).sort();
-  sum.innerHTML = `<b>${esc(file.name)}</b>: ${rows.length} tickets ready to upload.`
-    + (closedDates.length ? `<br>Closed between ${esc(fmtDate(parseTs(closedDates[0])))} and ${esc(fmtDate(parseTs(closedDates[closedDates.length-1])))}.` : '')
-    + (unknown.length ? `<br><span class="muted">Extra columns kept as-is: ${unknown.map(esc).join(', ')}.</span>` : '')
-    + (problems.length ? `<ul>${problems.slice(0, 8).map(p => `<li>${esc(p)}</li>`).join('')}${problems.length > 8 ? `<li>…and ${problems.length - 8} more</li>` : ''}</ul>` : '');
-  $('btnUploadGo').disabled = !rows.length;
-  PARSED.nNew = nNew;
+  // A file with no closing dates is an open tickets export.
+  PARSED.detected = rows.some(r => r.closed_at) ? 'closed' : 'open';
+  describeUpload();
 }
+const uploadKind = () => PARSED && ($('uploadKind').value === 'auto' ? PARSED.detected : $('uploadKind').value);
+const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`;
+// What the upload will do, worked out by ticket number against the data already here.
+function planUpload(){
+  const { rows } = PARSED, kind = uploadKind(), closedOn = closedOnMap();
+  const openBy = new Map(OPEN.map(o => [o.ticket_number, o]));
+  if(kind === 'closed'){
+    const existing = new Set(T.map(t => t.ticket_number));
+    // Open tickets that this file closes after they were (re)opened leave Open tickets.
+    const closesOpen = rows.filter(r => { const o = openBy.get(r.ticket_number); const c = parseTs(r.closed_at); return o && c && (!o._pc || c > o._pc); }).map(r => r.ticket_number);
+    return { kind, nNew: rows.filter(r => !existing.has(r.ticket_number)).length, closesOpen };
+  }
+  // Open file: a ticket that is closed in the data and not already marked as reopened came back open.
+  const reopened = rows.filter(r => { const c = closedOn.get(r.ticket_number), o = openBy.get(r.ticket_number); return c && !(o && o._pc && o._pc >= c); }).map(r => r.ticket_number);
+  return { kind, added: rows.filter(r => !openBy.has(r.ticket_number)).length, updated: rows.filter(r => openBy.has(r.ticket_number)).length, reopened };
+}
+function describeUpload(){
+  if(!PARSED) return;
+  const { rows, problems, unknown } = PARSED, plan = planUpload(), sum = $('uploadSummary');
+  const list = nums => nums.slice(0, 6).map(esc).join(', ') + (nums.length > 6 ? ` and ${nums.length - 6} more` : '');
+  let html = `<b>${esc(PARSED.fileName)}</b>: ${plural(rows.length, 'ticket', 'tickets')}, read as <b>${plan.kind === 'open' ? 'open tickets' : 'closed escalations'}</b>${$('uploadKind').value === 'auto' ? ' (detected)' : ''}.`;
+  if(plan.kind === 'closed'){
+    const closedDates = rows.map(r => r.closed_at).filter(Boolean).sort();
+    if(closedDates.length) html += `<br>Closed between ${esc(fmtDate(parseTs(closedDates[0])))} and ${esc(fmtDate(parseTs(closedDates[closedDates.length-1])))}.`;
+    const again = rows.length - plan.nNew;
+    html += `<br>${plural(plan.nNew, 'new ticket', 'new tickets')}` + (again ? `, ${again} already here (updated and tagged Reopened).` : '.');
+    if(plan.closesOpen.length) html += `<br><b>${plural(plan.closesOpen.length, 'ticket', 'tickets')} in Open tickets ${plan.closesOpen.length === 1 ? 'is' : 'are'} now closed and will leave Open tickets:</b> ${list(plan.closesOpen)}.`;
+  }else{
+    html += `<br>${plural(plan.added, 'ticket is', 'tickets are')} added to Open tickets and ${plural(plan.updated, 'is', 'are')} updated. Open tickets not in this file stay as they are.`;
+    if(plan.reopened.length) html += `<br><b>${plural(plan.reopened.length, 'ticket was', 'tickets were')} closed before and will be marked Reopened:</b> ${list(plan.reopened)}.`;
+  }
+  const extra = plan.kind === 'open' ? unknown.filter(h => normHead(h) !== 'status') : unknown;
+  if(extra.length) html += `<br><span class="muted">Extra columns ${plan.kind === 'open' ? 'ignored' : 'kept as-is'}: ${extra.map(esc).join(', ')}.</span>`;
+  if(problems.length) html += `<ul>${problems.slice(0, 8).map(p => `<li>${esc(p)}</li>`).join('')}${problems.length > 8 ? `<li>…and ${problems.length - 8} more</li>` : ''}</ul>`;
+  sum.innerHTML = html;
+  $('btnUploadGo').disabled = !rows.length;
+}
+$('uploadKind').addEventListener('change', describeUpload);
 
 function parseTable(table, fileName){
   const problems = [];
-  const hIdx = table.findIndex(r => r.some(c => /ticket/i.test(String(c))));
-  const header = (table[hIdx] || []).map(h => String(h).trim());
-  const map = header.map(h => COLUMNS.find(c => c.aliases.includes(h.toLowerCase())) || null);
+  const hIdx = findHeader(table);
+  const header = (table[hIdx] || []).map(h => String(h ?? '').trim());
+  // Each known column is taken once, from the first header that matches it; the rest are kept as extra columns.
+  const taken = new Set();
+  const map = header.map(h => { const c = columnFor(h); if(!c || taken.has(c.key)) return null; taken.add(c.key); return c; });
   const unknown = header.filter((h, i) => h && !map[i]);
   const missing = map.some(c => c && c.key === 'ticket_number') ? [] : ['Ticket Number'];
   const byTicket = new Map();
@@ -1589,14 +1674,14 @@ function parseTable(table, fileName){
       if(!col){ if(h && String(v ?? '').trim()) row.extra[h] = String(v).trim(); return; }
       if(col.date){
         const t = toTimestamp(v);
-        if(t === undefined){ problems.push(`Row ${n+2}: couldn't read ${col.label} "${v}"`); row[col.key] = null; }
+        if(t === undefined){ problems.push(`Row ${n+hIdx+2}: couldn't read ${col.label} "${v}"`); row[col.key] = null; }
         else row[col.key] = t;
       }else{
         const s = String(v ?? '').trim();
         row[col.key] = s === '' ? null : fixDash(s);
       }
     });
-    if(!row.ticket_number){ problems.push(`Row ${n+2}: no ticket number, skipped`); return; }
+    if(!row.ticket_number){ problems.push(`Row ${n+hIdx+2}: no ticket number, skipped`); return; }
     row.ticket_number = String(row.ticket_number).replace(/\.0$/, '');
     if(byTicket.has(row.ticket_number)) problems.push(`Ticket ${row.ticket_number} appears twice; the last row is used`);
     byTicket.set(row.ticket_number, row);
@@ -1604,12 +1689,51 @@ function parseTable(table, fileName){
   return { fileName, rows: [...byTicket.values()], problems, unknown, missing };
 }
 
+// Open tickets export: add or update Open tickets; a ticket closed before is marked Reopened (here and on the closed ticket).
+async function saveOpenUpload(plan){
+  const now = new Date().toISOString(), closedBy = new Map(T.filter(t => t._c).map(t => [t.ticket_number, t]));
+  const reopened = new Set(plan.reopened);
+  const statusOf = r => { const k = Object.keys(r.extra || {}).find(k => normHead(k) === 'status'); return k ? r.extra[k] : null; };
+  const payload = PARSED.rows.map(r => {
+    const o = OPEN.find(x => x.ticket_number === r.ticket_number) || {};
+    const t = closedBy.get(r.ticket_number);
+    return {
+      ticket_number: r.ticket_number,
+      escalation_type: r.priority ? (isBusiness(r) ? 'Business' : 'CSC') : (o.escalation_type || 'CSC'),
+      opened_on: r.opened_at ? r.opened_at.slice(0, 10) : (o.opened_on || null),
+      account_name: r.account_name ?? o.account_name ?? null,
+      subject: r.subject ?? o.subject ?? null,
+      scanner_model: o.scanner_model ?? null,
+      status_note: statusOf(r) ?? o.status_note ?? null,
+      reopened_at: reopened.has(r.ticket_number) ? now : (o.reopened_at ?? null),
+      prev_closed_at: reopened.has(r.ticket_number) ? t.closed_at : (o.prev_closed_at ?? null),
+      updated_by: ME.id, updated_at: now,
+    };
+  });
+  for(let i = 0; i < payload.length; i += 500){
+    const { error } = await sb.from('escalation_open_tickets').upsert(payload.slice(i, i + 500), { onConflict:'ticket_number' });
+    if(error) throw error;
+  }
+  for(const num of reopened){
+    const t = closedBy.get(num);
+    const { error } = await sb.from('escalation_tickets').update({ reopen_count: (t.reopen_count || 0) + 1, reopened_at: now }).eq('ticket_number', num);
+    if(error) throw error;
+  }
+  return `Uploaded ${plural(payload.length, 'open ticket', 'open tickets')}` + (reopened.size ? `, ${reopened.size} reopened.` : '.');
+}
+
 $('btnUploadGo').addEventListener('click', async ()=>{
   if(!PARSED || !PARSED.rows.length) return;
   const btn = $('btnUploadGo'); btn.disabled = true; btn.textContent = 'Uploading…';
+  const plan = planUpload();
   try{
+    if(plan.kind === 'open'){
+      const msg = await saveOpenUpload(plan);
+      closeUpload(); toast(msg); await loadAll(true);
+      return;
+    }
     const { data: up, error: upErr } = await sb.from('escalation_uploads').insert({
-      file_name: PARSED.fileName, row_count: PARSED.rows.length, new_count: PARSED.nNew, updated_count: PARSED.rows.length - PARSED.nNew,
+      file_name: PARSED.fileName, row_count: PARSED.rows.length, new_count: plan.nNew, updated_count: PARSED.rows.length - plan.nNew,
     }).select().single();
     if(upErr) throw upErr;
     // A ticket number already stored is replaced by the new row and tagged Reopened.
@@ -1635,8 +1759,13 @@ $('btnUploadGo').addEventListener('click', async ()=>{
       if(error) throw error;
     }
     await sb.from('escalation_uploads').update({ new_count: payload.length - existing.size, updated_count: existing.size }).eq('id', up.id);
+    // Tickets this file closes leave Open tickets.
+    for(let i = 0; i < plan.closesOpen.length; i += 200){
+      const { error } = await sb.from('escalation_open_tickets').delete().in('ticket_number', plan.closesOpen.slice(i, i + 200));
+      if(error) throw error;
+    }
     closeUpload();
-    toast(`Uploaded ${PARSED.rows.length} tickets.`);
+    toast(`Uploaded ${PARSED.rows.length} tickets` + (plan.closesOpen.length ? `; ${plan.closesOpen.length} left Open tickets as closed.` : '.'));
     await loadAll(true);
   }catch(err){
     console.error(err);
