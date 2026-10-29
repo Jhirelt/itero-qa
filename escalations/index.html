@@ -78,6 +78,7 @@
   .sec-btn.active{ background:var(--accent); border-color:var(--accent); color:#00110f; }
   .panel-head{ display:flex; align-items:flex-start; gap:12px; justify-content:space-between; flex-wrap:wrap; }
   .panel-head > div{ flex:1; min-width:240px; }
+  .panel table.data .sub{ margin:0; font-size:11.5px; }
   .panel-head + *{ margin-top:12px; }
   .theme-switch{ display:flex; align-items:center; gap:8px; cursor:pointer; border:1px solid var(--border); background:var(--bg-elev-2); padding:6px 10px; border-radius:999px; }
   .theme-switch svg{ width:15px; height:15px; color:var(--text-dim); transition: color .32s ease, transform .35s cubic-bezier(.34,1.56,.64,1); }
@@ -300,6 +301,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
   <div class="tabs hidden" id="wgTabs">
     <button class="tab-btn active" data-wgview="report">Report</button>
+    <button class="tab-btn" data-wgview="pilot">Pilot data</button>
     <button class="tab-btn" data-wgview="uploads">Uploads</button>
   </div>
   <div class="user-badge" id="userBadge">
@@ -471,6 +473,38 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <h4>White Globe</h4>
       <p class="sub">This section is ready to be built. Its report will show up here once its Excel format is set up.</p>
       <div class="empty">No White Globe data yet</div>
+    </div>
+  </div>
+  <!-- Pilot (June-September 2026): a one-off set of review exports, loaded once into wg_pilot_tickets, one row per ticket. -->
+  <div id="wg-pilot" class="hidden">
+    <div class="kpis">
+      <div class="kpi"><div class="k-label">Pilot tickets</div><div class="k-value" id="pTickets">–</div><div class="k-foot" id="pTicketsFoot"></div></div>
+      <div class="kpi"><div class="k-label">Customers</div><div class="k-value" id="pCustomers">–</div><div class="k-foot" id="pCustomersFoot"></div></div>
+      <div class="kpi"><div class="k-label">Recall rate</div><div class="k-value" id="pRecall">–</div><div class="k-foot" id="pRecallFoot"></div></div>
+      <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="pParts">–</div><div class="k-foot" id="pPartsFoot"></div></div>
+      <div class="kpi"><div class="k-label">Effectiveness validations</div><div class="k-value" id="pValid">–</div><div class="k-foot" id="pValidFoot"></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="panel"><h4>Tickets per month</h4><p class="sub">By the month the ticket was opened</p><div id="pMonths"></div></div>
+      <div class="panel"><h4>By issue type</h4><p class="sub">Top issue types in the pilot</p><div id="pIssues"></div></div>
+      <div class="panel"><h4>By sub-issue type</h4><p class="sub">Top sub-issue types in the pilot</p><div id="pSubIssues"></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="panel"><h4>By product family</h4><p class="sub">Scanner family on the ticket</p><div id="pFamily"></div></div>
+      <div class="panel"><h4>By ticket type</h4><p class="sub">Salesforce ticket type</p><div id="pTypes"></div></div>
+      <div class="panel"><h4>By ticket owner</h4><p class="sub">Agent or queue that owns the ticket</p><div id="pOwners"></div></div>
+    </div>
+    <div class="panel" style="margin-bottom:12px;">
+      <h4>Recalls</h4>
+      <p class="sub">Same customer (MAT ID) and same issue type on different ticket numbers. Effectiveness validation tickets are planned follow-ups, so they don't count as recalls.</p>
+      <div class="table-wrap" style="border:none;max-height:460px;overflow:auto;"><table class="data" id="pRecallTable" style="min-width:720px;"><thead><tr><th>Customer</th><th>Issue type</th><th style="text-align:right">Tickets</th><th style="text-align:right">Days first to last</th><th>Ticket numbers</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head">
+        <div><h4>Pilot tickets</h4><p class="sub" id="pListCount"></p></div>
+        <div class="field" style="min-width:260px;"><label for="pSearch">Search</label><input class="ctl" id="pSearch" placeholder="Ticket, customer, MAT ID, subject, serial…"></div>
+      </div>
+      <div class="table-wrap" style="border:none;max-height:460px;overflow:auto;"><table class="data" id="pTable" style="min-width:900px;"><thead><tr><th>Ticket</th><th>Opened</th><th>Customer</th><th>Subject</th><th>Issue type</th><th>Sub-issue</th><th>Owner</th><th>Status</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
   <div id="wg-uploads" class="hidden">
@@ -1392,8 +1426,93 @@ function switchSection(sec){
 document.querySelectorAll('.sec-btn').forEach(b => b.addEventListener('click', ()=>switchSection(b.dataset.section)));
 function switchWgView(v){
   document.querySelectorAll('#wgTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.wgview === v));
-  ['report','uploads'].forEach(x => $('wg-'+x).classList.toggle('hidden', x !== v));
+  ['report','pilot','uploads'].forEach(x => $('wg-'+x).classList.toggle('hidden', x !== v));
+  if(v === 'pilot') loadPilot();
 }
+
+/* ---------- White Glove pilot data ---------- */
+let PILOT = null;
+// Planned follow-up calls of the pilot, not a customer calling back.
+const isValidation = t => /effectiveness validation/i.test(t.subject || '');
+const isPartReplacement = t => /\b(part|parts|ppc|wand)\s+(replacement|request)\b/i.test(t.subject || '') && !isValidation(t);
+async function loadPilot(){
+  if(PILOT){ renderPilot(); return; }
+  const { data, error } = await sb.from('wg_pilot_tickets').select('*').order('opened_at', { ascending:false });
+  if(error){ console.error(error); toast('Could not load the pilot data. Reload the page to try again.'); return; }
+  PILOT = data.map(t => Object.assign(t, { _o: parseTs(t.opened_at) }));
+  renderPilot();
+}
+function pilotRecalls(){
+  const groups = new Map();
+  PILOT.filter(t => !isValidation(t) && t.mat_id && t.issue_type).forEach(t => {
+    const k = t.mat_id + '|' + t.issue_type.toLowerCase();
+    (groups.get(k) || groups.set(k, []).get(k)).push(t);
+  });
+  return [...groups.values()].filter(g => g.length > 1)
+    .map(g => g.sort((a,b) => a._o - b._o))
+    .sort((a,b) => b.length - a.length || (b[b.length-1]._o - b[0]._o) - (a[a.length-1]._o - a[0]._o));
+}
+function renderPilot(){
+  const T = PILOT, n = T.length;
+  const pct = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+  const customers = new Set(T.map(t => t.mat_id).filter(Boolean));
+  const perCustomer = countBy(T, t => t.mat_id);
+  const repeatCustomers = perCustomer.filter(r => r.value > 1).length;
+  const counted = T.filter(t => !isValidation(t));
+  const recalls = pilotRecalls();
+  const recallTickets = recalls.reduce((s, g) => s + g.length - 1, 0);
+  const days = (a, b) => Math.round((b - a) / 864e5);
+  const gaps = recalls.flatMap(g => g.slice(1).map((t, i) => days(g[i]._o, t._o)));
+  const avgGap = gaps.length ? (gaps.reduce((s, x) => s + x, 0) / gaps.length) : null;
+  const parts = T.filter(isPartReplacement).length, valid = T.filter(isValidation).length;
+  const first = T.reduce((m, t) => !m || t._o < m ? t._o : m, null), last = T.reduce((m, t) => !m || t._o > m ? t._o : m, null);
+
+  $('pTickets').textContent = n;
+  $('pTicketsFoot').textContent = first ? `${fmtDate(first)} to ${fmtDate(last)}, one row per ticket` : '';
+  $('pCustomers').textContent = customers.size;
+  $('pCustomersFoot').textContent = `${repeatCustomers} called more than once (${pct(repeatCustomers, customers.size)})`;
+  $('pRecall').textContent = pct(recallTickets, counted.length);
+  $('pRecallFoot').textContent = `${recallTickets} of ${counted.length} tickets, ${recalls.length} customers` + (avgGap == null ? '' : `, ${avgGap.toFixed(1)} days apart on average`);
+  $('pParts').textContent = parts;
+  $('pPartsFoot').textContent = `${pct(parts, n)} of pilot tickets`;
+  $('pValid').textContent = valid;
+  $('pValidFoot').textContent = 'Follow-up calls after a part replacement';
+
+  const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+  const byMonth = new Map();
+  T.forEach(t => { if(!t._o) return; const k = t._o.getFullYear() * 12 + t._o.getMonth(); byMonth.set(k, (byMonth.get(k) || 0) + 1); });
+  renderHbars($('pMonths'), [...byMonth.entries()].sort((a,b) => a[0] - b[0]).map(([k, v]) => ({ label: MONTHS[k % 12], value: v })), null, 12);
+  renderHbars($('pIssues'), countBy(T, t => t.issue_type));
+  renderHbars($('pSubIssues'), countBy(T, t => t.sub_issue_type));
+  renderHbars($('pFamily'), countBy(T, t => t.product_family));
+  renderHbars($('pTypes'), countBy(T, t => t.ticket_type));
+  renderHbars($('pOwners'), countBy(T, t => t.ticket_owner));
+
+  $('pRecallTable').querySelector('tbody').innerHTML = recalls.length ? recalls.map(g => `<tr>
+      <td>${esc(g[0].account_name || '')}<div class="sub">MAT ${esc(g[0].mat_id)}</div></td>
+      <td>${esc(g[0].issue_type)}</td>
+      <td class="num">${g.length}</td>
+      <td class="num">${days(g[0]._o, g[g.length-1]._o)}</td>
+      <td>${g.map(t => `<span class="nowrap" title="${esc(t.subject || '')}">${esc(t.ticket_number)}${copyBtn(t.ticket_number)} <span class="sub">${esc(fmtShort(t._o))}</span></span>`).join('<br>')}</td></tr>`).join('')
+    : '<tr><td colspan="5" class="empty">No recalls in the pilot</td></tr>';
+  renderPilotList();
+}
+function renderPilotList(){
+  const q = $('pSearch').value.trim().toLowerCase();
+  const rows = !q ? PILOT : PILOT.filter(t => [t.ticket_number, t.account_name, t.mat_id, t.subject, t.serial_number, t.issue_type, t.sub_issue_type, t.ticket_owner].some(v => String(v || '').toLowerCase().includes(q)));
+  $('pListCount').textContent = `${rows.length} of ${PILOT.length} tickets`;
+  $('pTable').querySelector('tbody').innerHTML = rows.length ? rows.map(t => `<tr>
+      <td class="ticket nowrap">${esc(t.ticket_number)}${copyBtn(t.ticket_number)}</td>
+      <td class="nowrap">${esc(t._o ? fmtShort(t._o) : '')}</td>
+      <td>${esc(t.account_name || '')}<div class="sub">MAT ${esc(t.mat_id || '–')}</div></td>
+      <td>${esc(t.subject || '')}</td>
+      <td>${esc(t.issue_type || '')}</td>
+      <td>${esc(t.sub_issue_type || '')}</td>
+      <td>${esc(t.ticket_owner || '')}</td>
+      <td>${esc(t.status || '')}</td></tr>`).join('')
+    : '<tr><td colspan="8" class="empty">No tickets match</td></tr>';
+}
+$('pSearch').addEventListener('input', () => PILOT && renderPilotList());
 document.querySelectorAll('#wgTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchWgView(b.dataset.wgview)));
 try{ switchSection(localStorage.getItem('itero-section') || 'escalations'); }catch(e){ switchSection('escalations'); }
 
