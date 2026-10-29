@@ -79,6 +79,11 @@
   .panel-head{ display:flex; align-items:flex-start; gap:12px; justify-content:space-between; flex-wrap:wrap; }
   .panel-head > div{ flex:1; min-width:240px; }
   .panel table.data .sub{ margin:0; font-size:11.5px; }
+  .grid-2.aht-grid{ grid-template-columns:1fr 1fr; }
+  .aht-grid table.data{ min-width:0; width:100%; }
+  .aht-grid > div{ min-width:0; }
+  @media (max-width:1100px){ .grid-2.aht-grid{ grid-template-columns:1fr; } }
+  table.data tr.avg td{ font-weight:700; }
   .panel-head + *{ margin-top:12px; }
   .theme-switch{ display:flex; align-items:center; gap:8px; cursor:pointer; border:1px solid var(--border); background:var(--bg-elev-2); padding:6px 10px; border-radius:999px; }
   .theme-switch svg{ width:15px; height:15px; color:var(--text-dim); transition: color .32s ease, transform .35s cubic-bezier(.34,1.56,.64,1); }
@@ -478,11 +483,26 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <!-- Pilot (June-September 2026): a one-off set of review exports, loaded once into wg_pilot_tickets, one row per ticket. -->
   <div id="wg-pilot" class="hidden">
     <div class="kpis">
+      <div class="kpi"><div class="k-label">Success rate</div><div class="k-value" id="pSuccess">–</div><div class="k-foot" id="pSuccessFoot"></div></div>
       <div class="kpi"><div class="k-label">Pilot tickets</div><div class="k-value" id="pTickets">–</div><div class="k-foot" id="pTicketsFoot"></div></div>
       <div class="kpi"><div class="k-label">Customers</div><div class="k-value" id="pCustomers">–</div><div class="k-foot" id="pCustomersFoot"></div></div>
       <div class="kpi"><div class="k-label">Recall rate</div><div class="k-value" id="pRecall">–</div><div class="k-foot" id="pRecallFoot"></div></div>
       <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="pParts">–</div><div class="k-foot" id="pPartsFoot"></div></div>
       <div class="kpi"><div class="k-label">Effectiveness validations</div><div class="k-value" id="pValid">–</div><div class="k-foot" id="pValidFoot"></div></div>
+    </div>
+    <div class="panel" style="margin-bottom:12px;">
+      <h4>How the success rate is built</h4>
+      <p class="sub">A pilot ticket counts as a success when the same customer did not call again about the same issue type. The other two checks back it up.</p>
+      <div class="table-wrap" style="border:none;"><table class="data" id="pSuccessTable" style="min-width:640px;"><thead><tr><th>Check</th><th style="text-align:right">Result</th><th>What it is based on</th></tr></thead><tbody></tbody></table></div>
+    </div>
+    <div class="panel" style="margin-bottom:12px;">
+      <h4>AHT comparison</h4>
+      <p class="sub">Average handle time per agent during the pilot (mm:ss), from the WG AHT comparison: the regular team next to the White Glove team.</p>
+      <div class="table-wrap" style="border:none;"><table class="data" id="pAhtSummary" style="min-width:640px;"><thead></thead><tbody></tbody></table></div>
+      <div class="grid-2 aht-grid" style="margin-top:12px;margin-bottom:0;">
+        <div><h4 style="margin-bottom:8px;">Team KPI</h4><div class="table-wrap" style="border:none;"><table class="data" id="pAhtTeam"><thead></thead><tbody></tbody></table></div></div>
+        <div><h4 style="margin-bottom:8px;">WG Team KPI</h4><div class="table-wrap" style="border:none;"><table class="data" id="pAhtWg"><thead></thead><tbody></tbody></table></div></div>
+      </div>
     </div>
     <div class="grid-3">
       <div class="panel"><h4>Tickets per month</h4><p class="sub">By the month the ticket was opened</p><div id="pMonths"></div></div>
@@ -1431,15 +1451,20 @@ function switchWgView(v){
 }
 
 /* ---------- White Glove pilot data ---------- */
-let PILOT = null;
+let PILOT = null, PILOT_AHT = [];
+const PILOT_START = '2026-06-01', PILOT_END = '2026-09-30';
 // Planned follow-up calls of the pilot, not a customer calling back.
 const isValidation = t => /effectiveness validation/i.test(t.subject || '');
 const isPartReplacement = t => /\b(part|parts|ppc|wand)\s+(replacement|request)\b/i.test(t.subject || '') && !isValidation(t);
 async function loadPilot(){
   if(PILOT){ renderPilot(); return; }
-  const { data, error } = await sb.from('wg_pilot_tickets').select('*').order('opened_at', { ascending:false });
-  if(error){ console.error(error); toast('Could not load the pilot data. Reload the page to try again.'); return; }
-  PILOT = data.map(t => Object.assign(t, { _o: parseTs(t.opened_at) }));
+  const [tk, aht] = await Promise.all([
+    sb.from('wg_pilot_tickets').select('*').order('opened_at', { ascending:false }),
+    sb.from('wg_aht').select('*').gte('month', PILOT_START).lte('month', PILOT_END).order('month')
+  ]);
+  if(tk.error || aht.error){ console.error(tk.error || aht.error); toast('Could not load the pilot data. Reload the page to try again.'); return; }
+  PILOT = tk.data.map(t => Object.assign(t, { _o: parseTs(t.opened_at) }));
+  PILOT_AHT = aht.data;
   renderPilot();
 }
 function pilotRecalls(){
@@ -1467,6 +1492,20 @@ function renderPilot(){
   const parts = T.filter(isPartReplacement).length, valid = T.filter(isValidation).length;
   const first = T.reduce((m, t) => !m || t._o < m ? t._o : m, null), last = T.reduce((m, t) => !m || t._o > m ? t._o : m, null);
 
+  // Part replacements that held: no later ticket from the same customer about the same issue type.
+  const sameIssueLater = t => counted.some(x => x !== t && x.mat_id === t.mat_id && (x.issue_type || '').toLowerCase() === (t.issue_type || '').toLowerCase() && x._o > t._o);
+  const replacements = counted.filter(isPartReplacement), held = replacements.filter(t => !sameIssueLater(t)).length;
+  const success = counted.length - recallTickets;
+  const aht = pilotAhtStats();
+  $('pSuccess').textContent = pct(success, counted.length);
+  $('pSuccessFoot').textContent = `${success} of ${counted.length} tickets with no recall on the same issue`;
+  $('pSuccessTable').querySelector('tbody').innerHTML = [
+    ['Resolved without a recall', pct(success, counted.length), `${success} of ${counted.length} tickets: the customer did not open another ticket about the same issue type. Effectiveness validations are left out because they are planned follow-ups.`],
+    ['Part replacements that held', pct(held, replacements.length), `${held} of ${replacements.length} part replacements had no later ticket from the same customer about the same issue type.`],
+    ['Handle time', aht ? fmtDiff(aht.wg - aht.team) : '–', aht ? `The White Glove team averaged ${fmtMmss(aht.wg)} per call against ${fmtMmss(aht.team)} for the regular team (${aht.months}), so the extra review did not make calls longer.` : 'No AHT data for the pilot months.']
+  ].map(r => `<tr><td class="nowrap"><b>${esc(r[0])}</b></td><td class="num" style="font-size:16px;font-weight:700">${esc(r[1])}</td><td>${esc(r[2])}</td></tr>`).join('');
+  renderPilotAht();
+
   $('pTickets').textContent = n;
   $('pTicketsFoot').textContent = first ? `${fmtDate(first)} to ${fmtDate(last)}, one row per ticket` : '';
   $('pCustomers').textContent = customers.size;
@@ -1493,9 +1532,40 @@ function renderPilot(){
       <td>${esc(g[0].issue_type)}</td>
       <td class="num">${g.length}</td>
       <td class="num">${days(g[0]._o, g[g.length-1]._o)}</td>
-      <td>${g.map(t => `<span class="nowrap" title="${esc(t.subject || '')}">${esc(t.ticket_number)}${copyBtn(t.ticket_number)} <span class="sub">${esc(fmtShort(t._o))}</span></span>`).join('<br>')}</td></tr>`).join('')
+      <td>${g.map(t => `<span class="nowrap" title="${esc(t.subject || '')}">${esc(t.ticket_number)}${copyBtn(t.ticket_number)} <span class="sub">${esc(fmtShort(t._o))}${t.serial_number ? ' · SN ' + esc(t.serial_number) : ''}</span></span>`).join('<br>')}</td></tr>`).join('')
     : '<tr><td colspan="5" class="empty">No recalls in the pilot</td></tr>';
   renderPilotList();
+}
+const fmtMmss = s => s == null ? '–' : `${Math.floor(Math.round(s) / 60)}:${String(Math.round(s) % 60).padStart(2, '0')}`;
+const fmtDiff = s => (s < 0 ? '−' : '+') + fmtMmss(Math.abs(s));
+const ahtAvg = (rows, k) => { const v = rows.map(r => r[k]).filter(x => x != null).map(Number); return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null; };
+const monthLabel = m => new Date(+m.slice(0, 4), +m.slice(5, 7) - 1, 1).toLocaleDateString('en-US', { month:'long' });
+function pilotAhtStats(){
+  const team = PILOT_AHT.filter(r => r.team === 'team'), wg = PILOT_AHT.filter(r => r.team === 'wg');
+  if(!team.length || !wg.length) return null;
+  const months = [...new Set(PILOT_AHT.map(r => r.month))].map(monthLabel);
+  return { team: ahtAvg(team, 'aht_seconds'), wg: ahtAvg(wg, 'aht_seconds'), months: months.length > 1 ? months.slice(0, -1).join(', ') + ' and ' + months[months.length - 1] : months[0] };
+}
+// Same layout as the WG AHT comparison sheets: agents down, months across, with the average row.
+function renderPilotAht(){
+  const months = [...new Set(PILOT_AHT.map(r => r.month))].sort();
+  const title = s => s.replace(/\b\w/g, c => c.toUpperCase());
+  const head = '<tr><th>Agent</th>' + months.map(m => `<th style="text-align:right">${esc(monthLabel(m))}</th>`).join('') + '</tr>';
+  [['team', 'pAhtTeam'], ['wg', 'pAhtWg']].forEach(([team, id]) => {
+    const rows = PILOT_AHT.filter(r => r.team === team), agents = [...new Set(rows.map(r => r.agent))];
+    const cell = (a, m) => { const r = rows.find(x => x.agent === a && x.month === m); return r ? fmtMmss(r.aht_seconds) : '–'; };
+    $(id).querySelector('thead').innerHTML = head;
+    $(id).querySelector('tbody').innerHTML = agents.length ? agents.map(a => `<tr><td>${esc(title(a))}</td>${months.map(m => `<td class="num">${cell(a, m)}</td>`).join('')}</tr>`).join('')
+      + `<tr class="avg"><td>Average</td>${months.map(m => `<td class="num">${fmtMmss(ahtAvg(rows.filter(r => r.month === m), 'aht_seconds'))}</td>`).join('')}</tr>`
+      : `<tr><td colspan="${months.length + 1}" class="empty">No AHT data</td></tr>`;
+  });
+  $('pAhtSummary').querySelector('thead').innerHTML = '<tr><th>Month</th><th style="text-align:right">Team AHT</th><th style="text-align:right">WG Team AHT</th><th style="text-align:right">Difference</th><th style="text-align:right">Team wrap up</th><th style="text-align:right">WG wrap up</th><th style="text-align:right">Team AHoT</th><th style="text-align:right">WG AHoT</th></tr>';
+  $('pAhtSummary').querySelector('tbody').innerHTML = months.length ? months.map(m => {
+    const t = PILOT_AHT.filter(r => r.month === m && r.team === 'team'), w = PILOT_AHT.filter(r => r.month === m && r.team === 'wg');
+    const ta = ahtAvg(t, 'aht_seconds'), wa = ahtAvg(w, 'aht_seconds');
+    return `<tr><td>${esc(monthLabel(m))}</td><td class="num">${fmtMmss(ta)}</td><td class="num">${fmtMmss(wa)}</td><td class="num">${ta != null && wa != null ? fmtDiff(wa - ta) : '–'}</td>
+      <td class="num">${fmtMmss(ahtAvg(t, 'wrap_up_seconds'))}</td><td class="num">${fmtMmss(ahtAvg(w, 'wrap_up_seconds'))}</td><td class="num">${fmtMmss(ahtAvg(t, 'ahot_seconds'))}</td><td class="num">${fmtMmss(ahtAvg(w, 'ahot_seconds'))}</td></tr>`;
+  }).join('') : '<tr><td colspan="8" class="empty">No AHT data for the pilot months</td></tr>';
 }
 function renderPilotList(){
   const q = $('pSearch').value.trim().toLowerCase();
