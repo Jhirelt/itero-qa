@@ -137,6 +137,12 @@
   }
   .login-error.show{ display:block; }
   .login-box .btn{ width:100%; justify-content:center; }
+  .who-pick{ display:none; }
+  .login-box.picking > :not(.login-logo):not(.who-pick){ display:none; }
+  .login-box.picking .who-pick{ display:block; }
+  .who-hint{ text-align:center; font-size:12.5px; color:var(--text-dim); margin:-12px 0 18px; }
+  .who-list{ display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
+  .who-list .btn{ padding:12px 10px; font-size:14px; }
 
   /* ---------- Layout ---------- */
   .wrap{ max-width:none; margin:0 auto; padding:18px 48px; }
@@ -2229,6 +2235,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     </form>
     <button type="button" class="login-switch" id="btnLoginMode">First time? Create your account</button>
     <div class="login-note" id="loginNote"></div>
+    <div class="who-pick" id="whoPick">
+      <h2>Who is evaluating?</h2>
+      <p class="who-hint">This is a shared account. Pick your name.</p>
+      <div class="who-list" id="whoList"></div>
+      <button type="button" class="login-switch" id="btnWhoSignOut">Sign out</button>
+    </div>
   </div>
 </div>
 
@@ -5422,7 +5434,7 @@ function applyRoleToUI(){
   document.getElementById('btnViewAs').style.display = (isAdmin || REAL_USER) ? '' : 'none';
 
   document.getElementById('userBadgeName').textContent = CURRENT_USER.display_name || CURRENT_USER.email;
-  document.getElementById('userBadgeRole').textContent = CURRENT_USER.role + (REAL_USER ? ' · view' : '');
+  document.getElementById('userBadgeRole').textContent = CURRENT_USER.role + (CURRENT_USER.shared_account ? ' · ' + CURRENT_USER.shared_account : '') + (REAL_USER ? ' · view' : '');
   document.getElementById('userBadge').style.display = 'flex';
 }
 
@@ -5435,7 +5447,7 @@ function refreshProfileLater(userId, attempt = 0){
     try{
       const { data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', userId).maybeSingle();
       if(!error && data){
-        CURRENT_USER.display_name = data.display_name;
+        if(!CURRENT_USER.shared_account) CURRENT_USER.display_name = data.display_name;
         CURRENT_USER.role = data.role;
         CURRENT_USER.prefs = data.prefs || {};
         applyRoleToUI();
@@ -5453,7 +5465,8 @@ async function loadProfileAndStart(user){
   for(let attempt = 0; attempt < 3; attempt++){
     lookupFailed = false;
     try{
-      let { data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', user.id).maybeSingle();
+      let { data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs, shared_people').eq('id', user.id).maybeSingle();
+      if(error && error.code === '42703') ({ data, error } = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', user.id).maybeSingle());
       if(error && error.code === '42703') ({ data, error } = await supabaseClient.from('profiles').select('role, display_name').eq('id', user.id).maybeSingle());
       if(error){ lookupFailed = true; console.error('Profile lookup returned an error (role will default to evaluator):', error); }
       else profile = data;
@@ -5468,7 +5481,7 @@ async function loadProfileAndStart(user){
       const { data: role, error } = await supabaseClient.rpc('claim_staff_invite');
       if(error){ if(error.code !== 'PGRST202' && error.code !== '42883') console.error('Staff sign-in check failed', error); }
       else if(role){
-        const res = await supabaseClient.from('profiles').select('role, display_name, prefs').eq('id', user.id).maybeSingle();
+        const res = await supabaseClient.from('profiles').select('role, display_name, prefs, shared_people').eq('id', user.id).maybeSingle();
         if(res.data) profile = res.data;
       }
     }catch(e){ console.error('Staff sign-in check failed', e); }
@@ -5502,6 +5515,13 @@ async function loadProfileAndStart(user){
       prefs: (profile && profile.prefs) || {},
     };
     if(lookupFailed) refreshProfileLater(user.id);
+    const people = sharedPeople(profile);
+    if(people.length){
+      // Shared account: the person picks their name, and the app works as them.
+      const who = await pickSharedPerson(people);
+      CURRENT_USER.shared_account = CURRENT_USER.display_name;
+      CURRENT_USER.display_name = who;
+    }
     applyViewAs();
     if(CURRENT_USER.viewAs) await loadViewAsPrefs();
   }
@@ -5514,6 +5534,30 @@ async function loadProfileAndStart(user){
     init();
   }
 }
+
+function sharedPeople(profile){
+  const list = profile && Array.isArray(profile.shared_people) ? profile.shared_people : [];
+  return list.map(n=> String(n || '').trim()).filter(Boolean);
+}
+
+// Asks who is using a shared account, every time it signs in or the page opens.
+function pickSharedPerson(people){
+  return new Promise(resolve=>{
+    const box = document.querySelector('#loginOverlay .login-box');
+    const list = document.getElementById('whoList');
+    list.innerHTML = people.map(n=> '<button type="button" class="btn btn-ghost" data-who="' + escapeHtml(n) + '">' + escapeHtml(n) + '</button>').join('');
+    list.querySelectorAll('button').forEach(b=> b.addEventListener('click', ()=>{
+      box.classList.remove('picking');
+      resolve(b.dataset.who);
+    }));
+    box.classList.add('picking');
+    setAppVisible(false);
+  });
+}
+document.getElementById('btnWhoSignOut').addEventListener('click', async ()=>{
+  if(supabaseClient) await supabaseClient.auth.signOut();
+  window.location.reload();
+});
 
 function showLoginError(msg){
   const el = document.getElementById('loginError');
@@ -6206,7 +6250,8 @@ let ASSIGNMENTS_AVAILABLE = true;
 
 async function ensureProfilesLoaded(){
   if(PROFILES_CACHE) return PROFILES_CACHE;
-  const { data, error } = await supabaseClient.from('profiles').select('id, display_name, role').order('display_name');
+  let { data, error } = await supabaseClient.from('profiles').select('id, display_name, role, shared_people').order('display_name');
+  if(error && error.code === '42703') ({ data, error } = await supabaseClient.from('profiles').select('id, display_name, role').order('display_name'));
   if(error){ console.error('Could not load profiles', error); return []; }
   PROFILES_CACHE = data || [];
   return PROFILES_CACHE;
@@ -6537,11 +6582,16 @@ let EDITING_EXISTING = null;   // { id, agentName, callDate } while a saved eval
 let VIEW_EVAL = null;          // { row, fromProfile }
 
 function canEditEval(e){
-  return !!CURRENT_USER && (isAdminUser() || (!!e.evaluator_id && e.evaluator_id === CURRENT_USER.id));
+  if(!CURRENT_USER) return false;
+  if(isAdminUser()) return true;
+  // On a shared account each person edits only their own evaluations.
+  if(CURRENT_USER.shared_account && e.evaluator_name && e.evaluator_name !== CURRENT_USER.display_name) return false;
+  return !!e.evaluator_id && e.evaluator_id === CURRENT_USER.id;
 }
 
 function evaluatorLabel(e){
   const p = e.evaluator_id && (PROFILES_CACHE || []).find(x=> x.id === e.evaluator_id);
+  if(p && sharedPeople(p).length && e.evaluator_name) return e.evaluator_name;
   return p ? (p.display_name || 'QA') : (e.evaluator_name || '—');
 }
 
@@ -7546,7 +7596,7 @@ const LS_ONGOING_DRAFTS_KEY = 'qa_ongoing_drafts_v1';
 // Drafts belong to whoever is signed in, so two evaluators sharing a computer
 // never pick up each other's half-done evaluations.
 // Viewing as someone else keeps its drafts apart from that person's own.
-function draftKey(base){ return CURRENT_USER && CURRENT_USER.id ? base + ':' + (CURRENT_USER.viewAs ? 'view-as:' : '') + CURRENT_USER.id : base; }
+function draftKey(base){ return CURRENT_USER && CURRENT_USER.id ? base + ':' + (CURRENT_USER.viewAs ? 'view-as:' : '') + CURRENT_USER.id + (CURRENT_USER.shared_account ? ':' + CURRENT_USER.display_name : '') : base; }
 // Drafts saved before they were per person go to the first one who signs in.
 function adoptLegacyDrafts(){
   try{
