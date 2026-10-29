@@ -196,9 +196,12 @@
     border-radius:var(--radius-sm); padding:8px 12px; margin-bottom:10px; line-height:1.4;
   }
   .default-note b{ color:var(--accent); font-weight:800; }
-  .search-scenario-row{ display:flex; align-items:stretch; gap:12px; margin-bottom:14px; }
-  .search-scenario-row .rubric-search{ flex-grow:1; margin-bottom:0; }
+  .search-scenario-row{ display:flex; flex-wrap:wrap; align-items:stretch; gap:12px; margin-bottom:14px; }
+  .search-scenario-row .rubric-search{ flex:1 1 240px; max-width:440px; min-width:0; margin-bottom:0; }
   .search-scenario-row .scenario-row{ flex:0 0 auto; margin-bottom:0; }
+  .search-scenario-row .inline-field{ flex:1 1 200px; margin-top:0; }
+  .search-scenario-row .inline-field label{ min-width:0; }
+  .search-scenario-row .inline-field input{ height:100%; min-width:110px; }
   .scenario-row{ display:flex; align-items:center; gap:10px; }
 
   .ongoing-drafts-bar{ margin-bottom:12px; display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
@@ -698,6 +701,12 @@
   .txt-pick-hint{ font-size:11px; color:var(--text-dim); padding:0 4px 4px; }
   .extras-head{ display:flex; align-items:baseline; justify-content:space-between; gap:8px; margin:0 0 6px; }
   .extras-head h4{ margin:0; }
+  .acc-head{ cursor:pointer; user-select:none; }
+  .acc-head-right{ display:flex; align-items:center; gap:6px; }
+  .acc-head .chev{ width:14px; height:14px; color:var(--text-dim); transition:transform .15s; }
+  #extrasPanel.acc-collapsed .acc-head .chev{ transform:rotate(-90deg); }
+  #extrasPanel.acc-collapsed #accList{ display:none; }
+  #extrasPanel.acc-collapsed .acc-head{ margin-bottom:0; }
   .extras-count{ font-size:11px; font-weight:800; color:var(--text-dim); }
   .extras-count.full{ color:var(--yes); }
   /* ---------- Tasks ---------- */
@@ -1135,14 +1144,7 @@
   .eff-tile .lbl{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; }
   .eff-tile .val{ font-size:22px; font-weight:800; color:var(--accent); margin-top:4px; }
   .eff-tile .sub{ font-size:11.5px; color:var(--text-dim); margin-top:2px; }
-  .eff-grid{ display:grid; grid-template-columns:repeat(auto-fit, minmax(320px, 1fr)); gap:16px; }
-  .eff-table{ width:100%; border-collapse:collapse; font-size:12.5px; }
-  .eff-table th{ text-align:right; font-size:10.5px; text-transform:uppercase; letter-spacing:.4px; color:var(--text-dim); padding:6px 8px; border-bottom:1px solid var(--border); }
-  .eff-table td{ text-align:right; padding:7px 8px; border-bottom:1px solid var(--border); }
-  .eff-table th:first-child, .eff-table td:first-child{ text-align:left; }
-  .eff-table tfoot td{ font-weight:800; border-bottom:none; }
   .eff-empty{ font-size:12.5px; color:var(--text-dim); padding:6px 0; }
-  .eval-item .time{ font-size:11.5px; color:var(--text-dim); white-space:nowrap; }
   .monthly-head{ display:flex; align-items:baseline; justify-content:space-between; gap:10px; flex-wrap:wrap; margin-bottom:12px; }
   .monthly-head h3{ margin:0; }
   .monthly-head .monthly-sub{ font-size:11.5px; color:var(--text-faint); }
@@ -1297,8 +1299,9 @@
   .ve-row.res-feedback .lbl{ color:var(--warn); }
   .ve-summary{ white-space:pre-wrap; font-family:inherit; font-size:12px; line-height:1.5; background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:10px 12px; margin:0; max-height:260px; overflow:auto; }
   .ve-subtitle{ font-size:11px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:800; margin:16px 0 8px; }
-  .ve-actions{ display:flex; gap:8px; margin-top:16px; }
-  .ve-actions .btn{ flex:1; }
+  .ve-actions{ display:flex; flex-wrap:wrap; gap:8px; margin-top:16px; }
+  .ve-actions .btn{ flex:1; white-space:nowrap; }
+  .ve-actions .btn svg{ width:15px; height:15px; vertical-align:-3px; margin-right:4px; }
   .ve-actions .btn-danger{ background:var(--no-soft); color:var(--no); border:1px solid var(--no); }
   .ve-actions .btn-danger:hover{ background:var(--no); color:#fff; }
   .eval-item .by{ color:var(--text-faint); font-size:11px; flex-shrink:0; max-width:90px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
@@ -1380,8 +1383,11 @@
   .qn-clear{ background:none; border:none; color:var(--text-faint); font-size:11.5px; cursor:pointer; padding:0; }
   .qn-clear:hover{ color:var(--no); }
   .qn-actions{ display:flex; align-items:center; gap:10px; }
-  .qn-add{ background:var(--accent-soft); border:1px solid var(--accent-dim); color:var(--accent); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; cursor:pointer; }
+  .qn-add{ background:var(--accent-soft); border:1px solid var(--accent-dim); color:var(--accent); border-radius:999px; padding:2px 9px; font-size:11px; font-weight:700; cursor:pointer; white-space:nowrap; }
   .qn-add:hover{ border-color:var(--accent); }
+  .qn-added{ margin-top:8px; padding:8px 10px; border:1px solid var(--accent-dim); border-radius:var(--radius-sm); background:var(--accent-soft); }
+  .qn-added-head{ display:flex; justify-content:space-between; align-items:center; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; color:var(--accent); margin-bottom:4px; }
+  .qn-added-text{ white-space:pre-wrap; font-size:12px; line-height:1.45; color:var(--text); max-height:90px; overflow:auto; }
 
   /* ---------- Repeated error alerts ---------- */
   .repeat-alert{ display:none; margin-top:10px; border:1px solid var(--no); background:var(--no-soft); border-radius:var(--radius-sm); padding:9px 11px; font-size:12px; }
@@ -1551,6 +1557,14 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
               <svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
             </button>
           </div>
+          <div class="inline-field call-date-row">
+            <label for="fCallDate">Call date</label>
+            <input type="date" id="fCallDate">
+          </div>
+          <div class="inline-field call-date-row">
+            <label for="fTimeSpent">Time spent</label>
+            <input id="fTimeSpent" placeholder="e.g. 25m" autocomplete="off" title="How long the evaluation took">
+          </div>
           <div class="scenario-row">
             <label for="scenarioSelect">Call type</label>
             <div class="scenario-select-wrap">
@@ -1559,6 +1573,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             </div>
           </div>
         </div>
+        <div class="field-error" id="errCallDate"></div>
+        <div class="field-error" id="errTimeSpent"></div>
         <div class="sched-lock-note" id="schedLockNote"></div>
         <div id="sections"></div>
       </div>
@@ -1575,16 +1591,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <div class="autocomplete-list" id="agentList"></div>
           </div>
           <div class="field-error" id="errAgent"></div>
-          <div class="call-date-row">
-            <label for="fCallDate">Call date</label>
-            <input type="date" id="fCallDate">
-          </div>
-          <div class="field-error" id="errCallDate"></div>
-          <div class="call-date-row">
-            <label for="fTimeSpent">Time spent</label>
-            <input id="fTimeSpent" placeholder="e.g. 25m" autocomplete="off" title="How long the evaluation took">
-          </div>
-          <div class="field-error" id="errTimeSpent"></div>
           <div class="sched-banner" id="schedBanner"></div>
           <div class="repeat-alert" id="evalRepeatAlert"></div>
         </div>
@@ -1597,14 +1603,14 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <div class="stat-row"><span>Evaluated</span><b id="statCount">0 / 70</b></div>
           </div>
           <div class="score-acc-divider"></div>
-          <div class="extras-head"><h4>Accomplishments</h4><span class="extras-count" id="accCount">0 / 4</span></div>
+          <div class="extras-head acc-head" id="accHead" title="Show or hide the accomplishments"><h4>Accomplishments</h4><span class="acc-head-right"><span class="extras-count" id="accCount">0 / 4</span><svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
           <div id="accList" class="chip-list"></div>
         </div>
         </div>
         <div class="panel summary-panel">
           <div class="panel-head-row" id="summaryHeadRow" style="cursor:pointer;">
             <h4>Evaluation summary</h4>
-            <button class="collapse-toggle collapsed" id="btnToggleSummary" title="Show or hide the summary text">
+            <button class="collapse-toggle" id="btnToggleSummary" title="Show or hide the summary text">
               <svg class="chev" viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
             </button>
           </div>
@@ -1612,19 +1618,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <span>You edited this summary by hand, so rubric changes won't overwrite it.</span>
             <button type="button" id="btnRegenerateSummary">Regenerate</button>
           </div>
-          <textarea id="output" placeholder="Summary" class="summary-collapsed"></textarea>
+          <textarea id="output" placeholder="Summary"></textarea>
           <div class="btn-row">
             <button class="btn btn-primary" id="btnCopy">
               <svg viewBox="0 0 24 24" fill="none"><rect x="8" y="8" width="12" height="12" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" stroke="currentColor" stroke-width="1.8"/></svg>
               Copy summary
-            </button>
-            <button class="btn btn-primary" id="btnOutcomeReport">
-              <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 15l5-5 4 4 5-6 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r="1.3" fill="currentColor"/></svg>
-              Generate outcome report
-            </button>
-            <button class="btn btn-ghost" id="btnSendEmail">
-              <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="m4 6 8 6 8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Send email
             </button>
           </div>
           <button class="btn btn-primary save-fab" id="btnSaveEvaluation">
@@ -1634,8 +1632,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </div>
         <div class="side-row">
         <div class="panel quick-notes" id="quickNotesPanel" style="display:none;">
-          <div class="extras-head"><h4>Quick notes</h4><div class="qn-actions"><button type="button" class="qn-add" id="btnQuickNotesToEval" title="Add these notes to the evaluation summary">+ Add to evaluation</button><button type="button" class="qn-clear" id="btnClearQuickNotes" title="Clear your notes">Clear</button></div></div>
+          <div class="extras-head"><h4>Quick notes</h4><div class="qn-actions"><button type="button" class="qn-add" id="btnQuickNotesToEval" title="Save these notes with the evaluation, on the agent's scorecard. They don't go in the summary.">+ Add to evaluation</button><button type="button" class="qn-clear" id="btnClearQuickNotes" title="Clear your notes">Clear</button></div></div>
           <textarea id="quickNotes"></textarea>
+          <div class="qn-added" id="scorecardNotesBox" style="display:none;">
+            <div class="qn-added-head"><span>On the scorecard</span><button type="button" class="qn-clear" id="btnRemoveScorecardNotes" title="Take these notes off the evaluation">Remove</button></div>
+            <div class="qn-added-text" id="scorecardNotesText"></div>
+          </div>
         </div>
         <div class="panel" id="focusPanel">
           <div class="extras-head"><h4>Focus points</h4><span class="extras-count" id="focusCount"></span></div>
@@ -1862,6 +1864,14 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div id="viewEvalBody"></div>
       <div class="ve-actions" id="viewEvalActions">
         <button type="button" class="btn btn-primary" id="btnViewEvalEdit">Edit evaluation</button>
+        <button type="button" class="btn btn-ghost" id="btnOutcomeReport" title="Report image of this evaluation">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M3 15l5-5 4 4 5-6 4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><circle cx="8" cy="8.5" r="1.3" fill="currentColor"/></svg>
+          Generate outcome report
+        </button>
+        <button type="button" class="btn btn-ghost" id="btnSendEmail" title="Email this evaluation to the agent">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="m4 6 8 6 8-6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Send email
+        </button>
         <button type="button" class="btn btn-ghost" id="btnViewEvalDispute">Disputed</button>
         <button type="button" class="btn btn-danger" id="btnViewEvalDelete">Delete</button>
       </div>
@@ -2824,6 +2834,8 @@ let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zer
 let CHOICES = {};
 // What the evaluator wrote on a rubric that goes in the summary: { id: { impact, comment } }.
 let RUBRIC_NOTES = {};
+// Quick notes the evaluator added to this evaluation; saved with it, shown on the scorecard.
+let SCORECARD_NOTES = '';
 
 function rubricNote(id){
   const n = RUBRIC_NOTES[id] || {};
@@ -2840,7 +2852,7 @@ function cleanRubricNotes(src){
 }
 function rubricNoteLines(id){
   const n = rubricNote(id);
-  return (n.impact ? '\nHow this affects the customer: ' + n.impact : '') + (n.comment ? '\nComments: ' + n.comment : '');
+  return n.comment ? '\nComments: ' + n.comment : '';
 }
 
 // Time spent: "25m", "1h 10m", "90s", "25:30" (min:sec), "1:05:00" or a plain number of minutes.
@@ -2992,6 +3004,17 @@ function renderExtras(){
     focusOptions().filter(f=> !FOCUS_POINTS.includes(f)).map(f=> '<option>' + escapeHtml(f) + '</option>').join('');
 }
 
+// The accomplishments list folds away so only the score shows; the choice is remembered.
+const LS_ACC_COLLAPSED_KEY = 'qa_acc_collapsed';
+function setAccCollapsed(on){
+  document.getElementById('extrasPanel').classList.toggle('acc-collapsed', on);
+  try{ localStorage.setItem(LS_ACC_COLLAPSED_KEY, on ? '1' : '0'); }catch(e){}
+}
+try{ setAccCollapsed(localStorage.getItem(LS_ACC_COLLAPSED_KEY) !== '0'); }catch(e){ setAccCollapsed(true); }
+document.getElementById('accHead').addEventListener('click', ()=>{
+  setAccCollapsed(!document.getElementById('extrasPanel').classList.contains('acc-collapsed'));
+});
+
 document.getElementById('accList').addEventListener('click', (e)=>{
   const b = e.target.closest('button[data-acc]');
   if(!b) return;
@@ -3099,6 +3122,12 @@ function setSummaryManual(manual){
   if(SUMMARY_MANUAL && !AUTO_SUMMARY_AT_EDIT) AUTO_SUMMARY_AT_EDIT = LAST_AUTO_SUMMARY;
   if(!SUMMARY_MANUAL) AUTO_SUMMARY_AT_EDIT = '';
   updateSummaryManualNote();
+}
+
+// Several tickets typed in the field (separated by spaces or commas) read "Tickets: 1, 2".
+function ticketLine(raw){
+  const list = String(raw || '').split(/[\s,;]+/).filter(Boolean);
+  return list.length > 1 ? 'Tickets: ' + list.join(', ') : 'Ticket ID: ' + (list[0] || 'N/A');
 }
 
 function firstName(name){
@@ -3472,7 +3501,6 @@ function applyRubricSearch(){
 
 const RUBRIC_NOTES_HTML = `
             <div class="ic-notes">
-              <textarea data-note="impact" rows="1" maxlength="1000" placeholder="How does this affect the customer?"></textarea>
               <textarea data-note="comment" rows="1" maxlength="1000" placeholder="Comments"></textarea>
             </div>`;
 // The two note boxes show on the rubrics that go in the summary.
@@ -3561,7 +3589,6 @@ function renderSections(){
           `;
         }
         const note = RUBRIC_NOTES[id] || {};
-        row.querySelector('textarea[data-note="impact"]').value = note.impact || '';
         row.querySelector('textarea[data-note="comment"]').value = note.comment || '';
         itemsWrap.appendChild(row);
       }catch(e){ console.error('Skipping broken item', id, e); }
@@ -3712,7 +3739,7 @@ function buildOutput(score, earned, possible, zeroTriggered){
 
   let fieldsBlock = [];
   fieldsBlock.push('Caller: ' + (rawCaller || 'N/A'));
-  fieldsBlock.push('Ticket ID: ' + (rawTicket || 'N/A'));
+  fieldsBlock.push(ticketLine(rawTicket));
   if(rawCallId) fieldsBlock.push('Call ID: ' + rawCallId);
   fieldsBlock.push('Call Reason: ' + (rawReason || 'N/A'));
   if(rawOrder) fieldsBlock.push('Order ID: ' + rawOrder);
@@ -3740,14 +3767,14 @@ function buildOutput(score, earned, possible, zeroTriggered){
   ]);
   const accompBlocks = sectionGroups(sec => sec.accomplishments.map(d=> ({ ...d, icon: '\u2705', kind: 'yes' })));
 
-  function namedBlock(title, blocks){
+  function namedBlock(title, blocks, lead){
     if(!blocks.length) return '';
-    return '____________________________\n' + boldText(title) + '\n\n' + blocks.join('\n\n') + '\n';
+    return '____________________________\n' + boldText(title) + '\n\n' + (lead ? lead + '\n\n' : '') + blocks.join('\n\n') + '\n';
   }
 
-  const deductions = namedBlock('Deductions', deductionBlocks);
+  const deductions = namedBlock('Deductions', deductionBlocks, 'How does this deduction impact our customers');
   const feedback = namedBlock('Feedback', feedbackBlocks);
-  let accomplishments = namedBlock('Accomplishments', accompBlocks);
+  let accomplishments = namedBlock('Accomplishments', accompBlocks, 'How does this accomplishment impact our customers');
   // Focus points stay on the evaluation and the agent's profile, not in the summary.
   const focus = '';
 
@@ -4855,15 +4882,53 @@ function computeSectionBreakdown(){
   });
 }
 
+// The report and the email are built from the live form, or from a saved
+// evaluation while REPORT_ROW is set (see withSavedEvaluation).
+let REPORT_ROW = null;
+function reportFields(){
+  if(REPORT_ROW){
+    const r = REPORT_ROW, d = r.details || {};
+    return {
+      agent: r.agents ? r.agents.name : '', caller: d.caller || '', ticket: r.ticket_id || '', callId: r.call_id || '',
+      order: d.orderId || '', reason: r.call_reason || '', evaluator: evaluatorLabel(r),
+      date: r.call_date ? new Date(r.call_date + 'T12:00:00') : new Date(),
+    };
+  }
+  const v = id=> document.getElementById(id).value.trim();
+  return {
+    agent: v('fAgent'), caller: v('fCaller'), ticket: v('fTicket'), callId: v('fCallId'), order: v('fOrder'), reason: v('fReason'),
+    evaluator: (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : '', date: new Date(),
+  };
+}
+
+// Swap a saved evaluation's answers in, run fn, and put the form back as it was.
+function withSavedEvaluation(row, fn){
+  const d = row.details || {};
+  const keep = { ANSWERS, CHOICES, RUBRIC_NOTES, ACCOMPLISHMENTS, LAST_STATE };
+  ANSWERS = Object.assign({}, d.answers);
+  CHOICES = d.choices && typeof d.choices === 'object' ? d.choices : {};
+  RUBRIC_NOTES = cleanRubricNotes(d.rubricNotes);
+  ACCOMPLISHMENTS = Array.isArray(d.accomplishments) ? d.accomplishments.slice() : [];
+  const earned = Number(row.points_earned) || 0, possible = Number(row.points_possible) || 0;
+  LAST_STATE = { score: Math.round(Number(row.score)), earned, possible, zeroTriggered: !!row.zero_triggered, zeroReasons: [] };
+  REPORT_ROW = row;
+  try{ return fn(); }
+  finally{
+    ({ ANSWERS, CHOICES, RUBRIC_NOTES, ACCOMPLISHMENTS, LAST_STATE } = keep);
+    REPORT_ROW = null;
+  }
+}
+
 function buildOutcomeHTML(targetId){
   targetId = targetId || 'outcomeCapture';
   const sections = computeSectionBreakdown();
-  const rawAgent = document.getElementById('fAgent').value.trim() || 'Agent';
-  const rawEvaluator = (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : 'N/A';
-  const rawTicket = document.getElementById('fTicket').value.trim() || 'N/A';
-  const rawOrder = document.getElementById('fOrder').value.trim();
-  const rawReason = document.getElementById('fReason').value.trim() || 'N/A';
-  const dateStr = new Date().toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  const f = reportFields();
+  const rawAgent = f.agent || 'Agent';
+  const rawEvaluator = f.evaluator || 'N/A';
+  const rawTicket = f.ticket || 'N/A';
+  const rawOrder = f.order;
+  const rawReason = f.reason || 'N/A';
+  const dateStr = f.date.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
 
   const zeroTriggered = LAST_STATE.zeroTriggered;
   const score = LAST_STATE.score;
@@ -5074,7 +5139,8 @@ async function init(){
   });
 
   document.getElementById('btnOutcomeReport').addEventListener('click', ()=>{
-    buildOutcomeHTML();
+    if(!VIEW_EVAL) return;
+    withSavedEvaluation(VIEW_EVAL.row, ()=> buildOutcomeHTML());
     document.getElementById('outcomeOverlay').classList.add('show');
   });
   document.getElementById('btnCloseOutcome').addEventListener('click', ()=>{
@@ -5542,7 +5608,6 @@ function buildDetailItems(){
       });
       const note = rubricNote(id);
       const item = items[items.length - 1];
-      if(rubricInSummary(id, cfg) && note.impact) item.impact = note.impact;
       if(rubricInSummary(id, cfg) && note.comment) item.comment = note.comment;
     });
   });
@@ -5561,6 +5626,7 @@ function buildEvaluationDetails(){
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
     rubricNotes: cleanRubricNotes(RUBRIC_NOTES),
+    scorecardNotes: SCORECARD_NOTES || null,
     accomplishments: ACCOMPLISHMENTS.slice(),
     focusPoints: FOCUS_POINTS.slice(),
     summary: document.getElementById('output').value,
@@ -5738,11 +5804,8 @@ async function renderOutcomeCanvas(targetId){
 
 function buildEmailBody(){
   const sections = computeSectionBreakdown();
-  const rawAgent = document.getElementById('fAgent').value.trim();
-  const rawCaller = document.getElementById('fCaller').value.trim();
-  const rawTicket = document.getElementById('fTicket').value.trim();
-  const rawOrder = document.getElementById('fOrder').value.trim();
-  const rawReason = document.getElementById('fReason').value.trim();
+  const f = reportFields();
+  const rawAgent = f.agent, rawCaller = f.caller, rawTicket = f.ticket, rawOrder = f.order, rawReason = f.reason;
 
   let lines = [];
   lines.push('Hello ' + (firstName(rawAgent) || 'there') + ',');
@@ -5750,9 +5813,8 @@ function buildEmailBody(){
   lines.push('You can find the details about your evaluation below:');
   lines.push('');
   lines.push('Caller: ' + (rawCaller || 'N/A'));
-  lines.push('Ticket ID: ' + (rawTicket || 'N/A'));
-  const rawCallId = document.getElementById('fCallId').value.trim();
-  if(rawCallId) lines.push('Call ID: ' + rawCallId);
+  lines.push(ticketLine(rawTicket));
+  if(f.callId) lines.push('Call ID: ' + f.callId);
   lines.push('Call Reason: ' + (rawReason || 'N/A'));
   if(rawOrder) lines.push('Order ID: ' + rawOrder);
   lines.push('____________________________');
@@ -5782,13 +5844,15 @@ function buildEmailBody(){
 }
 
 document.getElementById('btnSendEmail').addEventListener('click', async ()=>{
+  if(!VIEW_EVAL) return;
+  const row = VIEW_EVAL.row, d = row.details || {};
   const btn = document.getElementById('btnSendEmail');
   const original = btn.innerHTML;
   btn.disabled = true;
   btn.textContent = 'Preparing...';
 
   try{
-    buildOutcomeHTML('offscreenOutcomeCapture');
+    withSavedEvaluation(row, ()=> buildOutcomeHTML('offscreenOutcomeCapture'));
     const canvas = await renderOutcomeCanvas('offscreenOutcomeCapture');
     const blob = await new Promise(resolve=> canvas.toBlob(resolve, 'image/png'));
     if(blob){
@@ -5800,9 +5864,9 @@ document.getElementById('btnSendEmail').addEventListener('click', async ()=>{
     showToast('Opening email — could not copy the report image automatically');
   }
 
-  const callId = document.getElementById('fCallId').value.trim();
+  const callId = row.call_id || '';
   const subject = 'QA Evaluation' + (callId ? ' - Call ID ' + callId : '');
-  const body = SUMMARY_MANUAL ? document.getElementById('output').value : buildEmailBody();
+  const body = (d.summaryManual && typeof d.summary === 'string') ? d.summary : withSavedEvaluation(row, buildEmailBody);
   window.location.href = 'mailto:?subject=' + encodeURIComponent(subject) + '&body=' + encodeURIComponent(body);
 
   btn.disabled = false;
@@ -6082,33 +6146,20 @@ function currentMonthValue(){
   return now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
 }
 
-/* ---------- Efficiency: time spent on evaluations and tasks (month of the table above, both teams) ---------- */
-function effRows(groups){
-  return Object.keys(groups).sort((a, b)=> groups[b].count - groups[a].count || a.localeCompare(b)).map(name=>{
-    const g = groups[name];
-    return '<tr><td>' + escapeHtml(name) + '</td><td>' + g.count + '</td><td>' + g.timed + '</td><td>' + (g.timed ? formatDuration(g.total) : '—') + '</td><td>' + (g.timed ? formatDuration(g.total / g.timed) : '—') + '</td></tr>';
-  }).join('');
-}
-function effGroup(list, nameOf, secondsOf){
-  const groups = {}, all = { count: 0, timed: 0, total: 0 };
+/* ---------- Efficiency: total time spent on evaluations and tasks (month of the table above, both teams) ---------- */
+function effGroup(list, secondsOf){
+  const all = { count: 0, timed: 0, total: 0 };
   list.forEach(x=>{
-    const name = nameOf(x) || 'Nobody';
-    const g = groups[name] = groups[name] || { count: 0, timed: 0, total: 0 };
     const sec = secondsOf(x);
-    g.count++; all.count++;
-    if(sec !== null && sec !== undefined){ g.timed++; g.total += sec; all.timed++; all.total += sec; }
+    all.count++;
+    if(sec !== null && sec !== undefined){ all.timed++; all.total += sec; }
   });
-  return { groups, all };
+  return { all };
 }
-function effTable(title, who, countLabel, data){
-  if(!data.all.count) return '<div><div class="agent-fail-title">' + title + '</div><div class="eff-empty">Nothing in this month.</div></div>';
-  return '<div><div class="agent-fail-title">' + title + '</div><table class="eff-table"><thead><tr><th>' + who + '</th><th>' + countLabel + '</th><th>With time</th><th>Total time</th><th>Average</th></tr></thead>' +
-    '<tbody>' + effRows(data.groups) + '</tbody>' +
-    '<tfoot><tr><td>Total</td><td>' + data.all.count + '</td><td>' + data.all.timed + '</td><td>' + (data.all.timed ? formatDuration(data.all.total) : '—') + '</td><td>' + (data.all.timed ? formatDuration(data.all.total / data.all.timed) : '—') + '</td></tr></tfoot></table></div>';
-}
+// Sum of the times typed in by hand, with how many items had one and their average.
 function effTile(label, data, noun){
-  return '<div class="eff-tile"><div class="lbl">' + label + '</div><div class="val">' + (data.all.timed ? formatDuration(data.all.total / data.all.timed) : '—') + '</div>' +
-    '<div class="sub">' + (data.all.timed ? 'average of ' + data.all.timed + ' ' + noun + (data.all.timed === 1 ? '' : 's') + ' with time' : 'no times entered yet') + '</div></div>';
+  return '<div class="eff-tile"><div class="lbl">' + label + '</div><div class="val">' + (data.all.timed ? formatDuration(data.all.total) : '—') + '</div>' +
+    '<div class="sub">' + (data.all.timed ? data.all.timed + ' ' + noun + (data.all.timed === 1 ? '' : 's') + ' with time · average ' + formatDuration(data.all.total / data.all.timed) : 'no times entered yet') + '</div></div>';
 }
 async function renderEfficiency(monthEvals, scope){
   const body = document.getElementById('effBody');
@@ -6120,17 +6171,15 @@ async function renderEfficiency(monthEvals, scope){
     const day = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
     return day >= scope.startDate && day <= end;
   })());
-  const evalData = effGroup(monthEvals, evaluatorLabel, e=> e.time_spent_seconds);
-  const taskData = effGroup(doneTasks, t=> taskResponsible(t) || profileName(t.completed_by), t=> t.time_spent_seconds);
+  const evalData = effGroup(monthEvals, e=> e.time_spent_seconds);
+  const taskData = effGroup(doneTasks, t=> t.time_spent_seconds);
   const totalSec = evalData.all.total + taskData.all.total;
   body.innerHTML = '<div class="eff-tiles">' +
-    effTile('Average per evaluation', evalData, 'evaluation') +
-    effTile('Average per task', taskData, 'task') +
+    effTile('Evaluation time', evalData, 'evaluation') +
+    effTile('Task time', taskData, 'task') +
     '<div class="eff-tile"><div class="lbl">Time logged</div><div class="val">' + (totalSec ? formatDuration(totalSec) : '—') + '</div>' +
-    '<div class="sub">evaluations ' + (evalData.all.total ? formatDuration(evalData.all.total) : '0m') + ' · tasks ' + (taskData.all.total ? formatDuration(taskData.all.total) : '0m') + '</div></div>' +
-    '</div><div class="eff-grid">' +
-    effTable('Evaluations by evaluator', 'Evaluator', 'Evaluations', evalData) +
-    effTable('Completed tasks by person', 'Responsible', 'Tasks', taskData) + '</div>';
+    '<div class="sub">evaluations and tasks together</div></div>' +
+    '</div>';
 }
 
 function monthlyGridScope(){
@@ -6569,12 +6618,16 @@ async function openViewEvalModal(evalId, fromProfile){
       (visibleDisputes(d).length ? '<div class="ve-subtitle">Disputes</div>' + disputeHistoryHtml(d) : '') +
       '<div class="ve-subtitle">Rubrics</div>' +
       sectionsHtml +
+      (d && d.scorecardNotes ? '<div class="ve-subtitle">Evaluator notes</div><pre class="ve-summary">' + escapeHtml(d.scorecardNotes) + '</pre>' : '') +
       (d && d.summary ? '<div class="ve-subtitle">Summary</div><pre class="ve-summary">' + escapeHtml(d.summary) + '</pre>' : '');
     const canEdit = canEditEval(row);
     document.getElementById('btnViewEvalEdit').style.display = canEdit ? '' : 'none';
     document.getElementById('btnViewEvalDispute').style.display = canEdit && d && d.answers ? '' : 'none';
     document.getElementById('btnViewEvalDelete').style.display = canEdit && fromProfile ? '' : 'none';
-    document.getElementById('viewEvalActions').style.display = canEdit ? '' : 'none';
+    const canReport = !isAgentUser() && !!(d && d.answers);
+    document.getElementById('btnOutcomeReport').style.display = canReport ? '' : 'none';
+    document.getElementById('btnSendEmail').style.display = canReport ? '' : 'none';
+    document.getElementById('viewEvalActions').style.display = canEdit || canReport ? '' : 'none';
   }catch(err){
     console.error('Could not open the evaluation', err);
     body.innerHTML = '<div class="fail-empty">Could not load: ' + escapeHtml(err.message || 'unknown error') + '</div>';
@@ -6613,6 +6666,8 @@ function startEditingEvaluation(row){
   ANSWERS = Object.assign({}, d.answers);
   CHOICES = d.choices && typeof d.choices === 'object' ? JSON.parse(JSON.stringify(d.choices)) : {};
   RUBRIC_NOTES = cleanRubricNotes(d.rubricNotes);
+  SCORECARD_NOTES = typeof d.scorecardNotes === 'string' ? d.scorecardNotes : '';
+  renderScorecardNotes();
   ACCOMPLISHMENTS = Array.isArray(d.accomplishments) ? d.accomplishments.slice() : [];
   FOCUS_POINTS = focusList(d.focusPoints);
   SUMMARY_MANUAL = !!(d.summaryManual && typeof d.summary === 'string');
@@ -6668,6 +6723,8 @@ function resetEvaluationForm(){
   LAST_SAVED_SIGNATURE = null;
   CHOICES = {};
   RUBRIC_NOTES = {};
+  SCORECARD_NOTES = '';
+  renderScorecardNotes();
   ACCOMPLISHMENTS = [];
   FOCUS_POINTS = [];
   renderSections();
@@ -7301,7 +7358,6 @@ function renderEvalList(evals, details){
       '<span class="ticket">' + escapeHtml(e.ticket_id || 'No ticket') + '</span>' +
       (visibleDisputes(details[e.id]).length ? '<span class="disputed-tag" title="This evaluation was disputed">Disputed</span>' : '') +
       '<span class="by" title="Evaluated by">' + escapeHtml(evaluatorLabel(e)) + '</span>' +
-      (e.time_spent_seconds !== null && e.time_spent_seconds !== undefined ? '<span class="time" title="Time spent on the evaluation">' + formatDuration(e.time_spent_seconds) + '</span>' : '') +
       '<span class="score ' + evalScoreClass(Math.round(e.score)) + '">' + Math.round(e.score) + '%</span>' +
       actions +
       '</div>';
@@ -7521,6 +7577,7 @@ function captureDraftSnapshot(){
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
     rubricNotes: cleanRubricNotes(RUBRIC_NOTES),
+    scorecardNotes: SCORECARD_NOTES,
     accomplishments: ACCOMPLISHMENTS.slice(),
     focusPoints: FOCUS_POINTS.slice(),
     updatedAt: new Date().toISOString(),
@@ -7585,6 +7642,8 @@ function applyDraftSnapshot(snap){
   ANSWERS = Object.assign({}, snap.answers || {});
   CHOICES = (snap.choices && typeof snap.choices === 'object') ? JSON.parse(JSON.stringify(snap.choices)) : {};
   RUBRIC_NOTES = cleanRubricNotes(snap.rubricNotes);
+  SCORECARD_NOTES = typeof snap.scorecardNotes === 'string' ? snap.scorecardNotes : '';
+  renderScorecardNotes();
   ACCOMPLISHMENTS = Array.isArray(snap.accomplishments) ? snap.accomplishments.slice() : [];
   FOCUS_POINTS = focusList(snap.focusPoints);
   SECTIONS.forEach(sec=> sortByApplicability(sec.key));
@@ -8812,18 +8871,25 @@ document.getElementById('quickNotes').addEventListener('input', (e)=>{
   try{ localStorage.setItem(draftKey(LS_QUICK_NOTES_KEY), e.target.value); }catch(err){}
 });
 // Puts the quick notes in the summary as their own paragraph, above the closing lines.
+// Quick notes go with the evaluation (the agent's scorecard), never in the summary.
+function renderScorecardNotes(){
+  const box = document.getElementById('scorecardNotesBox');
+  box.style.display = SCORECARD_NOTES ? '' : 'none';
+  document.getElementById('scorecardNotesText').textContent = SCORECARD_NOTES;
+}
 document.getElementById('btnQuickNotesToEval').addEventListener('click', ()=>{
   const notes = document.getElementById('quickNotes').value.trim();
   if(!notes){ showToast('Write something in the quick notes first.'); return; }
-  const out = document.getElementById('output');
-  if(!SUMMARY_MANUAL) setSummaryManual(true);
-  const text = out.value.replace(/\s+$/, '');
-  const at = text.lastIndexOf(SUMMARY_CLOSING);
-  out.value = at >= 0 ? text.slice(0, at).replace(/\s+$/, '') + '\n\n' + notes + '\n\n' + text.slice(at) : text + '\n\n' + notes;
-  updateSummaryManualNote();
+  if(SCORECARD_NOTES.includes(notes)){ showToast('These notes are already on the scorecard.'); return; }
+  SCORECARD_NOTES = SCORECARD_NOTES ? SCORECARD_NOTES + '\n\n' + notes : notes;
+  renderScorecardNotes();
   saveCurrentDraftToLocal();
-  if(out.classList.contains('summary-collapsed')) document.getElementById('btnToggleSummary').click();
-  showToast('Quick notes added to the summary.');
+  showToast('Added to the evaluation. They show on the agent\'s scorecard when you save.');
+});
+document.getElementById('btnRemoveScorecardNotes').addEventListener('click', ()=>{
+  SCORECARD_NOTES = '';
+  renderScorecardNotes();
+  saveCurrentDraftToLocal();
 });
 document.getElementById('btnClearQuickNotes').addEventListener('click', ()=>{
   const ta = document.getElementById('quickNotes');
