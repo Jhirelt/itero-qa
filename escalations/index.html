@@ -473,11 +473,72 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
  <!-- =============== WHITE GLOBE =============== -->
  <!-- Its own section: separate data and its own Excel. Nothing here reads or writes the escalations tables. -->
  <div id="section-whiteglobe" class="hidden">
+  <!-- Report built from the "All Team White Glove Review" uploads (wg_review_tickets + wg_review_comments), by the day the ticket was opened. -->
   <div id="wg-report">
+    <div class="filters">
+      <div class="field"><label>Report by</label>
+        <div class="seg" id="wgPeriodSeg">
+          <button data-period="week">Week</button>
+          <button data-period="month" class="active">Month</button>
+          <button data-period="quarter">Quarter</button>
+          <button data-period="year">Year</button>
+        </div>
+      </div>
+      <div class="field"><label>Period</label>
+        <div class="stepper">
+          <button class="btn btn-ghost" id="wgPrev" title="Previous"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <div class="cal-anchor">
+            <button class="btn btn-ghost lbl" id="wgPeriodLabel" title="Pick any date range" aria-haspopup="dialog"></button>
+            <div class="cal-pop" id="wgCalPop" role="dialog" aria-label="Pick dates">
+              <div class="cal-head"><button class="icon-btn" id="wgCalPrev" title="Previous month"><svg viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button><span></span><button class="icon-btn" id="wgCalNext" title="Next month"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button></div>
+              <div class="cal-months" id="wgCalMonths"></div>
+              <div class="cal-foot"><span id="wgCalSel">Pick the first day</span><span class="spacer"></span><button class="btn btn-ghost" id="wgCalClear">Clear</button><button class="btn btn-primary" id="wgCalApply" disabled>Apply</button></div>
+            </div>
+          </div>
+          <button class="btn btn-ghost" id="wgNext" title="Next"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+          <button class="btn btn-ghost" id="wgLatest" title="Go to the latest period with White Globe reviews">Latest</button>
+        </div>
+      </div>
+      <div class="spacer"></div>
+      <button class="btn btn-ghost" id="btnWgSummary" title="A written summary of the selected period, ready to paste"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 10h14M5 14h9M5 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Summary</button>
+      <button class="btn btn-ghost" id="btnWgExport"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
+    </div>
+
+    <div class="kpis">
+      <div class="kpi"><div class="k-label">Reviews</div><div class="k-value" id="wReviews">–</div><div class="k-foot" id="wReviewsFoot"></div></div>
+      <div class="kpi"><div class="k-label">White Glove done</div><div class="k-value" id="wDone">–</div><div class="k-foot" id="wDoneFoot"></div></div>
+      <div class="kpi"><div class="k-label">Customers</div><div class="k-value" id="wCustomers">–</div><div class="k-foot" id="wCustomersFoot"></div></div>
+      <div class="kpi"><div class="k-label">Part replacements</div><div class="k-value" id="wParts">–</div><div class="k-foot" id="wPartsFoot"></div></div>
+      <div class="kpi"><div class="k-label">SN verified</div><div class="k-value" id="wSn">–</div><div class="k-foot" id="wSnFoot"></div></div>
+      <div class="kpi"><div class="k-label">Still in progress</div><div class="k-value" id="wOpen">–</div><div class="k-foot" id="wOpenFoot"></div></div>
+    </div>
+
+    <div class="grid-2">
+      <div class="panel"><h4 id="wTrendTitle">Reviews per day</h4><p class="sub" id="wTrendSub">By the day the ticket was opened</p><div class="chart" id="wTrend"></div></div>
+      <div class="panel"><h4>White Glove outcome</h4><p class="sub">From the customer's feedback in the ticket comment</p><div id="wOutcome"></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="panel"><h4>By request type</h4><p class="sub">First part of the subject</p><div id="wRequest"></div></div>
+      <div class="panel"><h4>By status</h4><p class="sub">As of the latest upload</p><div id="wStatus"></div></div>
+      <div class="panel"><h4>By issue type</h4><p class="sub">Reviews in the period</p><div id="wIssue"></div></div>
+    </div>
+    <div class="grid-3">
+      <div class="panel"><h4>By sub-issue type</h4><p class="sub">Reviews in the period</p><div id="wSub"></div></div>
+      <div class="panel"><h4>By scanner model</h4><p class="sub">From the subject</p><div id="wModel"></div></div>
+      <div class="panel"><h4>By warranty</h4><p class="sub">From the subject</p><div id="wWarranty"></div></div>
+    </div>
+    <div class="grid-2">
+      <div class="panel"><h4>Checks on the call</h4><p class="sub">What the ticket comment says was verified</p>
+        <div class="table-wrap" style="border:none;"><table class="data" id="wChecks" style="min-width:0;width:100%;"><thead><tr><th>Check</th><th style="text-align:right">Yes</th><th style="text-align:right">No</th><th style="text-align:right">Not stated</th><th style="text-align:right">Rate</th></tr></thead><tbody></tbody></table></div>
+      </div>
+      <div class="panel"><h4>By ticket owner</h4><p class="sub">Agent or queue that owns the ticket</p><div id="wOwner"></div></div>
+    </div>
     <div class="panel">
-      <h4>White Globe</h4>
-      <p class="sub">This section is ready to be built. Its report will show up here once its Excel format is set up.</p>
-      <div class="empty">No White Globe data yet</div>
+      <div class="panel-head">
+        <div><h4 id="wListTitle">Reviews in the period</h4><p class="sub" id="wListCount"></p></div>
+        <div class="field" style="min-width:260px;"><label for="wSearch">Search</label><input class="ctl" id="wSearch" placeholder="Ticket, customer, MAT ID, subject, serial…"></div>
+      </div>
+      <div class="table-wrap" style="border:none;max-height:560px;overflow:auto;"><table class="data" id="wTable" style="min-width:1000px;"><thead><tr><th>Ticket</th><th>Opened</th><th>Customer</th><th>Request</th><th>Issue</th><th>White Glove</th><th>Status</th><th>Owner</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
   <!-- Pilot (June-September 2026): a one-off set of review exports, loaded once into wg_pilot_tickets, one row per ticket. -->
@@ -531,10 +592,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     <div class="panel">
       <div class="panel-head">
         <div><h4>Uploads</h4>
-        <p class="sub">White Globe uses its own Excel, separate from the escalations export. Uploading opens once that format is set up.</p></div>
-        <button class="btn btn-primary" id="btnWgUpload" disabled title="Not set up yet">Upload Excel</button>
+        <p class="sub">The "All Team White Glove Review" report from Salesforce, as .xlsx. Tickets already loaded are updated and new comments are added, so the same file can be uploaded again safely.</p></div>
+        <button class="btn btn-primary hidden" id="btnWgUpload">Upload Excel</button>
+        <input type="file" id="wgUploadFile" accept=".xlsx,.xls,.csv" class="hidden">
       </div>
-      <div class="empty">No White Globe uploads yet</div>
+      <div class="table-wrap" style="border:none;"><table class="data" id="wgUploadsTable" style="min-width:600px;"><thead><tr><th>Uploaded</th><th>File</th><th style="text-align:right">Rows</th><th style="text-align:right">Tickets from it</th></tr></thead><tbody></tbody></table></div>
     </div>
   </div>
  </div>
@@ -570,7 +632,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 <!-- =============== SUMMARY =============== -->
 <div class="modal" id="summaryModal" role="dialog" aria-label="Summary" style="width:min(760px, calc(100% - 32px));">
   <h3 id="summaryTitle">Summary</h3>
-  <p>Written from the tickets closed in the selected period. You can edit it here before copying.</p>
+  <p id="summaryNote">Written from the tickets closed in the selected period. You can edit it here before copying.</p>
   <textarea id="summaryText" spellcheck="true"></textarea>
   <div class="modal-actions">
     <button class="btn btn-ghost" id="btnSummaryClose">Close</button>
@@ -747,6 +809,7 @@ async function startFor(user){
   $('userBadgeName').textContent = ME.display_name;
   setAppVisible(true);
   await loadAll(true);
+  if(currentSection() === 'whiteglobe') switchWgView(currentWgView());
 }
 $('loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
@@ -1035,55 +1098,67 @@ let resizeT; window.addEventListener('resize', ()=>{ clearTimeout(resizeT); resi
 
 
 /* ---------- Date range calendar: click the first day, then the last ---------- */
-const CAL = { month: null, a: null, b: null, hover: null };
+// One calendar per section. ids: its element ids; range(): [first, last] day selected when it opens;
+// marked(): day timestamps that get a dot; onApply(first, last) when Apply is pressed.
 const sameDay = (x, y) => x && y && +startOfDay(x) === +startOfDay(y);
-function openCal(){
-  const [s, e] = bounds(PERIOD, ANCHOR);
-  CAL.a = s; CAL.b = addDays(e, -1); CAL.hover = null;
-  CAL.month = new Date(CAL.b.getFullYear(), CAL.b.getMonth() - (window.innerWidth > 700 ? 1 : 0), 1);   // phones show one month
-  renderCal(); $('calPop').classList.add('show');
-}
-function closeCal(){ $('calPop').classList.remove('show'); }
-function renderCal(){
-  const closedDays = new Set(T.filter(t => t._c).map(t => +startOfDay(t._c)));
-  const today = startOfDay(new Date());
-  const lo = CAL.a, hi = CAL.b || (CAL.hover && CAL.hover >= CAL.a ? CAL.hover : null);
-  const month = m => {
-    const first = new Date(m.getFullYear(), m.getMonth(), 1), days = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
-    const lead = (first.getDay() + 6) % 7;   // weeks start on Monday
-    let cells = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="dow">${d}</div>`).join('') + '<div></div>'.repeat(lead);
-    for(let i = 1; i <= days; i++){
-      const d = new Date(m.getFullYear(), m.getMonth(), i), cls = ['cal-day'];
-      if(closedDays.has(+d)) cls.push('has');
-      if(+d === +today) cls.push('today');
-      if(lo && sameDay(d, lo)) cls.push('start');
-      if(hi && sameDay(d, hi)) cls.push('end');
-      if(lo && hi && d > lo && d < hi) cls.push('in');
-      cells += `<button class="${cls.join(' ')}" data-d="${+d}" title="${closedDays.has(+d) ? 'Escalations closed this day' : ''}"><span>${i}</span></button>`;
-    }
-    return `<div class="cal-month"><h5>${m.toLocaleDateString('en-US', { month:'long', year:'numeric' })}</h5><div class="cal-grid">${cells}</div></div>`;
-  };
-  $('calMonths').innerHTML = month(CAL.month) + month(new Date(CAL.month.getFullYear(), CAL.month.getMonth()+1, 1));
-  $('calSel').textContent = !CAL.a ? 'Pick the first day' : !CAL.b ? `${fmtDate(CAL.a)}: now pick the last day` : periodName('custom', CAL.a, addDays(CAL.b, 1));
-  $('calApply').disabled = !(CAL.a && CAL.b);
-  $('calMonths').querySelectorAll('.cal-day').forEach(btn => {
-    const d = new Date(+btn.dataset.d);
-    btn.addEventListener('click', ev => {
-      ev.stopPropagation();
-      if(!CAL.a || CAL.b || d < CAL.a){ CAL.a = d; CAL.b = null; } else CAL.b = d;
-      renderCal();
+const CALS = [];
+function makeCal({ ids, range, marked, markTitle, onApply }){
+  const C = { month: null, a: null, b: null, hover: null }, el = k => $(ids[k]);
+  function open(){
+    closeCal();
+    [C.a, C.b] = range(); C.hover = null;
+    C.month = new Date(C.b.getFullYear(), C.b.getMonth() - (window.innerWidth > 700 ? 1 : 0), 1);   // phones show one month
+    render(); el('pop').classList.add('show');
+  }
+  const close = () => el('pop').classList.remove('show');
+  function render(){
+    const days = marked();
+    const today = startOfDay(new Date());
+    const lo = C.a, hi = C.b || (C.hover && C.hover >= C.a ? C.hover : null);
+    const month = m => {
+      const first = new Date(m.getFullYear(), m.getMonth(), 1), n = new Date(m.getFullYear(), m.getMonth()+1, 0).getDate();
+      const lead = (first.getDay() + 6) % 7;   // weeks start on Monday
+      let cells = ['Mo','Tu','We','Th','Fr','Sa','Su'].map(d => `<div class="dow">${d}</div>`).join('') + '<div></div>'.repeat(lead);
+      for(let i = 1; i <= n; i++){
+        const d = new Date(m.getFullYear(), m.getMonth(), i), cls = ['cal-day'];
+        if(days.has(+d)) cls.push('has');
+        if(+d === +today) cls.push('today');
+        if(lo && sameDay(d, lo)) cls.push('start');
+        if(hi && sameDay(d, hi)) cls.push('end');
+        if(lo && hi && d > lo && d < hi) cls.push('in');
+        cells += `<button class="${cls.join(' ')}" data-d="${+d}" title="${days.has(+d) ? markTitle : ''}"><span>${i}</span></button>`;
+      }
+      return `<div class="cal-month"><h5>${m.toLocaleDateString('en-US', { month:'long', year:'numeric' })}</h5><div class="cal-grid">${cells}</div></div>`;
+    };
+    el('months').innerHTML = month(C.month) + month(new Date(C.month.getFullYear(), C.month.getMonth()+1, 1));
+    el('sel').textContent = !C.a ? 'Pick the first day' : !C.b ? `${fmtDate(C.a)}: now pick the last day` : periodName('custom', C.a, addDays(C.b, 1));
+    el('apply').disabled = !(C.a && C.b);
+    el('months').querySelectorAll('.cal-day').forEach(btn => {
+      const d = new Date(+btn.dataset.d);
+      btn.addEventListener('click', ev => {
+        ev.stopPropagation();
+        if(!C.a || C.b || d < C.a){ C.a = d; C.b = null; } else C.b = d;
+        render();
+      });
+      btn.addEventListener('mouseenter', ()=>{ if(C.a && !C.b && !sameDay(C.hover, d)){ C.hover = d; render(); } });
     });
-    btn.addEventListener('mouseenter', ()=>{ if(CAL.a && !CAL.b && !sameDay(CAL.hover, d)){ CAL.hover = d; renderCal(); } });
-  });
+  }
+  el('label').addEventListener('click', ev => { ev.stopPropagation(); el('pop').classList.contains('show') ? close() : open(); });
+  el('pop').addEventListener('click', ev => ev.stopPropagation());
+  el('prev').addEventListener('click', ()=>{ C.month = new Date(C.month.getFullYear(), C.month.getMonth()-1, 1); render(); });
+  el('next').addEventListener('click', ()=>{ C.month = new Date(C.month.getFullYear(), C.month.getMonth()+1, 1); render(); });
+  el('clear').addEventListener('click', ()=>{ C.a = C.b = C.hover = null; render(); });
+  el('apply').addEventListener('click', ()=>{ close(); onApply(startOfDay(C.a), startOfDay(C.b)); });
+  CALS.push(close);
 }
-$('periodLabel').addEventListener('click', ev => { ev.stopPropagation(); $('calPop').classList.contains('show') ? closeCal() : openCal(); });
-$('calPop').addEventListener('click', ev => ev.stopPropagation());
-$('calPrev').addEventListener('click', ()=>{ CAL.month = new Date(CAL.month.getFullYear(), CAL.month.getMonth()-1, 1); renderCal(); });
-$('calNext').addEventListener('click', ()=>{ CAL.month = new Date(CAL.month.getFullYear(), CAL.month.getMonth()+1, 1); renderCal(); });
-$('calClear').addEventListener('click', ()=>{ CAL.a = CAL.b = CAL.hover = null; renderCal(); });
-$('calApply').addEventListener('click', ()=>{
-  CUSTOM_DAYS = Math.round((startOfDay(CAL.b) - startOfDay(CAL.a)) / 86400000) + 1;
-  ANCHOR = startOfDay(CAL.a); setPeriod('custom'); closeCal(); renderReport();
+function closeCal(){ CALS.forEach(close => close()); }
+const dayCount = (a, b) => Math.round((b - a) / 86400000) + 1;
+makeCal({
+  ids: { pop:'calPop', months:'calMonths', sel:'calSel', apply:'calApply', clear:'calClear', prev:'calPrev', next:'calNext', label:'periodLabel' },
+  range: () => { const [s, e] = bounds(PERIOD, ANCHOR); return [s, addDays(e, -1)]; },
+  marked: () => new Set(T.filter(t => t._c).map(t => +startOfDay(t._c))),
+  markTitle: 'Escalations closed this day',
+  onApply: (a, b) => { CUSTOM_DAYS = dayCount(a, b); ANCHOR = a; setPeriod('custom'); renderReport(); },
 });
 document.addEventListener('click', closeCal);
 
@@ -1235,6 +1310,7 @@ function buildSummary(){
 function openSummary(){
   const { s, e } = periodData();
   $('summaryTitle').textContent = `Summary: ${periodName(PERIOD, s, e)}`;
+  $('summaryNote').textContent = 'Written from the tickets closed in the selected period. You can edit it here before copying.';
   $('summaryText').value = buildSummary();
   $('scrim').classList.add('show'); $('summaryModal').classList.add('show');
 }
@@ -1441,14 +1517,309 @@ function switchSection(sec){
   $('wgTabs').classList.toggle('hidden', esc);
   $('dataAsOf').classList.toggle('hidden', !esc);
   $('brandTitle').textContent = SECTIONS[sec];
+  if(!esc && ME) switchWgView(currentWgView());
   try{ localStorage.setItem('itero-section', sec); }catch(e){}
 }
 document.querySelectorAll('.sec-btn').forEach(b => b.addEventListener('click', ()=>switchSection(b.dataset.section)));
 function switchWgView(v){
   document.querySelectorAll('#wgTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.wgview === v));
   ['report','pilot','uploads'].forEach(x => $('wg-'+x).classList.toggle('hidden', x !== v));
-  if(v === 'pilot') loadPilot();
+  if(v === 'pilot') loadPilot(); else if(ME) loadWg();
 }
+
+const currentWgView = () => (document.querySelector('#wgTabs .tab-btn.active') || {}).dataset?.wgview || 'report';
+
+/* ---------- White Globe report: the "All Team White Glove Review" uploads ---------- */
+let WG = null;   // { tickets, uploads }
+const WGP = { period:'month', anchor:null, days:7 };   // same periods as Escalations, own selection
+async function loadWg(force){
+  if(WG && !force){ renderWgView(); return; }
+  try{
+    const [tk, cm, up] = await Promise.all([
+      fetchAll('wg_review_tickets', 'opened_at'),
+      fetchAll('wg_review_comments', 'id'),
+      sb.from('wg_uploads').select('*').eq('kind', 'review').order('uploaded_at', { ascending:false }),
+    ]);
+    if(up.error) throw up.error;
+    const byTicket = new Map();
+    cm.forEach(c => (byTicket.get(c.ticket_number) || byTicket.set(c.ticket_number, []).get(c.ticket_number)).push(c));
+    WG = { tickets: tk.map(t => wgPrepare(t, byTicket.get(t.ticket_number) || [])), uploads: up.data };
+    if(!WGP.anchor || force) WGP.anchor = wgLatest() || new Date();
+  }catch(err){ console.error(err); toast('Could not load the White Globe data. Reload the page to try again.'); return; }
+  renderWgView();
+}
+function renderWgView(){ const v = currentWgView(); if(v === 'report') renderWg(); else if(v === 'uploads') renderWgUploads(); }
+const wgLatest = () => WG.tickets.reduce((m, t) => t._o && (!m || t._o > m) ? t._o : m, null);
+
+// What one review says, read from its subject and its ticket comment (the agents fill a template).
+const WG_SERIAL = /^\s*[A-Z]{3}\d{4}W\d{2}[A-Z]\d{3}\b/;   // feedback that starts with the scanner checked, e.g. "BLX2019W43A019. Ran HWD…"
+const WG_OUTCOMES = [
+  ['Customer unavailable', /had to leave|no time|was busy|could not assist|couldn't assist|call (us )?back later/i],
+  ['White Glove done', /\b(ran|run|cleaned|clean(ed)? up|checked|looked at|reviewed|agreed to check|asked (him|her|them) to check)\b/i],
+  ['Single scanner', /only (1|one) scanner|no others? scanners?|(do not|don't|does not|doesn't) have (any )?others? scanners?|just (1|one) scanner/i],
+  ['Customer declined', /not (need|needed|required|interested)|declined|no further review/i],
+];
+function wgPrepare(t, comments){
+  comments = comments.slice().sort((a, b) => a.id - b.id);
+  // A rewrite ("Dismiss the previous comment…") replaces the earlier comment; otherwise the latest one counts.
+  const c = (comments.find(x => /^\s*dismiss the previou/i.test(x.comment)) || comments[comments.length - 1] || {}).comment || '';
+  const field = re => { const m = c.match(re); return m ? m[1].trim() : ''; };
+  const yesNo = re => { const m = c.match(re); return m ? (m[1] ? 'No' : 'Yes') : ''; };
+  const feedback = field(/customer.s feedback:?[ \t]*([^\n]*)/i);
+  let outcome = !c ? 'No comment' : !feedback ? 'Not stated' : WG_SERIAL.test(feedback) ? 'White Glove done' : '';
+  if(!outcome) outcome = (WG_OUTCOMES.find(([, re]) => re.test(feedback)) || ['Not clear'])[0];
+  const subj = String(t.subject || ''), parts = subj.split('|').map(x => x.trim()).filter(Boolean), flags = [];
+  while(parts.length && /^smesc/i.test(parts[0])) flags.push(parts.shift());
+  const request = parts[0] || '';
+  return Object.assign(t, {
+    _o: parseTs(t.opened_at) || parseTs(t.opened_on),
+    _w: {
+      comment: c, comments: comments.length, feedback, outcome,
+      offered: /white[- ]?glove service offered/i.test(c) ? 'Yes' : c ? 'No' : '',
+      done: outcome === 'White Glove done',
+      role: field(/role:[ \t]*([^\n.]*)/i),
+      sn: yesNo(/\bSN\s+(not\s+)?verified/i),
+      contract: yesNo(/sales\s+contract\s+(not\s+)?verified/i),
+      kb: /KB:\s*added/i.test(c) ? 'Yes' : /KB:/i.test(c) ? 'No' : '',
+      request, model: parts[1] && !/SN:/i.test(parts[1]) ? parts[1] : '',
+      warranty: (subj.match(/warranty:\s*([^|]+)/i) || [, ''])[1].trim(),
+      part: /replacement/i.test(request),
+      smesc: flags.length > 0, expedite: /expedite/i.test(flags.join(' ')),
+      closed: /^(closed|rejected|cancel)/i.test(t.status || ''),
+    },
+  });
+}
+
+function wgBounds(d){ return WGP.period === 'custom' ? [startOfDay(d), addDays(startOfDay(d), WGP.days)] : bounds(WGP.period, d); }
+function wgShift(d, n){ return WGP.period === 'custom' ? addDays(startOfDay(d), WGP.days * n) : shift(WGP.period, d, n); }
+function wgSetPeriod(p){ WGP.period = p; document.querySelectorAll('#wgPeriodSeg button').forEach(x => x.classList.toggle('active', x.dataset.period === p)); }
+function wgPeriodData(){
+  const [s, e] = wgBounds(WGP.anchor), [ps, pe] = wgBounds(wgShift(s, -1));
+  return { s, e, rows: WG.tickets.filter(t => inRange(t._o, s, e)).sort((a, b) => b._o - a._o), prev: WG.tickets.filter(t => inRange(t._o, ps, pe)) };
+}
+document.querySelectorAll('#wgPeriodSeg button').forEach(b => b.addEventListener('click', ()=>{ wgSetPeriod(b.dataset.period); renderWg(); }));
+$('wgPrev').addEventListener('click', ()=>{ WGP.anchor = wgShift(wgBounds(WGP.anchor)[0], -1); renderWg(); });
+$('wgNext').addEventListener('click', ()=>{ WGP.anchor = wgShift(wgBounds(WGP.anchor)[0], 1); renderWg(); });
+$('wgLatest').addEventListener('click', ()=>{ WGP.anchor = wgLatest() || new Date(); if(WGP.period === 'custom') WGP.anchor = addDays(startOfDay(WGP.anchor), 1 - WGP.days); renderWg(); });
+makeCal({
+  ids: { pop:'wgCalPop', months:'wgCalMonths', sel:'wgCalSel', apply:'wgCalApply', clear:'wgCalClear', prev:'wgCalPrev', next:'wgCalNext', label:'wgPeriodLabel' },
+  range: () => { const [s, e] = wgBounds(WGP.anchor); return [s, addDays(e, -1)]; },
+  marked: () => new Set((WG ? WG.tickets : []).filter(t => t._o).map(t => +startOfDay(t._o))),
+  markTitle: 'White Globe reviews opened this day',
+  onApply: (a, b) => { WGP.days = dayCount(a, b); WGP.anchor = a; wgSetPeriod('custom'); renderWg(); },
+});
+
+function renderWg(){
+  if(!WG) return;
+  const { s, e, rows, prev } = wgPeriodData(), n = rows.length, pw = PERIOD_WORD[WGP.period];
+  const pctTxt = (a, b) => b ? Math.round(a / b * 100) + '%' : '–';
+  $('wgPeriodLabel').textContent = periodName(WGP.period, s, e);
+  const d = n - prev.length;
+  $('wReviews').textContent = n;
+  $('wReviewsFoot').textContent = d === 0 ? `Same as previous ${pw}` : `${d > 0 ? '+' : '−'}${Math.abs(d)} vs previous ${pw} (${prev.length})`;
+  const offered = rows.filter(t => t._w.offered === 'Yes'), done = rows.filter(t => t._w.done);
+  $('wDone').textContent = pctTxt(done.length, offered.length);
+  $('wDoneFoot').textContent = n ? `${done.length} of ${offered.length} calls where it was offered (offered on ${offered.length} of ${n})` : 'No reviews in this period';
+  const mats = countBy(rows, t => t.mat_id);
+  $('wCustomers').textContent = mats.length;
+  $('wCustomersFoot').textContent = n ? `${mats.filter(r => r.value > 1).length} with more than one review` : '';
+  const parts = rows.filter(t => t._w.part).length;
+  $('wParts').textContent = parts;
+  $('wPartsFoot').textContent = n ? `${pctTxt(parts, n)} of reviews ended in a part replacement request` : '';
+  const snStated = rows.filter(t => t._w.sn), snYes = snStated.filter(t => t._w.sn === 'Yes').length;
+  $('wSn').textContent = pctTxt(snYes, snStated.length);
+  $('wSnFoot').textContent = n ? `${snYes} of ${snStated.length} that state it` + (n > snStated.length ? ` (${n - snStated.length} don't say)` : '') : '';
+  const open = rows.filter(t => !t._w.closed);
+  $('wOpen').textContent = open.length;
+  $('wOpenFoot').textContent = n ? (open.length ? countBy(open, t => t.status).map(r => `${r.value} ${r.label}`).join(', ') : 'All closed') : '';
+
+  renderWgTrend(s, e, rows);
+  renderHbars($('wOutcome'), countBy(rows, t => t._w.outcome), null, 8);
+  renderHbars($('wRequest'), countBy(rows, t => t._w.request));
+  renderHbars($('wStatus'), countBy(rows, t => t.status));
+  renderHbars($('wIssue'), countBy(rows, t => t.issue_type));
+  renderHbars($('wSub'), countBy(rows, t => t.sub_issue_type));
+  renderHbars($('wModel'), countBy(rows, t => t._w.model));
+  renderHbars($('wWarranty'), countBy(rows, t => t._w.warranty));
+  renderHbars($('wOwner'), countBy(rows, t => t.ticket_owner));
+  $('wChecks').querySelector('tbody').innerHTML = [
+    ['White Glove offered', 'offered'], ['Serial number verified', 'sn'], ['Sales contract verified', 'contract'], ['KB added', 'kb'],
+  ].map(([label, k]) => {
+    const y = rows.filter(t => t._w[k] === 'Yes').length, no = rows.filter(t => t._w[k] === 'No').length;
+    return `<tr><td>${label}</td><td class="num">${y}</td><td class="num">${no}</td><td class="num">${n - y - no}</td><td class="num"><b>${pctTxt(y, y + no)}</b></td></tr>`;
+  }).join('');
+  $('wListTitle').textContent = `Reviews in ${periodName(WGP.period, s, e)}`;
+  renderWgList(rows);
+}
+// Reviews per day (up to 6 weeks), per week (up to 6 months) or per month, over the selected period.
+function renderWgTrend(s, e, rows){
+  const span = dayCount(s, addDays(e, -1)), unit = span <= 42 ? 'day' : span <= 186 ? 'week' : 'month';
+  const buckets = [];
+  for(let x = unit === 'week' ? mondayOf(s) : unit === 'month' ? new Date(s.getFullYear(), s.getMonth(), 1) : new Date(s); x < e; ){
+    const nx = unit === 'day' ? addDays(x, 1) : unit === 'week' ? addDays(x, 7) : new Date(x.getFullYear(), x.getMonth() + 1, 1);
+    buckets.push({ s: x, label: unit === 'month' ? x.toLocaleDateString('en-US', { month:'short' }) : fmtShort(x), value: rows.filter(t => inRange(t._o, x, nx)).length });
+    x = nx;
+  }
+  $('wTrendTitle').textContent = `Reviews per ${unit}`;
+  $('wTrendSub').textContent = unit === 'day' ? 'By the day the ticket was opened' : `By the ${unit} the ticket was opened${unit === 'week' ? ' (weeks start on Monday)' : ''}`;
+  const W = 640, H = 170, top = Math.max(1, ...buckets.map(b => b.value)), bw = W / buckets.length;
+  const every = Math.ceil(buckets.length / 16);
+  $('wTrend').innerHTML = `<svg viewBox="0 0 ${W} ${H + 22}" role="img" aria-label="Reviews per ${unit}">
+    <g class="grid"><line x1="0" x2="${W}" y1="${H}" y2="${H}"/></g>
+    ${buckets.map((b, i) => { const h = b.value / top * (H - 18); return `<g><title>${esc(b.label)}: ${b.value}</title>
+      <rect x="${(i * bw + bw * 0.15).toFixed(1)}" y="${(H - h).toFixed(1)}" width="${(bw * 0.7).toFixed(1)}" height="${h.toFixed(1)}" rx="3" fill="var(--accent)" opacity="${b.value ? 1 : 0}"/>
+      ${b.value ? `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${(H - h - 5).toFixed(1)}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--text)">${b.value}</text>` : ''}
+      ${i % every === 0 ? `<text x="${(i * bw + bw / 2).toFixed(1)}" y="${H + 16}" text-anchor="middle" font-size="10.5" fill="var(--text-dim)">${esc(unit === 'day' ? String(b.s.getDate()) : b.label)}</text>` : ''}</g>`; }).join('')}
+  </svg>`;
+}
+function renderWgList(rows){
+  if(!rows) rows = wgPeriodData().rows;
+  const q = $('wSearch').value.trim().toLowerCase();
+  const list = !q ? rows : rows.filter(t => [t.ticket_number, t.account_name, t.mat_id, t.subject, t.serial_number, t.issue_type, t.sub_issue_type, t.ticket_owner, t._w.feedback].some(v => String(v || '').toLowerCase().includes(q)));
+  $('wListCount').textContent = `${list.length} of ${rows.length} reviews · the White Glove column shows the customer's feedback`;
+  $('wTable').querySelector('tbody').innerHTML = list.length ? list.map(t => `<tr>
+      <td class="ticket nowrap">${esc(t.ticket_number)}${copyBtn(t.ticket_number)}${t._w.smesc ? `<div class="sub">${t._w.expedite ? 'SMESC expedite' : 'SMESC'}</div>` : ''}</td>
+      <td class="nowrap">${esc(t._o ? fmtShort(t._o) : '')}</td>
+      <td>${esc(t.account_name || '')}<div class="sub">MAT ${esc(t.mat_id || '–')}${t.serial_number ? ' · SN ' + esc(t.serial_number) : ''}</div></td>
+      <td>${esc(t._w.request)}<div class="sub">${esc([t._w.model, t._w.warranty].filter(Boolean).join(' · '))}</div></td>
+      <td>${esc(t.issue_type || '')}<div class="sub">${esc(t.sub_issue_type || '')}</div></td>
+      <td style="min-width:260px"><b>${esc(t._w.outcome)}</b>${t._w.feedback ? `<div class="sub">${esc(t._w.feedback)}</div>` : ''}</td>
+      <td>${esc(t.status || '')}</td>
+      <td>${esc(t.ticket_owner || '')}</td></tr>`).join('')
+    : `<tr><td colspan="8" class="empty">${rows.length ? 'No reviews match' : 'No White Globe reviews in this period'}</td></tr>`;
+}
+$('wSearch').addEventListener('input', () => WG && renderWgList());
+
+/* ---------- White Globe summary text ---------- */
+const listText = a => a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
+const countText = rows => listText(rows.map(r => `${r.label} (${r.value})`));
+function wgRangeText(s, e, rows){
+  const last = addDays(e, -1);
+  if(WGP.period === 'week'){
+    const end = rows.some(t => t._o.getDay() === 0 || t._o.getDay() === 6) ? last : addDays(s, 4);
+    return `During the week of ${fmtLong(s)} to ${fmtLong(end)}`;
+  }
+  if(WGP.period === 'custom') return +s === +last ? `On ${fmtLong(s)}` : `From ${fmtLong(s)} to ${fmtLong(last)}`;
+  return `During ${periodName(WGP.period, s, e)}`;
+}
+function buildWgSummary(){
+  const { s, e, rows, prev } = wgPeriodData(), n = rows.length, pw = PERIOD_WORD[WGP.period];
+  const during = wgRangeText(s, e, rows);
+  if(!n) return `${during}, no White Globe reviews were opened.`;
+  const mats = new Set(rows.map(t => t.mat_id).filter(Boolean)).size;
+  const p1 = [`${during}, the team completed ${word(n)} White Globe ${n === 1 ? 'review' : 'reviews'} for ${word(mats)} ${mats === 1 ? 'customer' : 'customers'}` +
+    (prev.length || WGP.period !== 'custom' ? `, ${n === prev.length ? `the same as the previous ${pw}` : `${n > prev.length ? 'up' : 'down'} from ${word(prev.length)} the previous ${pw}`}.` : '.')];
+  const offered = rows.filter(t => t._w.offered === 'Yes'), done = offered.filter(t => t._w.done);
+  p1.push(`White Glove service was offered on ${offered.length === n ? (n === 1 ? 'the call' : `all ${word(n)} calls`) : `${word(offered.length)} of the ${word(n)} calls`} and was done on ${word(done.length)} (${pct(done.length, offered.length)}% of the calls where it was offered).`);
+  const notDone = countBy(offered.filter(t => !t._w.done), t => t._w.outcome);
+  if(notDone.length) p1.push(`Where it was not done, the reasons were: ${countText(notDone.map(r => Object.assign({}, r, { label: r.label.toLowerCase() })))}.`);
+
+  const p2 = [];
+  const req = countBy(rows, t => t._w.request), parts = rows.filter(t => t._w.part).length;
+  if(req.length) p2.push(`By request type: ${countText(req)}.`);
+  p2.push(parts ? `${cap(word(parts))} of the ${word(n)} reviews (${pct(parts, n)}%) ended in a part replacement request.` : 'None ended in a part replacement request.');
+  const smesc = rows.filter(t => t._w.smesc).length;
+  if(smesc) p2.push(`${cap(word(smesc))} ${smesc === 1 ? 'was' : 'were'} sent to SMESC.`);
+  const issues = countBy(rows, t => t.issue_type).slice(0, 3), subs = countBy(rows, t => t.sub_issue_type).slice(0, 3);
+  if(issues.length) p2.push(`The most common issue types were ${countText(issues)}${subs.length ? `, and the most common sub-issues ${countText(subs)}` : ''}.`);
+  p2.push(`Current status: ${countText(countBy(rows, t => t.status))}.`);
+
+  const check = (k, label) => { const y = rows.filter(t => t._w[k] === 'Yes').length, st = rows.filter(t => t._w[k]).length; return st ? `${label} on ${word(y)} of ${word(st)}${st < n ? ' that state it' : ''}` : ''; };
+  const checks = [check('sn', 'the serial number was verified'), check('contract', 'the sales contract was verified'), check('kb', 'the KB was added')].filter(Boolean);
+  const p3 = checks.length ? [`On the calls, ${listText(checks)}.`] : [];
+  const owners = countBy(rows, t => t.ticket_owner);
+  if(owners.length) p3.push(`Tickets by owner: ${countText(owners)}.`);
+
+  const line = t => `* ${t.ticket_number} (${[t.issue_type, t.sub_issue_type].filter(Boolean).join(', ')}${t._w.request ? '; ' + t._w.request : ''}): ${t._w.feedback ? cap(t._w.feedback).replace(/[.\s]*$/, '.') : 'No feedback in the comment.'}`;
+  const doneRows = rows.filter(t => t._w.done), other = rows.filter(t => !t._w.done);
+  return [p1.join(' '), p2.join(' '), p3.join(' '),
+    doneRows.length ? 'White Glove done:\n' + doneRows.map(line).join('\n') : '',
+    other.length ? 'Not done:\n' + other.map(t => line(t).replace(': ', `: ${t._w.outcome}. `)).join('\n') : ''].filter(Boolean).join('\n\n');
+}
+$('btnWgSummary').addEventListener('click', ()=>{
+  if(!WG) return;
+  const { s, e } = wgPeriodData();
+  $('summaryTitle').textContent = `White Globe summary: ${periodName(WGP.period, s, e)}`;
+  $('summaryNote').textContent = 'Written from the White Globe reviews opened in the selected period. You can edit it here before copying.';
+  $('summaryText').value = buildWgSummary();
+  $('scrim').classList.add('show'); $('summaryModal').classList.add('show');
+});
+$('btnWgExport').addEventListener('click', ()=>{
+  if(!WG) return;
+  if(!window.XLSX){ toast('Excel export could not load. Check your connection.'); return; }
+  const { s, e, rows } = wgPeriodData();
+  const out = rows.map(t => ({
+    'Ticket Number': t.ticket_number, 'Opened': t._o, 'Ticket Owner': t.ticket_owner || '', 'MAT ID': t.mat_id || '', 'Customer': t.account_name || '',
+    'Subject': t.subject || '', 'Request type': t._w.request, 'Scanner model': t._w.model, 'Warranty': t._w.warranty, 'Serial Number': t.serial_number || '',
+    'Status': t.status || '', 'Issue Type': t.issue_type || '', 'Sub-Issue Type': t.sub_issue_type || '', 'Product Family': t.product_family || '',
+    'White Glove offered': t._w.offered, 'White Glove outcome': t._w.outcome, "Customer's feedback": t._w.feedback,
+    'SN verified': t._w.sn, 'Sales contract verified': t._w.contract, 'KB added': t._w.kb, 'Caller role': t._w.role,
+  }));
+  const ws = XLSX.utils.json_to_sheet(out, { cellDates:true, dateNF:'yyyy-mm-dd hh:mm' });
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'White Globe');
+  XLSX.writeFile(wb, `White Globe ${periodName(WGP.period, s, e).replace(/[\/\\:,]/g, '')}.xlsx`);
+});
+
+/* ---------- White Globe uploads ---------- */
+function renderWgUploads(){
+  $('btnWgUpload').classList.toggle('hidden', !(ME && ME.can_upload));
+  const from = id => WG.tickets.filter(t => t.last_upload_id === id).length;
+  $('wgUploadsTable').querySelector('tbody').innerHTML = WG.uploads.length ? WG.uploads.map(u => `<tr>
+      <td class="nowrap">${esc(fmtDateTime(new Date(u.uploaded_at)))}</td><td>${esc(u.file_name)}</td>
+      <td class="num">${u.row_count}</td><td class="num">${from(u.id)}</td></tr>`).join('')
+    : '<tr><td colspan="4" class="empty">No White Globe uploads yet</td></tr>';
+}
+// Export column -> wg_review_tickets column ("Ticket Comments" goes to wg_review_comments).
+const WG_COLUMNS = {
+  'ticket number':'ticket_number', 'ticket owner':'ticket_owner', 'mat id':'mat_id', 'name 1':'account_name', 'subject':'subject',
+  'date time opened':'opened_at', 'opened date':'opened_on', 'product description':'product_description', 'asset description':'asset_description',
+  'serial number':'serial_number', 'status':'status', 'issue type':'issue_type', 'sub issue type':'sub_issue_type', 'ticket type':'ticket_type',
+  'product family':'product_family', 'ticket comments':'comment',
+};
+function parseWgTable(tables){
+  for(const table of tables){
+    const h = table.slice(0, 30).findIndex(r => r.some(c => normHead(c) === 'ticket number'));
+    if(h < 0) continue;
+    const cols = table[h].map(c => WG_COLUMNS[normHead(c)] || null);
+    const tickets = new Map(), comments = [];
+    let rowCount = 0;
+    table.slice(h + 1).forEach(r => {
+      const o = {}; cols.forEach((k, i) => { if(k){ const v = r[i]; o[k] = v instanceof Date ? v : String(v ?? '').trim(); } });
+      if(!o.ticket_number) return;
+      rowCount++;
+      const opened = toTimestamp(o.opened_at), on = toTimestamp(o.opened_on);
+      const t = { ticket_number: o.ticket_number };
+      Object.values(WG_COLUMNS).forEach(k => { if(k !== 'comment' && k !== 'ticket_number' && k in o) t[k] = o[k] || null; });
+      t.opened_at = opened || null;
+      t.opened_on = (on || opened || '').slice(0, 10) || null;
+      tickets.set(t.ticket_number, t);   // the export repeats a ticket once per comment
+      if(o.comment) comments.push({ ticket_number: o.ticket_number, comment: String(o.comment) });
+    });
+    return { tickets: [...tickets.values()], comments, rowCount };
+  }
+  return null;
+}
+$('btnWgUpload').addEventListener('click', ()=> $('wgUploadFile').click());
+$('wgUploadFile').addEventListener('change', async ev => {
+  const file = ev.target.files[0]; ev.target.value = '';
+  if(!file || !ME || !ME.can_upload) return;
+  try{
+    const P = parseWgTable(tablesFromWorkbook(await file.arrayBuffer()));
+    if(!P || !P.tickets.length){ toast('No "Ticket Number" column found. Upload the All Team White Glove Review report.'); return; }
+    const known = new Set(WG.tickets.map(t => t.ticket_number)), fresh = P.tickets.filter(t => !known.has(t.ticket_number)).length;
+    if(!confirm(`Upload "${file.name}"?\n\n${P.tickets.length} tickets (${fresh} new, ${P.tickets.length - fresh} already loaded) and ${P.comments.length} comments. Comments already loaded are skipped.`)) return;
+    const { data: up, error: uErr } = await sb.from('wg_uploads').insert({ kind:'review', file_name: file.name, row_count: P.rowCount }).select().single();
+    if(uErr) throw uErr;
+    const { error: tErr } = await sb.from('wg_review_tickets').upsert(P.tickets.map(t => Object.assign(t, { last_upload_id: up.id, updated_at: new Date().toISOString() })), { onConflict:'ticket_number' });
+    if(tErr) throw tErr;
+    if(P.comments.length){
+      const { error: cErr } = await sb.from('wg_review_comments').upsert(P.comments.map(c => Object.assign(c, { upload_id: up.id })), { onConflict:'ticket_number,comment_hash', ignoreDuplicates:true });
+      if(cErr) throw cErr;
+    }
+    toast(`Uploaded ${P.tickets.length} tickets from "${file.name}".`);
+    await loadWg(true);
+  }catch(err){ console.error(err); toast('Upload failed: ' + (err.message || 'unknown error') + '. Try again.'); }
+});
 
 /* ---------- White Glove pilot data ---------- */
 let PILOT = null, PILOT_AHT = [];
