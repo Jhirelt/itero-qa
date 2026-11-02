@@ -793,6 +793,7 @@
   @keyframes tpIn{ from{ opacity:0; transform:translateY(-4px); } to{ opacity:1; transform:none; } }
   .tp-title{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:700; padding:6px 8px 4px; }
   .tp-list{ display:flex; flex-direction:column; gap:2px; }
+  .tp-head{ font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); font-weight:800; padding:4px 8px 6px; }
   .tp-item{ display:flex; align-items:center; gap:8px; width:100%; min-height:34px; padding:6px 10px; border:none; border-radius:8px; background:none; color:var(--text); font:inherit; font-weight:700; cursor:pointer; text-align:left; }
   .tp-item:hover{ background:var(--bg-elev-2); }
   .tp-item.on{ background:var(--accent-soft); }
@@ -1019,6 +1020,7 @@
   body:not(.is-admin) .search-scenario-row .scenario-row,
   body:not(.is-admin) #btnHoldToggle,
   body:not(.is-admin) .admin-only{ display:none !important; }
+  body.is-shared #btnAddTask, body.is-shared #btnCopyAssignments{ display:none !important; }
   .x-chip button{ background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:14px; line-height:1; padding:0 2px; }
   .x-chip button:hover{ color:var(--no); }
   .focus-select{
@@ -1224,6 +1226,22 @@
   .monthly-table .bulk-cell.picked .bulk-box{ background:var(--accent); border-color:var(--accent); }
   .monthly-table .bulk-cell.picked .bulk-box::after{ content:"✓"; color:#00110f; font-size:11px; font-weight:900; display:block; line-height:14px; text-align:center; }
   .assign-box{ max-width:380px; }
+  .copy-assign-box{ max-width:620px; }
+  .copy-assign-box .assign-choice{ display:flex; flex-direction:column; gap:2px; text-align:left; }
+  .copy-assign-box .assign-choice span{ font-size:11.5px; }
+  .ca-months{ display:flex; flex-wrap:wrap; gap:6px; }
+  .ca-months .assign-choice{ flex:none; padding:7px 12px; font-size:12.5px; }
+  .ca-preview{ max-height:320px; overflow:auto; border:1px solid var(--border); border-radius:var(--radius-sm); }
+  .ca-preview table{ width:100%; border-collapse:collapse; font-size:12.5px; }
+  .ca-preview th{ position:sticky; top:0; background:var(--bg-elev-2); text-align:left; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; color:var(--text-dim); padding:7px 10px; }
+  .ca-preview td{ padding:7px 10px; border-top:1px solid var(--border); vertical-align:top; }
+  .ca-preview .ca-chip{ display:inline-block; margin:1px 4px 1px 0; padding:1px 8px; border-radius:999px; font-size:11.5px; font-weight:700; border:1px solid var(--border); }
+  .ca-preview .ca-chip.call{ color:var(--accent); border-color:var(--accent-dim); }
+  .ca-preview .ca-chip.ticket{ color:var(--warn); border-color:var(--warn); }
+  .ca-preview .ca-chip.gone{ color:var(--no); border-color:var(--no); text-decoration:line-through; }
+  .ca-preview .ca-dim{ color:var(--text-dim); }
+  .ca-empty{ padding:14px; color:var(--text-dim); font-size:12.5px; }
+  #btnCopyAssignConfirm.confirming{ background:var(--no); border-color:var(--no); color:#fff; }
   .assign-agent{ font-size:12.5px; color:var(--text-dim); margin-bottom:14px; }
   .assign-step{ margin-bottom:14px; transition:opacity .15s; }
   .assign-step.disabled{ opacity:.4; pointer-events:none; }
@@ -1728,6 +1746,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
           </select>
         </label>
         <button type="button" class="btn btn-ghost bulk-start-btn" id="btnBulkAssign" style="display:none;">Assign several</button>
+        <button type="button" class="btn btn-ghost bulk-start-btn" id="btnCopyAssignments" style="display:none;" title="Copy the assignments of another month into this one">Copy a month</button>
         <button type="button" class="btn btn-ghost bulk-start-btn" id="btnExportExcel" title="Download this table as an Excel file">
           <svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 19h14" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg>
           Export to Excel
@@ -1897,6 +1916,33 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         <div class="ve-actions" style="margin-top:8px;">
           <button type="button" class="btn btn-primary" id="btnSaveDispute">Save dispute</button>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal-overlay" id="copyAssignOverlay">
+    <div class="modal-box copy-assign-box">
+      <button class="modal-close" id="btnCloseCopyAssign">&times;</button>
+      <h3>Copy assignments</h3>
+      <div class="assign-agent" id="caTarget"></div>
+      <div class="assign-step">
+        <div class="assign-step-title">1. Copy from</div>
+        <div class="ca-months" id="caMonths"></div>
+      </div>
+      <div class="assign-step" id="caModeStep" style="display:none;">
+        <div class="assign-step-title" id="caModeTitle"></div>
+        <div class="assign-choice-row">
+          <button type="button" class="assign-choice" data-ca-mode="fill">Fill only the empty ones<span>Keep what is there</span></button>
+          <button type="button" class="assign-choice" data-ca-mode="reset">Reset and paste all<span>Replace open assignments</span></button>
+        </div>
+      </div>
+      <div class="assign-step">
+        <div class="assign-step-title">Preview</div>
+        <div class="ca-preview" id="caPreview"></div>
+      </div>
+      <div class="ve-actions">
+        <button type="button" class="btn btn-ghost" id="btnCopyAssignCancel">Cancel</button>
+        <button type="button" class="btn btn-primary" id="btnCopyAssignConfirm" disabled>Copy</button>
       </div>
     </div>
   </div>
@@ -5432,6 +5478,8 @@ function applyRoleToUI(){
   document.body.classList.toggle('is-agent', isAgent);
   document.getElementById('tabEvalBtn').style.display = isAgent ? 'none' : '';
   document.getElementById('btnViewAs').style.display = (isAdmin || REAL_USER) ? '' : 'none';
+  // The shared backup account evaluates; it doesn't hand out tasks or copy assignments.
+  document.body.classList.toggle('is-shared', !!CURRENT_USER.shared_account);
 
   document.getElementById('userBadgeName').textContent = CURRENT_USER.display_name || CURRENT_USER.email;
   document.getElementById('userBadgeRole').textContent = CURRENT_USER.role + (CURRENT_USER.shared_account ? ' · ' + CURRENT_USER.shared_account : '') + (REAL_USER ? ' · view' : '');
@@ -6942,6 +6990,169 @@ async function confirmBulkAssign(){
 }
 
 document.getElementById('btnBulkAssign').addEventListener('click', ()=> BULK.active ? stopBulk() : startBulk());
+
+/* ---------- Copy a month's assignments ---------- */
+// Copies another month's assignments (same agents, call/ticket and person) into
+// the month shown in the table, for the team shown. With assignments already
+// there, either fill only the empty places or replace the open ones; saved
+// evaluations are never touched.
+const COPY_ASSIGN = { target: null, from: null, mode: null, source: [], plan: null };
+
+function addMonths(month, n){
+  const d = new Date(Number(month.slice(0, 4)), Number(month.slice(5, 7)) - 1 + n, 1);
+  return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-01';
+}
+
+function openCopyAssign(){
+  if(!LAST_GRID || !LAST_GRID.scope.month || (CURRENT_USER && CURRENT_USER.shared_account)) return;
+  if(BULK.active) stopBulk();
+  const target = LAST_GRID.scope.month;
+  Object.assign(COPY_ASSIGN, { target, from: null, mode: null, source: [], plan: null });
+  document.getElementById('caTarget').textContent = 'Into ' + monthLabel(target) + ' · ' + CURRENT_TEAM + ' agents';
+  const months = [];
+  for(let i = 1; i <= 6; i++) months.push(addMonths(target, -i));
+  document.getElementById('caMonths').innerHTML = months.map(m=> '<button type="button" class="assign-choice" data-ca-month="' + m + '">' + monthLabel(m) + '</button>').join('');
+  document.getElementById('caModeStep').style.display = 'none';
+  document.getElementById('caPreview').innerHTML = '<div class="ca-empty">Pick the month to copy from.</div>';
+  resetCopyConfirm(0);
+  document.getElementById('copyAssignOverlay').classList.add('show');
+  pickCopyMonth(months[0]);
+}
+
+function closeCopyAssign(){ document.getElementById('copyAssignOverlay').classList.remove('show'); }
+
+function resetCopyConfirm(n){
+  const btn = document.getElementById('btnCopyAssignConfirm');
+  btn.classList.remove('confirming');
+  btn.disabled = !n;
+  btn.textContent = n ? 'Copy ' + n + ' assignment' + (n === 1 ? '' : 's') : 'Nothing to copy';
+}
+
+async function pickCopyMonth(month){
+  COPY_ASSIGN.from = month;
+  document.querySelectorAll('#caMonths .assign-choice').forEach(b=> b.classList.toggle('active', b.dataset.caMonth === month));
+  document.getElementById('caPreview').innerHTML = '<div class="ca-empty">Loading...</div>';
+  try{
+    COPY_ASSIGN.source = await fetchAssignments(month);
+  }catch(err){
+    document.getElementById('caPreview').innerHTML = '<div class="ca-empty">Could not load ' + escapeHtml(monthLabel(month)) + ': ' + escapeHtml(err.message || 'unknown error') + '</div>';
+    resetCopyConfirm(0);
+    return;
+  }
+  if(COPY_ASSIGN.from !== month) return;
+  const existing = teamAgents().reduce((n, agent)=>{ const m = monthPlaces(agent.id); return n + m.evals.length + m.open.length; }, 0);
+  const modeStep = document.getElementById('caModeStep');
+  if(existing){
+    document.getElementById('caModeTitle').textContent = '2. ' + monthLabel(COPY_ASSIGN.target) + ' already has ' + existing + ' evaluation' + (existing === 1 ? '' : 's') + ' or assignment' + (existing === 1 ? '' : 's');
+    modeStep.style.display = '';
+    if(!COPY_ASSIGN.mode) COPY_ASSIGN.mode = 'fill';
+  }else{
+    modeStep.style.display = 'none';
+    COPY_ASSIGN.mode = 'fill';
+  }
+  setCopyMode(COPY_ASSIGN.mode);
+}
+
+function setCopyMode(mode){
+  COPY_ASSIGN.mode = mode;
+  document.querySelectorAll('#caModeStep .assign-choice').forEach(b=> b.classList.toggle('active', b.dataset.caMode === mode));
+  COPY_ASSIGN.plan = planCopyAssign();
+  renderCopyPreview();
+}
+
+// An agent's places in the table's month: saved evaluations, and assignments
+// no evaluation was saved against yet.
+function monthPlaces(agentId){
+  const evals = LAST_GRID.evals.filter(e=> e.agent_id === agentId);
+  const linked = new Set(evals.map(e=> e.assignment_id).filter(Boolean));
+  const open = LAST_GRID.assignments.filter(a=> a.agent_id === agentId && !linked.has(a.id));
+  return { evals, open };
+}
+
+// Per agent: what is in the target month now, which open assignments a reset
+// removes, and which source assignments get added (never past the monthly 4).
+function planCopyAssign(){
+  const { target, mode, source } = COPY_ASSIGN;
+  const rows = [];
+  teamAgents().slice().sort((a, b)=> a.name.localeCompare(b.name)).forEach(agent=>{
+    const src = source.filter(a=> a.agent_id === agent.id).sort((a, b)=> a.slot - b.slot);
+    const { evals, open } = monthPlaces(agent.id);
+    const remove = mode === 'reset' ? open : [];
+    const kept = evals.length + open.length - remove.length;
+    const add = src.slice(kept, MONTHLY_EVAL_TARGET);
+    if(!add.length && !remove.length) return;
+    const keptSlots = LAST_GRID.assignments.filter(a=> a.agent_id === agent.id && !remove.includes(a)).map(a=> a.slot);
+    let next = keptSlots.reduce((m, x)=> Math.max(m, x), 0);
+    rows.push({
+      agent, done: evals.length, open: open.length, remove,
+      add: add.map(a=> ({ agent_id: agent.id, month: target, slot: ++next, assignee_id: a.assignee_id,
+        ...(a.assignee_name ? { assignee_name: a.assignee_name } : {}), kind: a.kind, assigned_by: CURRENT_USER.id })),
+    });
+  });
+  return rows;
+}
+
+function renderCopyPreview(){
+  const plan = COPY_ASSIGN.plan || [];
+  const chip = (a, cls)=> '<span class="ca-chip ' + (cls || a.kind) + '">' + kindLabel(a.kind) + ' · ' + escapeHtml(assigneeLabel(a)) + '</span>';
+  const box = document.getElementById('caPreview');
+  if(!plan.length){
+    box.innerHTML = '<div class="ca-empty">' + (COPY_ASSIGN.source.length ? 'Nothing to copy: every agent already has these places filled.' : monthLabel(COPY_ASSIGN.from) + ' has no assignments to copy.') + '</div>';
+    resetCopyConfirm(0);
+    return;
+  }
+  box.innerHTML = '<table><thead><tr><th>Agent</th><th>Now</th><th>After copying</th></tr></thead><tbody>' + plan.map(r=>
+    '<tr><td>' + escapeHtml(r.agent.name) + '</td>' +
+    '<td class="ca-dim">' + (r.done ? r.done + ' done' : '') + (r.done && r.open ? ', ' : '') + (r.open ? r.open + ' assigned' : '') + (!r.done && !r.open ? 'Empty' : '') + '</td>' +
+    '<td>' + r.remove.map(a=> chip(a, 'gone')).join('') + r.add.map(a=> chip(a)).join('') + '</td></tr>').join('') + '</tbody></table>';
+  resetCopyConfirm(plan.reduce((n, r)=> n + r.add.length, 0));
+  if(!plan.some(r=> r.add.length)){
+    const btn = document.getElementById('btnCopyAssignConfirm');
+    btn.disabled = false;
+    btn.textContent = 'Remove open assignments';
+  }
+}
+
+async function confirmCopyAssign(){
+  const btn = document.getElementById('btnCopyAssignConfirm');
+  const plan = COPY_ASSIGN.plan || [];
+  const removeIds = plan.flatMap(r=> r.remove.map(a=> a.id));
+  const rows = plan.flatMap(r=> r.add);
+  if(!btn.classList.contains('confirming')){
+    // Second click confirms.
+    btn.classList.add('confirming');
+    btn.textContent = 'Confirm: ' + (removeIds.length ? 'replace ' + removeIds.length + ' and ' : '') + 'copy ' + rows.length;
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Copying...';
+  try{
+    if(removeIds.length){
+      const { error } = await supabaseClient.from('evaluation_assignments').delete().in('id', removeIds);
+      if(error) throw error;
+    }
+    if(rows.length){
+      const { error } = await supabaseClient.from('evaluation_assignments').insert(rows);
+      if(error) throw error;
+    }
+    closeCopyAssign();
+    showToast('Copied ' + rows.length + ' assignment' + (rows.length === 1 ? '' : 's') + ' from ' + monthLabel(COPY_ASSIGN.from) + (removeIds.length ? ' (' + removeIds.length + ' replaced)' : ''));
+    refreshAgentsView();
+  }catch(err){
+    console.error('Could not copy the assignments', err);
+    showToast(err && err.code === '23505' ? 'Someone changed this month\'s assignments meanwhile. Open Copy again.' : 'Could not copy: ' + (err.message || 'unknown error'));
+    resetCopyConfirm(rows.length);
+    refreshAgentsView();
+  }
+}
+
+document.getElementById('btnCopyAssignments').addEventListener('click', openCopyAssign);
+document.getElementById('btnCloseCopyAssign').addEventListener('click', closeCopyAssign);
+document.getElementById('btnCopyAssignCancel').addEventListener('click', closeCopyAssign);
+document.getElementById('copyAssignOverlay').addEventListener('click', (e)=>{ if(e.target.id === 'copyAssignOverlay') closeCopyAssign(); });
+document.getElementById('caMonths').addEventListener('click', (e)=>{ const b = e.target.closest('[data-ca-month]'); if(b) pickCopyMonth(b.dataset.caMonth); });
+document.querySelectorAll('#caModeStep .assign-choice').forEach(b=> b.addEventListener('click', ()=> setCopyMode(b.dataset.caMode)));
+document.getElementById('btnCopyAssignConfirm').addEventListener('click', confirmCopyAssign);
 document.getElementById('btnBulkCancel').addEventListener('click', stopBulk);
 document.querySelectorAll('[data-bulk-kind]').forEach(b=> b.addEventListener('click', ()=>{
   BULK.kind = b.dataset.bulkKind;
@@ -7010,6 +7221,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   const aroot = document.getElementById('assignTable');
   const canAssign = ASSIGNMENTS_AVAILABLE && !!scope.month && !!CURRENT_USER;
   document.getElementById('btnBulkAssign').style.display = canAssign ? '' : 'none';
+  document.getElementById('btnCopyAssignments').style.display = canAssign ? '' : 'none';
   document.getElementById('btnBulkAssign').textContent = BULK.active ? 'Close bulk assign' : 'Assign several';
   if(!canAssign && BULK.active){ BULK.active = false; BULK.kind = null; BULK.picked.clear(); updateBulkBar(); }
   const picking = BULK.active && !!BULK.kind;
@@ -8045,17 +8257,25 @@ function profileName(id){
   const p = (PROFILES_CACHE || []).find(x=> x.id === id);
   return p ? (p.display_name || 'QA') : '';
 }
+function isSharedProfile(id){
+  const p = (PROFILES_CACHE || []).find(x=> x.id === id);
+  return !!p && sharedPeople(p).length > 0;
+}
 function taskResponsible(t){
+  if(t.responsible_id && t.responsible_name && isSharedProfile(t.responsible_id)) return t.responsible_name;
   return t.responsible_id ? (profileName(t.responsible_id) || t.responsible_name || 'QA') : (t.responsible_name || '');
 }
 // Both evaluators (and the admin) come from the QA profiles; extra people are added in Task settings.
+// A shared account shows as one choice that then asks which of its people.
 function taskPeopleOptions(){
-  const qa = (PROFILES_CACHE || []).filter(p=> p.role !== 'agent').map(p=> ({ value: 'p:' + p.id, label: p.display_name || 'QA' }));
+  const qa = (PROFILES_CACHE || []).filter(p=> p.role !== 'agent')
+    .map(p=> sharedPeople(p).length ? { value: 'b:' + p.id, label: (p.display_name || 'Backup') + ' \u203a' } : { value: 'p:' + p.id, label: p.display_name || 'QA' });
   const extra = (CONFIG.taskPeople || []).filter(n=> !qa.some(o=> o.label.toLowerCase() === n.toLowerCase()))
     .map(n=> ({ value: 'n:' + n, label: n }));
   return qa.concat(extra);
 }
 function taskResponsibleValue(t){
+  if(t.responsible_id && t.responsible_name && isSharedProfile(t.responsible_id)) return 'p:' + t.responsible_id + '|' + t.responsible_name;
   if(t.responsible_id) return 'p:' + t.responsible_id;
   return t.responsible_name ? 'n:' + t.responsible_name : '';
 }
@@ -8144,7 +8364,7 @@ async function updateTask(id, patch){
 }
 
 async function addTask(){
-  if(!supabaseClient) return;
+  if(!supabaseClient || (CURRENT_USER && CURRENT_USER.shared_account)) return;
   await ensureProfilesLoaded();
   const me = CURRENT_USER && !CURRENT_USER.viewAs ? CURRENT_USER : null;
   const { data, error } = await supabaseClient.from('tasks').insert({
@@ -8180,7 +8400,8 @@ async function setTaskField(id, f, value){
     if(await updateTask(id, { due_date: value })) renderTasks();
   }else if(f === 'responsible'){
     if(value === taskResponsibleValue(t)) return;
-    const patch = value.startsWith('p:') ? { responsible_id: value.slice(2), responsible_name: profileName(value.slice(2)) }
+    const [pid, pname] = value.slice(2).split('|');
+    const patch = value.startsWith('p:') ? { responsible_id: pid, responsible_name: pname || profileName(pid) }
       : { responsible_id: null, responsible_name: value.startsWith('n:') ? value.slice(2) : '' };
     if(await updateTask(id, patch)){
       renderTasks();
@@ -8304,6 +8525,17 @@ TASK_POP.addEventListener('click', (e)=>{
   const item = e.target.closest('.tp-item');
   if(!item) return;
   const value = item.dataset.value;
+  if(st.kind === 'responsible' && value.startsWith('b:')){
+    // Backup account: pick the SME who will do it.
+    const id = value.slice(2);
+    const p = (PROFILES_CACHE || []).find(x=> x.id === id);
+    const t = TASKS.find(x=> x.id === st.id);
+    const cur = t ? taskResponsibleValue(t) : '';
+    TASK_POP.innerHTML = '<div class="tp-head">' + escapeHtml(p ? p.display_name : 'Backup') + ': which SME?</div><div class="tp-list">' +
+      taskOptionsHtml(sharedPeople(p).map(n=> ({ value: 'p:' + id + '|' + n, html: taskPersonHtml(n) })), cur) + '</div>';
+    placeTaskPop(st.anchor);
+    return;
+  }
   if(st.kind === 'action'){
     st.anchor.value = value;
     closeTaskPop();
@@ -8347,7 +8579,12 @@ document.getElementById('view-tasks').addEventListener('click', async (e)=>{
   const row = e.target.closest('tr[data-task]');
   if(!row) return;
   const menu = e.target.closest('[data-menu]');
-  if(menu){ e.stopPropagation(); openTaskMenu(menu, menu.dataset.menu, row.dataset.task); return; }
+  if(menu){
+    e.stopPropagation();
+    if(menu.dataset.menu === 'responsible' && CURRENT_USER && CURRENT_USER.shared_account){ showToast('The backup account can\'t assign tasks.'); return; }
+    openTaskMenu(menu, menu.dataset.menu, row.dataset.task);
+    return;
+  }
   const t = TASKS.find(x=> x.id === row.dataset.task);
   if(!t) return;
   if(e.target.closest('[data-del]')){
@@ -8447,11 +8684,12 @@ async function refreshBell(){
   if(!supabaseClient || !CURRENT_USER || isAgentUser()) return;
   await loadReleaseNotes();
   if(TASKS_AVAILABLE){
-    const { data, error } = await supabaseClient.from('tasks').select('id, title, assigned_by, updated_at')
+    const { data, error } = await supabaseClient.from('tasks').select('id, title, assigned_by, updated_at, responsible_name')
       .eq('responsible_id', CURRENT_USER.id).eq('seen_by_assignee', false).eq('status', 'pending')
       .order('updated_at', { ascending: false });
     if(error){ if(error.code === '42P01' || error.code === 'PGRST205') TASKS_AVAILABLE = false; }
-    else BELL_ITEMS = data || [];
+    // On the backup account each SME only hears about their own tasks.
+    else BELL_ITEMS = (data || []).filter(t=> !CURRENT_USER.shared_account || t.responsible_name === CURRENT_USER.display_name);
   }
   updateBellCount();
   if(document.getElementById('bellMenu').classList.contains('show')) renderBellMenu();
