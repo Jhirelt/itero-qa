@@ -5792,7 +5792,7 @@ async function saveEvaluationToDatabase(){
     return;
   }
   if(schedule && schedule.state === 'other'){
-    showToast('This evaluation is assigned to ' + (profileName(schedule.assignment.assignee_id) || 'QA') + '. Press "Assign to me" first.');
+    showToast('This evaluation is assigned to ' + assigneeLabel(schedule.assignment) + '. Press "Assign to me" first.');
     return;
   }
   if(shown && shown.state === 'mine' && schedule && shown.agentId === schedule.agentId && schedule.state !== 'mine' &&
@@ -6260,7 +6260,7 @@ async function ensureProfilesLoaded(){
 async function fetchAssignments(month){
   if(!ASSIGNMENTS_AVAILABLE || !month) return [];
   const { data, error } = await supabaseClient.from('evaluation_assignments')
-    .select('id, agent_id, month, slot, assignee_id, kind, assigned_by, created_at').eq('month', month);
+    .select('*').eq('month', month);
   if(error){
     // Table not created yet: keep the grid working without assignments.
     if(error.code === '42P01' || error.code === 'PGRST205'){ ASSIGNMENTS_AVAILABLE = false; return []; }
@@ -6268,6 +6268,34 @@ async function fetchAssignments(month){
   }
   return data || [];
 }
+
+// Assignments to a shared account can name one of its people.
+function assigneeLabel(a){ return (a && a.assignee_name) || profileName(a && a.assignee_id) || 'QA'; }
+function isMyAssignment(a){
+  if(!CURRENT_USER || !a || a.assignee_id !== CURRENT_USER.id) return false;
+  return !CURRENT_USER.shared_account || !a.assignee_name || a.assignee_name === CURRENT_USER.display_name;
+}
+// Who can be picked as assignee: each person of a shared account is its own choice.
+function assigneeOptions(includeMe){
+  const opts = [];
+  (PROFILES_CACHE || []).forEach(p=>{
+    const people = sharedPeople(p);
+    if(people.length){
+      people.forEach(n=>{
+        if(!includeMe && p.id === CURRENT_USER.id && n === CURRENT_USER.display_name) return;
+        opts.push({ value: p.id + '|' + n, label: n + ' (backup)' });
+      });
+    }else if(includeMe || p.id !== CURRENT_USER.id){
+      opts.push({ value: p.id, label: p.display_name || 'QA' });
+    }
+  });
+  return opts;
+}
+function parseAssignee(value){
+  const [id, name] = String(value || '').split('|');
+  return { id: id || null, name: name || null };
+}
+function myAssigneeValue(){ return CURRENT_USER.shared_account ? CURRENT_USER.id + '|' + CURRENT_USER.display_name : CURRENT_USER.id; }
 
 function canRemoveAssignment(a){
   return !!CURRENT_USER && (a.assigned_by === CURRENT_USER.id || a.assignee_id === CURRENT_USER.id || isAdminUser());
@@ -6286,7 +6314,7 @@ function buildAgentSlots(evals, assignments){
   const slots = evals.map(e=>{
     if(linked.has(e)) return { type: 'eval', eval: e, assignment: linked.get(e) };
     const i = e.assignment_id ? -1 : open.findIndex(a=>
-      e.evaluator_id ? a.assignee_id === e.evaluator_id : profileName(a.assignee_id) === (e.evaluator_name || ''));
+      e.evaluator_id ? a.assignee_id === e.evaluator_id && (!a.assignee_name || a.assignee_name === e.evaluator_name) : assigneeLabel(a) === (e.evaluator_name || ''));
     const done = i > -1 ? open.splice(i, 1)[0] : null;
     return { type: 'eval', eval: e, assignment: done };
   });
@@ -6304,9 +6332,9 @@ function openAssignModal(agentId, month){
   document.getElementById('assignAgentName').textContent = (agent ? agent.name : 'Agent') + ' · ' +
     MONTH_NAMES[Number(month.slice(5, 7)) - 1] + ' ' + month.slice(0, 4);
   document.getElementById('assignMeName').textContent = CURRENT_USER.display_name || 'Me';
-  const others = (PROFILES_CACHE || []).filter(p=> p.id !== CURRENT_USER.id);
+  const others = assigneeOptions(false);
   const sel = document.getElementById('assignOtherSelect');
-  sel.innerHTML = others.map(p=> '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.display_name || 'QA') + '</option>').join('');
+  sel.innerHTML = others.map(o=> '<option value="' + escapeHtml(o.value) + '">' + escapeHtml(o.label) + '</option>').join('');
   document.getElementById('btnAssignOther').disabled = !others.length;
   document.getElementById('btnAssignOther').title = others.length ? '' : 'There are no other QA profiles yet';
   document.querySelectorAll('#assignWhoRow .assign-choice').forEach(b=> b.classList.remove('active'));
@@ -6323,13 +6351,14 @@ function chooseAssignee(who){
   document.querySelectorAll('#assignWhoRow .assign-choice').forEach(b=> b.classList.toggle('active', b.dataset.who === who));
   const otherWrap = document.getElementById('assignOtherWrap');
   otherWrap.style.display = who === 'other' ? '' : 'none';
-  ASSIGN_STATE.assigneeId = who === 'me' ? CURRENT_USER.id : document.getElementById('assignOtherSelect').value;
+  ASSIGN_STATE.assigneeId = who === 'me' ? myAssigneeValue() : document.getElementById('assignOtherSelect').value;
   document.getElementById('assignKindStep').classList.toggle('disabled', !ASSIGN_STATE.assigneeId);
 }
 
 async function createAssignment(kind){
   if(!ASSIGN_STATE.assigneeId){ showToast('First choose who will do the evaluation'); return; }
-  const { agentId, month, assigneeId } = ASSIGN_STATE;
+  const { agentId, month } = ASSIGN_STATE;
+  const assignee = parseAssignee(ASSIGN_STATE.assigneeId);
   const buttons = document.querySelectorAll('#assignKindStep button');
   buttons.forEach(b=> b.disabled = true);
   try{
@@ -6340,12 +6369,12 @@ async function createAssignment(kind){
     if(exErr) throw exErr;
     const slot = (existing || []).reduce((m, r)=> Math.max(m, r.slot), 0) + 1;
     const { error } = await supabaseClient.from('evaluation_assignments').insert({
-      agent_id: agentId, month, slot, assignee_id: assigneeId, kind, assigned_by: CURRENT_USER.id,
+      agent_id: agentId, month, slot, assignee_id: assignee.id, ...(assignee.name ? { assignee_name: assignee.name } : {}), kind, assigned_by: CURRENT_USER.id,
     });
     if(error) throw error;
     closeAssignModal();
     showToast((kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' +
-      (assigneeId === CURRENT_USER.id ? 'you' : (profileName(assigneeId) || 'QA')));
+      (ASSIGN_STATE.assigneeId === myAssigneeValue() ? 'you' : (assignee.name || profileName(assignee.id) || 'QA')));
     refreshAgentsView();
   }catch(err){
     console.error('Could not assign evaluation', err);
@@ -6356,7 +6385,7 @@ async function createAssignment(kind){
 }
 
 async function removeAssignment(a){
-  if(!confirm('Remove this assignment for ' + (profileName(a.assignee_id) || 'QA') + '?')) return;
+  if(!confirm('Remove this assignment for ' + assigneeLabel(a) + '?')) return;
   const { error } = await supabaseClient.from('evaluation_assignments').delete().eq('id', a.id);
   if(error){ console.error('Could not remove assignment', error); showToast('Could not remove: ' + (error.message || 'unknown error')); return; }
   showToast('Assignment removed');
@@ -6398,10 +6427,10 @@ async function loadSchedule(agentId, month){
   const slots = buildAgentSlots(sortEvalsChrono(evals), assignments.filter(a=> a.agent_id === agentId));
   const open = slots.filter(sl=> sl.type === 'assignment').map(sl=> sl.assignment);
   // Prefer one already assigned to me; otherwise the next open one in order.
-  const next = open.find(a=> a.assignee_id === CURRENT_USER.id) || open[0] || null;
+  const next = open.find(isMyAssignment) || open[0] || null;
   return {
     agentId, month, done: evals.length, position: evals.length + 1, assignment: next,
-    state: evals.length >= MONTHLY_EVAL_TARGET ? 'full' : !next ? 'none' : next.assignee_id === CURRENT_USER.id ? 'mine' : 'other',
+    state: evals.length >= MONTHLY_EVAL_TARGET ? 'full' : !next ? 'none' : isMyAssignment(next) ? 'mine' : 'other',
     openBy: await fetchOpenBy(agentId, month),
   };
 }
@@ -6509,7 +6538,7 @@ async function refreshScheduleBanner(){
   if(token !== SCHEDULE_TOKEN) return sched;  // a newer refresh replaced this one
   const prev = SCHEDULE;
   if(prev && sched && prev.state === 'mine' && sched.state === 'other' && prev.agentId === sched.agentId && prev.month === sched.month){
-    showToast((profileName(sched.assignment.assignee_id) || 'QA') + ' took this evaluation; it is now assigned to them.');
+    showToast(assigneeLabel(sched.assignment) + ' took this evaluation; it is now assigned to them.');
   }
   SCHEDULE = sched;
   renderScheduleBanner();
@@ -6534,7 +6563,7 @@ function renderScheduleBanner(){
     html = '<div class="sched-title">Scheduled for you' + kind + '</div>' +
       nth + '. ' + (s.done ? s.done + ' already done this month.' : 'First one of the month.');
   }else if(s.state === 'other'){
-    const who = escapeHtml(profileName(s.assignment.assignee_id) || 'QA');
+    const who = escapeHtml(assigneeLabel(s.assignment));
     html = '<div class="sched-title">Assigned to ' + who + kind + '</div>' +
       nth + ' is scheduled for <b>' + who + '</b>. Assign it to yourself to start; the table will show you as the evaluator.' +
       '<button type="button" class="btn btn-primary" id="btnTakeAssignment">Assign to me</button>';
@@ -6567,7 +6596,7 @@ async function takeScheduledAssignment(){
   const btn = document.getElementById('btnTakeAssignment');
   if(btn){ btn.disabled = true; btn.textContent = 'Assigning...'; }
   try{
-    const { error } = await supabaseClient.rpc('take_assignment', { assignment: s.assignment.id });
+    const { error } = await supabaseClient.rpc('take_assignment', { assignment: s.assignment.id, as_name: CURRENT_USER.shared_account ? CURRENT_USER.display_name : null });
     if(error) throw error;
     showToast('Evaluation ' + s.position + ' is now assigned to you');
   }catch(err){
@@ -6860,9 +6889,8 @@ function startBulk(){
   if(GRID_VIEW !== 'assign') setGridView('assign');
   BULK.active = true; BULK.kind = null; BULK.picked.clear();
   const sel = document.getElementById('bulkAssignee');
-  sel.innerHTML = '<option value="' + escapeHtml(CURRENT_USER.id) + '">Me (' + escapeHtml(CURRENT_USER.display_name || 'me') + ')</option>' +
-    (PROFILES_CACHE || []).filter(p=> p.id !== CURRENT_USER.id)
-      .map(p=> '<option value="' + escapeHtml(p.id) + '">' + escapeHtml(p.display_name || 'QA') + '</option>').join('');
+  sel.innerHTML = '<option value="' + escapeHtml(myAssigneeValue()) + '">Me (' + escapeHtml(CURRENT_USER.display_name || 'me') + ')</option>' +
+    assigneeOptions(false).map(o=> '<option value="' + escapeHtml(o.value) + '">' + escapeHtml(o.label) + '</option>').join('');
   updateBulkBar();
   rerenderGrid();
 }
@@ -6880,7 +6908,8 @@ function rerenderGrid(){
 async function confirmBulkAssign(){
   if(!LAST_GRID || !BULK.kind || !BULK.picked.size) return;
   const month = LAST_GRID.scope.month;
-  const assigneeId = document.getElementById('bulkAssignee').value;
+  const assigneeValue = document.getElementById('bulkAssignee').value;
+  const assignee = parseAssignee(assigneeValue);
   const perAgent = {};
   BULK.picked.forEach(key=>{ const agentId = key.split('|')[0]; perAgent[agentId] = (perAgent[agentId] || 0) + 1; });
   const btn = document.getElementById('btnBulkConfirm');
@@ -6893,12 +6922,12 @@ async function confirmBulkAssign(){
     Object.keys(perAgent).forEach(agentId=>{
       let next = (existing || []).filter(r=> r.agent_id === agentId).reduce((m, r)=> Math.max(m, r.slot), 0);
       for(let i = 0; i < perAgent[agentId]; i++){
-        rows.push({ agent_id: agentId, month, slot: ++next, assignee_id: assigneeId, kind: BULK.kind, assigned_by: CURRENT_USER.id });
+        rows.push({ agent_id: agentId, month, slot: ++next, assignee_id: assignee.id, ...(assignee.name ? { assignee_name: assignee.name } : {}), kind: BULK.kind, assigned_by: CURRENT_USER.id });
       }
     });
     const { error } = await supabaseClient.from('evaluation_assignments').insert(rows);
     if(error) throw error;
-    const who = assigneeId === CURRENT_USER.id ? 'you' : (profileName(assigneeId) || 'QA');
+    const who = assigneeValue === myAssigneeValue() ? 'you' : (assignee.name || profileName(assignee.id) || 'QA');
     showToast(rows.length + ' ' + (BULK.kind === 'call' ? 'call' : 'ticket') + ' evaluation' + (rows.length === 1 ? '' : 's') + ' assigned to ' + who);
     BULK.active = false; BULK.kind = null; BULK.picked.clear();
     updateBulkBar();
@@ -7012,7 +7041,7 @@ function renderMonthlyGrid(evals, scope, assignments){
     canAssign, total: agents.length,
     complete: agents.filter(a=> (byAgent[a.id] || []).length >= MONTHLY_EVAL_TARGET).length,
     openTotal: openSlots.length,
-    myOpen: CURRENT_USER ? openSlots.filter(sl=> sl.assignment.assignee_id === CURRENT_USER.id).length : 0,
+    myOpen: CURRENT_USER ? openSlots.filter(sl=> isMyAssignment(sl.assignment)).length : 0,
   };
   updateGridHeading(scope);
 
@@ -7075,9 +7104,9 @@ function renderMonthlyGrid(evals, scope, assignments){
         ahtml += scoreCellHtml(sl, sl.eval);
       }else if(sl && sl.type === 'assignment'){
         const a = sl.assignment;
-        const mine = CURRENT_USER && a.assignee_id === CURRENT_USER.id;
-        const who = mine ? 'You' : (profileName(a.assignee_id) || 'QA');
-        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + (profileName(a.assignee_id) || 'QA') + (profileName(a.assigned_by) ? ' by ' + profileName(a.assigned_by) : '');
+        const mine = isMyAssignment(a);
+        const who = mine ? 'You' : assigneeLabel(a);
+        const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + assigneeLabel(a) + (profileName(a.assigned_by) ? ' by ' + profileName(a.assigned_by) : '');
         ahtml += '<td class="cell-assigned' + (mine ? ' mine' : '') + '" title="' + escapeHtml(tip) + '">' +
           '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
           (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
@@ -9121,7 +9150,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
         colTotals[i].n++;
       }else{
         const a = sl.assignment;
-        values.push('Assigned · ' + kindLabel(a.kind), profileName(a.assignee_id) || 'QA', '');
+        values.push('Assigned · ' + kindLabel(a.kind), assigneeLabel(a), '');
       }
     });
     while(values.length < 3 + cols * 3) values.push('');
