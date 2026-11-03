@@ -1196,6 +1196,12 @@
   .monthly-table .assign-btn:hover{ border-color:var(--accent); color:var(--accent); }
   .monthly-table .cell-assigned{ font-size:11.5px; color:var(--text-dim); }
   .monthly-table .cell-assigned.mine{ color:var(--text); background:var(--accent-soft); }
+  .monthly-table .cell-assigned.editable{ cursor:pointer; }
+  /* Fixed columns so removing or adding an assignment never moves the others. */
+  .monthly-table.assign-table{ table-layout:fixed; }
+  .monthly-table.assign-table th:first-child{ width:26%; }
+  .monthly-table.assign-table td{ overflow:hidden; text-overflow:ellipsis; }
+  .monthly-table .cell-assigned.editable:hover{ outline:1px solid var(--accent); outline-offset:-1px; }
   .assign-chip{ display:inline-flex; align-items:center; gap:6px; }
   .assign-chip .kind{ font-size:9.5px; font-weight:800; text-transform:uppercase; letter-spacing:.4px; padding:2px 5px; border-radius:4px; }
   .kind-call{ background:var(--accent-soft); color:var(--accent); }
@@ -1950,7 +1956,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div class="modal-overlay" id="assignOverlay">
     <div class="modal-box assign-box">
       <button class="modal-close" id="btnCloseAssign">&times;</button>
-      <h3>Assign an evaluation</h3>
+      <h3 id="assignTitle">Assign an evaluation</h3>
       <div class="assign-agent" id="assignAgentName"></div>
       <div class="assign-step">
         <div class="assign-step-title">1. Who will evaluate?</div>
@@ -3559,7 +3565,7 @@ function applyRubricSearch(){
 
 const RUBRIC_NOTES_HTML = `
             <div class="ic-notes">
-              <textarea data-note="comment" rows="1" maxlength="1000" placeholder="Comments"></textarea>
+              <textarea data-note="comment" rows="1" placeholder="Comments"></textarea>
             </div>`;
 // The two note boxes show on the rubrics that go in the summary.
 function rubricInSummary(id, cfg){
@@ -3656,8 +3662,12 @@ function renderSections(){
   root.querySelectorAll('.txt-pick').forEach(btn=>{
     btn.addEventListener('click', (e)=>{ e.stopPropagation(); openTextPicker(btn); });
   });
+  // Comments have no length limit; the box grows with the text.
+  const growNote = ta=>{ ta.style.height = 'auto'; ta.style.height = Math.min(ta.scrollHeight + 2, 320) + 'px'; };
   root.querySelectorAll('.ic-notes textarea').forEach(ta=>{
+    if(ta.value) requestAnimationFrame(()=> growNote(ta));
     ta.addEventListener('input', ()=>{
+      growNote(ta);
       const id = ta.closest('.item-card').dataset.id;
       RUBRIC_NOTES[id] = Object.assign({}, RUBRIC_NOTES[id], { [ta.dataset.note]: ta.value });
       refreshEval();
@@ -3774,7 +3784,9 @@ function boldText(str){
 function noText(cfg){
   return cfg.zeroType ? cfg.reason : cfg.no;
 }
-// A rubric with a subtitle shows the subtitle on the line and the chosen text below it.
+// A rubric with a subtitle shows the subtitle on the line and the chosen text below it,
+// after the impact question for deductions and accomplishments.
+const IMPACT_QUESTION = { no: 'How does this deduction impact our customers?', yes: 'How does this accomplishment impact our customers?' };
 function formatLine(icon, cfg, text, kind){
   const subtitle = (cfg.subtitle || '').trim();
   const line = CONFIG.itemTemplate
@@ -3782,7 +3794,8 @@ function formatLine(icon, cfg, text, kind){
     .replace(/{{label}}/g, cfg.label)
     .replace(/{{text}}/g, subtitle || text)
     .replace(/{{pts}}/g, ptsSuffix(cfg, kind));
-  return subtitle && text.trim() !== subtitle ? line + '\n' + text : line;
+  if(!subtitle || text.trim() === subtitle) return line;
+  return IMPACT_QUESTION[kind] ? line + '\n\n' + IMPACT_QUESTION[kind] + '\n' + text : line + '\n' + text;
 }
 
 function buildOutput(score, earned, possible, zeroTriggered){
@@ -3825,14 +3838,14 @@ function buildOutput(score, earned, possible, zeroTriggered){
   ]);
   const accompBlocks = sectionGroups(sec => sec.accomplishments.map(d=> ({ ...d, icon: '\u2705', kind: 'yes' })));
 
-  function namedBlock(title, blocks, lead){
+  function namedBlock(title, blocks){
     if(!blocks.length) return '';
-    return '____________________________\n' + boldText(title) + '\n\n' + (lead ? lead + '\n\n' : '') + blocks.join('\n\n') + '\n';
+    return '____________________________\n' + boldText(title) + '\n\n' + blocks.join('\n\n') + '\n';
   }
 
-  const deductions = namedBlock('Deductions', deductionBlocks, 'How does this deduction impact our customers');
+  const deductions = namedBlock('Deductions', deductionBlocks);
   const feedback = namedBlock('Feedback', feedbackBlocks);
-  let accomplishments = namedBlock('Accomplishments', accompBlocks, 'How does this accomplishment impact our customers');
+  let accomplishments = namedBlock('Accomplishments', accompBlocks);
   // Focus points stay on the evaluation and the agent's profile, not in the summary.
   const focus = '';
 
@@ -6345,8 +6358,32 @@ function parseAssignee(value){
 }
 function myAssigneeValue(){ return CURRENT_USER.shared_account ? CURRENT_USER.id + '|' + CURRENT_USER.display_name : CURRENT_USER.id; }
 
+// Evaluators can remove or change anyone's assignment; the shared backup
+// account only its own person's.
 function canRemoveAssignment(a){
-  return !!CURRENT_USER && (a.assigned_by === CURRENT_USER.id || a.assignee_id === CURRENT_USER.id || isAdminUser());
+  if(!CURRENT_USER || isAgentUser()) return false;
+  if(!CURRENT_USER.shared_account) return true;
+  return a.assigned_by === CURRENT_USER.id || isMyAssignment(a);
+}
+function canEditAssignment(a){ return !!CURRENT_USER && !isAgentUser() && !CURRENT_USER.shared_account; }
+
+// The assignments table keeps each assignment in its own column (its slot), so
+// removing one leaves that column empty and nothing moves; evaluations saved
+// without an assignment take the first free column.
+function positionSlots(slots){
+  const cols = [], loose = [];
+  slots.forEach(sl=>{
+    const n = sl.assignment && sl.assignment.slot;
+    if(n && !cols[n - 1]) cols[n - 1] = sl; else loose.push(sl);
+  });
+  loose.forEach(sl=>{ let i = 0; while(cols[i]) i++; cols[i] = sl; });
+  return cols;
+}
+// The slot asked for when it is free, otherwise the lowest free one.
+function pickSlot(taken, wanted){
+  if(wanted && !taken.has(wanted)) return wanted;
+  for(let n = 1; n <= 20; n++) if(!taken.has(n)) return n;
+  return null;
 }
 
 // Lay out one agent's month: saved evaluations first, then open assignments.
@@ -6370,13 +6407,16 @@ function buildAgentSlots(evals, assignments){
   return slots;
 }
 
-const ASSIGN_STATE = { agentId: null, month: null, assigneeId: null };
+const ASSIGN_STATE = { agentId: null, month: null, assigneeId: null, slot: null, editing: null };
 
-function openAssignModal(agentId, month){
+function openAssignModal(agentId, month, slot, editing){
   const agent = (AGENTS_LIST_CACHE || []).find(a=> a.id === agentId);
   ASSIGN_STATE.agentId = agentId;
   ASSIGN_STATE.month = month;
   ASSIGN_STATE.assigneeId = null;
+  ASSIGN_STATE.slot = slot || null;
+  ASSIGN_STATE.editing = editing || null;
+  document.getElementById('assignTitle').textContent = editing ? 'Edit assignment' : 'Assign an evaluation';
   document.getElementById('assignAgentName').textContent = (agent ? agent.name : 'Agent') + ' · ' +
     MONTH_NAMES[Number(month.slice(5, 7)) - 1] + ' ' + month.slice(0, 4);
   document.getElementById('assignMeName').textContent = CURRENT_USER.display_name || 'Me';
@@ -6388,6 +6428,13 @@ function openAssignModal(agentId, month){
   document.querySelectorAll('#assignWhoRow .assign-choice').forEach(b=> b.classList.remove('active'));
   document.getElementById('assignOtherWrap').style.display = 'none';
   document.getElementById('assignKindStep').classList.add('disabled');
+  document.querySelectorAll('#assignKindStep button').forEach(b=> b.classList.toggle('active', !!editing && b.dataset.kind === editing.kind));
+  if(editing){
+    // Start from who has it now; picking call or ticket saves the change.
+    const value = editing.assignee_name ? editing.assignee_id + '|' + editing.assignee_name : editing.assignee_id;
+    if(value === myAssigneeValue()) chooseAssignee('me');
+    else if(others.some(o=> o.value === value)){ sel.value = value; chooseAssignee('other'); }
+  }
   document.getElementById('assignOverlay').classList.add('show');
 }
 
@@ -6403,19 +6450,40 @@ function chooseAssignee(who){
   document.getElementById('assignKindStep').classList.toggle('disabled', !ASSIGN_STATE.assigneeId);
 }
 
+async function updateAssignment(kind){
+  const a = ASSIGN_STATE.editing;
+  const assignee = parseAssignee(ASSIGN_STATE.assigneeId);
+  const buttons = document.querySelectorAll('#assignKindStep button');
+  buttons.forEach(b=> b.disabled = true);
+  try{
+    const { error } = await supabaseClient.from('evaluation_assignments')
+      .update({ assignee_id: assignee.id, assignee_name: assignee.name, kind }).eq('id', a.id);
+    if(error) throw error;
+    closeAssignModal();
+    showToast('Assignment changed: ' + kindLabel(kind) + ' · ' + (ASSIGN_STATE.assigneeId === myAssigneeValue() ? 'you' : (assignee.name || profileName(assignee.id) || 'QA')));
+    refreshAgentsView();
+  }catch(err){
+    console.error('Could not change the assignment', err);
+    showToast('Could not change it: ' + (err.message || 'unknown error'));
+  }finally{
+    buttons.forEach(b=> b.disabled = false);
+  }
+}
+
 async function createAssignment(kind){
   if(!ASSIGN_STATE.assigneeId){ showToast('First choose who will do the evaluation'); return; }
+  if(ASSIGN_STATE.editing) return updateAssignment(kind);
   const { agentId, month } = ASSIGN_STATE;
   const assignee = parseAssignee(ASSIGN_STATE.assigneeId);
   const buttons = document.querySelectorAll('#assignKindStep button');
   buttons.forEach(b=> b.disabled = true);
   try{
-    // Next free number for this agent and month; the unique key stops two
-    // people from taking the same one at once.
+    // The column that was clicked, or the first free one; the unique key stops
+    // two people from taking the same one at once.
     const { data: existing, error: exErr } = await supabaseClient.from('evaluation_assignments')
       .select('slot').eq('agent_id', agentId).eq('month', month);
     if(exErr) throw exErr;
-    const slot = (existing || []).reduce((m, r)=> Math.max(m, r.slot), 0) + 1;
+    const slot = pickSlot(new Set((existing || []).map(r=> r.slot)), ASSIGN_STATE.slot);
     const { error } = await supabaseClient.from('evaluation_assignments').insert({
       agent_id: agentId, month, slot, assignee_id: assignee.id, ...(assignee.name ? { assignee_name: assignee.name } : {}), kind, assigned_by: CURRENT_USER.id,
     });
@@ -6958,8 +7026,6 @@ async function confirmBulkAssign(){
   const month = LAST_GRID.scope.month;
   const assigneeValue = document.getElementById('bulkAssignee').value;
   const assignee = parseAssignee(assigneeValue);
-  const perAgent = {};
-  BULK.picked.forEach(key=>{ const agentId = key.split('|')[0]; perAgent[agentId] = (perAgent[agentId] || 0) + 1; });
   const btn = document.getElementById('btnBulkConfirm');
   btn.disabled = true;
   try{
@@ -6967,11 +7033,15 @@ async function confirmBulkAssign(){
       .select('agent_id, slot').eq('month', month);
     if(exErr) throw exErr;
     const rows = [];
-    Object.keys(perAgent).forEach(agentId=>{
-      let next = (existing || []).filter(r=> r.agent_id === agentId).reduce((m, r)=> Math.max(m, r.slot), 0);
-      for(let i = 0; i < perAgent[agentId]; i++){
-        rows.push({ agent_id: agentId, month, slot: ++next, assignee_id: assignee.id, ...(assignee.name ? { assignee_name: assignee.name } : {}), kind: BULK.kind, assigned_by: CURRENT_USER.id });
-      }
+    // Each picked cell keeps its column (slot) when it is free.
+    const taken = {};
+    (existing || []).forEach(r=>{ (taken[r.agent_id] = taken[r.agent_id] || new Set()).add(r.slot); });
+    Array.from(BULK.picked).sort().forEach(key=>{
+      const [agentId, col] = key.split('|');
+      const set = taken[agentId] = taken[agentId] || new Set();
+      const slot = pickSlot(set, Number(col) + 1);
+      set.add(slot);
+      rows.push({ agent_id: agentId, month, slot, assignee_id: assignee.id, ...(assignee.name ? { assignee_name: assignee.name } : {}), kind: BULK.kind, assigned_by: CURRENT_USER.id });
     });
     const { error } = await supabaseClient.from('evaluation_assignments').insert(rows);
     if(error) throw error;
@@ -7081,11 +7151,11 @@ function planCopyAssign(){
     const kept = evals.length + open.length - remove.length;
     const add = src.slice(kept, MONTHLY_EVAL_TARGET);
     if(!add.length && !remove.length) return;
-    const keptSlots = LAST_GRID.assignments.filter(a=> a.agent_id === agent.id && !remove.includes(a)).map(a=> a.slot);
-    let next = keptSlots.reduce((m, x)=> Math.max(m, x), 0);
+    const taken = new Set(LAST_GRID.assignments.filter(a=> a.agent_id === agent.id && !remove.includes(a)).map(a=> a.slot));
+    const nextSlot = want=>{ const n = pickSlot(taken, want); taken.add(n); return n; };
     rows.push({
       agent, done: evals.length, open: open.length, remove,
-      add: add.map(a=> ({ agent_id: agent.id, month: target, slot: ++next, assignee_id: a.assignee_id,
+      add: add.map(a=> ({ agent_id: agent.id, month: target, slot: nextSlot(a.slot), assignee_id: a.assignee_id,
         ...(a.assignee_name ? { assignee_name: a.assignee_name } : {}), kind: a.kind, assigned_by: CURRENT_USER.id })),
     });
   });
@@ -7302,16 +7372,19 @@ function renderMonthlyGrid(evals, scope, assignments){
   root.innerHTML = html;
 
   // --- Assignments: each slot of the month, who has it, and empty slots to assign.
-  const acols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(slotsByAgent).map(l=> l.length));
+  const placed = {};
+  agents.forEach(a=>{ placed[a.id] = positionSlots(slotsByAgent[a.id] || []); });
+  const acols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(placed).map(l=> l.length));
   let ahtml = '<div class="monthly-scroll"><table class="monthly-table assign-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= acols; i++) ahtml += '<th>Eval ' + i + '</th>';
   ahtml += '<th>Done</th><th>Open</th><th>Average</th></tr></thead><tbody>';
   agents.forEach(agent=>{
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
+    const cols = placed[agent.id];
     ahtml += rowStart(agent, acols + 4);
     for(let i = 0; i < acols; i++){
-      const sl = slots[i];
+      const sl = cols[i];
       if(sl && sl.type === 'eval'){
         ahtml += scoreCellHtml(sl, sl.eval);
       }else if(sl && sl.type === 'assignment'){
@@ -7319,7 +7392,9 @@ function renderMonthlyGrid(evals, scope, assignments){
         const mine = isMyAssignment(a);
         const who = mine ? 'You' : assigneeLabel(a);
         const tip = (a.kind === 'call' ? 'Call' : 'Ticket') + ' evaluation assigned to ' + assigneeLabel(a) + (profileName(a.assigned_by) ? ' by ' + profileName(a.assigned_by) : '');
-        ahtml += '<td class="cell-assigned' + (mine ? ' mine' : '') + '" title="' + escapeHtml(tip) + '">' +
+        const editable = canEditAssignment(a);
+        ahtml += '<td class="cell-assigned' + (mine ? ' mine' : '') + (editable ? ' editable' : '') + '" title="' + escapeHtml(tip + (editable ? ' · click to change' : '')) + '"' +
+          (editable ? ' data-edit-assignment="' + escapeHtml(a.id) + '"' : '') + '>' +
           '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
           (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
           '</td>';
@@ -7328,7 +7403,7 @@ function renderMonthlyGrid(evals, scope, assignments){
         renderedBulkKeys.add(key);
         ahtml += '<td class="cell-empty bulk-cell' + (BULK.picked.has(key) ? ' picked' : '') + '" data-bulk-key="' + escapeHtml(key) + '" title="Select to assign"><span class="bulk-box"></span></td>';
       }else if(canAssign && i < MONTHLY_EVAL_TARGET){
-        ahtml += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '">+ Assign</button></td>';
+        ahtml += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '" data-assign-slot="' + (i + 1) + '">+ Assign</button></td>';
       }else{
         ahtml += '<td class="cell-empty">—</td>';
       }
@@ -7357,11 +7432,17 @@ function renderMonthlyGrid(evals, scope, assignments){
       }
       if(BULK.active) return;
       const assignBtn = ev.target.closest('.assign-btn');
-      if(assignBtn){ openAssignModal(assignBtn.dataset.assignAgent, scope.month); return; }
+      if(assignBtn){ openAssignModal(assignBtn.dataset.assignAgent, scope.month, Number(assignBtn.dataset.assignSlot) || null); return; }
       const removeBtn = ev.target.closest('.assign-remove');
       if(removeBtn){
         const a = assignments.find(x=> x.id === removeBtn.dataset.assignment);
         if(a) removeAssignment(a);
+        return;
+      }
+      const editCell = ev.target.closest('[data-edit-assignment]');
+      if(editCell){
+        const a = assignments.find(x=> x.id === editCell.dataset.editAssignment);
+        if(a) openAssignModal(a.agent_id, scope.month, a.slot, a);
         return;
       }
       if(ev.target.closest('.cell-assigned')) return;
