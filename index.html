@@ -1121,6 +1121,17 @@
   .field-error.show{ display:block; }
   .call-date-row{ display:flex; align-items:center; gap:8px; margin-top:12px; }
   .call-date-row input.invalid{ border-color:var(--no); }
+  .date-pick{ display:flex; flex:1 1 auto; min-width:0; }
+  .date-btn{
+    flex:1 1 auto; min-width:110px; display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 10px;
+    border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text);
+    font:inherit; font-size:12.5px; cursor:pointer; white-space:nowrap; text-align:left;
+  }
+  .date-btn:hover, .date-btn.open{ border-color:var(--accent); }
+  .date-btn svg{ width:14px; height:14px; flex:none; color:var(--text-dim); }
+  .date-pick:has(input.invalid) .date-btn{ border-color:var(--no); }
+  .edit-eval-field .date-btn{ width:100%; padding:9px 12px; font-size:13px; }
+  .tp-day:disabled{ opacity:.3; cursor:default; background:none; }
   .call-date-row label{ font-size:11px; text-transform:uppercase; letter-spacing:.6px; color:var(--text-dim); font-weight:700; white-space:nowrap; min-width:78px; }
   .call-date-row input{
     flex-grow:1; min-width:0; padding:7px 10px; border-radius:var(--radius-sm); border:1px solid var(--border);
@@ -1588,8 +1599,12 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             </button>
           </div>
           <div class="inline-field call-date-row">
-            <label for="fCallDate">Call date</label>
-            <input type="date" id="fCallDate">
+            <label>Date</label>
+            <span class="date-pick"><button type="button" class="date-btn" data-date-for="fCallDate" title="Date of the call or ticket"></button><input type="hidden" id="fCallDate"></span>
+          </div>
+          <div class="inline-field call-date-row">
+            <label>Evaluation day</label>
+            <span class="date-pick"><button type="button" class="date-btn" data-date-for="fEvalDay" title="Day this evaluation was started"></button><input type="hidden" id="fEvalDay"></span>
           </div>
           <div class="inline-field call-date-row">
             <label for="fTimeSpent">Time spent</label>
@@ -1877,7 +1892,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     <div class="modal-box">
       <button class="modal-close" id="btnCloseEditEval">&times;</button>
       <h3>Edit evaluation</h3>
-      <div class="edit-eval-field"><label>Call date</label><input type="date" id="editEvalDate" required></div>
+      <div class="edit-eval-field"><label>Date</label><span class="date-pick"><button type="button" class="date-btn" data-date-for="editEvalDate"></button><input type="hidden" id="editEvalDate"></span></div>
       <div class="edit-eval-field"><label>Ticket ID <span class="req" title="Required">*</span></label><input type="text" id="editEvalTicket" required></div>
       <div class="edit-eval-field"><label>Call reason</label><input type="text" id="editEvalReason"></div>
       <div class="edit-eval-score-preview">Current score: <b id="editEvalScorePreview">—</b></div>
@@ -3814,6 +3829,8 @@ function buildOutput(score, earned, possible, zeroTriggered){
   if(rawCallId) fieldsBlock.push('Call ID: ' + rawCallId);
   fieldsBlock.push('Call Reason: ' + (rawReason || 'N/A'));
   if(rawOrder) fieldsBlock.push('Order ID: ' + rawOrder);
+  fieldsBlock.push('Date: ' + prettyDate(document.getElementById('fCallDate').value));
+  fieldsBlock.push('Evaluation day: ' + prettyDate(document.getElementById('fEvalDay').value || todayLocal()));
 
   const sections = computeSectionBreakdown();
 
@@ -4956,6 +4973,113 @@ function computeSectionBreakdown(){
 // The report and the email are built from the live form, or from a saved
 // evaluation while REPORT_ROW is set (see withSavedEvaluation).
 let REPORT_ROW = null;
+/* ---------- Dates: app calendar instead of the browser's date input ---------- */
+// "Evaluation day" is filled in with today when an evaluation is started and
+// follows the day until the evaluator picks one by hand.
+let EVAL_DAY_AUTO = true;
+function prettyDate(iso){
+  if(!iso || !/^\d{4}-\d{2}-\d{2}/.test(iso)) return 'N/A';
+  return new Date(iso.slice(0, 10) + 'T12:00:00').toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+function evalDayOf(row){
+  const d = (row && row.details) || {};
+  if(d.evalDay) return d.evalDay;
+  if(row && row.created_at){ const c = new Date(row.created_at); return c.getFullYear() + '-' + String(c.getMonth() + 1).padStart(2, '0') + '-' + String(c.getDate()).padStart(2, '0'); }
+  return todayLocal();
+}
+function setEvalDay(iso, auto){
+  EVAL_DAY_AUTO = !!auto;
+  document.getElementById('fEvalDay').value = iso || todayLocal();
+}
+function startEvalDay(){ setEvalDay(todayLocal(), true); }
+
+const DATE_ICON = '<svg viewBox="0 0 24 24" fill="none"><rect x="3.5" y="5" width="17" height="15" rx="2.5" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>';
+function paintDateButton(input){
+  const btn = document.querySelector('.date-btn[data-date-for="' + input.id + '"]');
+  if(btn) btn.innerHTML = '<span>' + (input.value ? prettyDate(input.value) : 'Pick a date') + '</span>' + DATE_ICON;
+}
+// Hidden inputs keep the ISO value the rest of the code reads; setting .value repaints the button.
+document.querySelectorAll('.date-btn[data-date-for]').forEach(btn=>{
+  const input = document.getElementById(btn.dataset.dateFor);
+  const desc = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+  Object.defineProperty(input, 'value', { get(){ return desc.get.call(this); }, set(v){ desc.set.call(this, v); paintDateButton(this); } });
+  paintDateButton(input);
+  btn.addEventListener('click', (e)=>{ e.stopPropagation(); openDatePop(btn, input); });
+});
+
+const DATE_POP = document.createElement('div');
+DATE_POP.className = 'task-pop';
+DATE_POP.id = 'datePop';
+document.body.appendChild(DATE_POP);
+let DATE_POP_STATE = null;
+function closeDatePop(){
+  DATE_POP.classList.remove('show');
+  if(DATE_POP_STATE) DATE_POP_STATE.btn.classList.remove('open');
+  DATE_POP_STATE = null;
+}
+function openDatePop(btn, input){
+  if(DATE_POP_STATE && DATE_POP_STATE.btn === btn){ closeDatePop(); return; }
+  closeDatePop();
+  const base = input.value || todayLocal();
+  DATE_POP_STATE = { btn, input, y: Number(base.slice(0, 4)), m: Number(base.slice(5, 7)) - 1 };
+  btn.classList.add('open');
+  renderDatePop();
+}
+function renderDatePop(){
+  const st = DATE_POP_STATE;
+  const first = new Date(st.y, st.m, 1);
+  const days = new Date(st.y, st.m + 1, 0).getDate();
+  const pad = (first.getDay() + 6) % 7; // weeks start on Monday
+  const max = st.input.max || '';
+  const iso = d=> st.y + '-' + String(st.m + 1).padStart(2, '0') + '-' + String(d).padStart(2, '0');
+  let cells = '';
+  for(let i = 0; i < pad; i++) cells += '<span></span>';
+  for(let d = 1; d <= days; d++){
+    const v = iso(d);
+    cells += '<button type="button" class="tp-day' + (v === st.input.value ? ' on' : '') + (v === todayLocal() ? ' today' : '') + '" data-day="' + v + '"' + (max && v > max ? ' disabled' : '') + '>' + d + '</button>';
+  }
+  const nextOk = !max || iso(1) < max.slice(0, 8) + '01';
+  DATE_POP.innerHTML = '<div class="tp-cal"><div class="tp-cal-head">' +
+    '<button type="button" class="tp-nav" data-nav="-1" title="Previous month">‹</button>' +
+    '<span>' + ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][st.m] + (st.y !== new Date().getFullYear() ? ' ' + st.y : '') + '</span>' +
+    '<button type="button" class="tp-nav" data-nav="1" title="Next month"' + (nextOk ? '' : ' disabled') + '>›</button></div>' +
+    '<div class="tp-week">' + ['M', 'T', 'W', 'T', 'F', 'S', 'S'].map(d=> '<span>' + d + '</span>').join('') + '</div>' +
+    '<div class="tp-days">' + cells + '</div>' +
+    '<button type="button" class="tp-today" data-day="' + todayLocal() + '">Today</button></div>';
+  placeTaskPopAt(DATE_POP, st.btn);
+}
+function placeTaskPopAt(pop, anchor){
+  const r = anchor.getBoundingClientRect();
+  pop.classList.add('show');
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  const left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8));
+  const below = r.bottom + 6 + h <= window.innerHeight - 8;
+  pop.style.left = left + 'px';
+  pop.style.top = (below ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
+}
+DATE_POP.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const st = DATE_POP_STATE;
+  if(!st) return;
+  const nav = e.target.closest('[data-nav]');
+  if(nav){
+    if(nav.disabled) return;
+    st.m += Number(nav.dataset.nav);
+    if(st.m < 0){ st.m = 11; st.y--; } else if(st.m > 11){ st.m = 0; st.y++; }
+    renderDatePop();
+    return;
+  }
+  const day = e.target.closest('[data-day]');
+  if(!day || day.disabled) return;
+  const input = st.input;
+  closeDatePop();
+  if(input.id === 'fEvalDay') EVAL_DAY_AUTO = false;
+  input.value = day.dataset.day;
+  input.dispatchEvent(new Event('change', { bubbles: true }));
+});
+document.addEventListener('click', (e)=>{ if(DATE_POP_STATE && !DATE_POP.contains(e.target)) closeDatePop(); });
+window.addEventListener('scroll', ()=>{ if(DATE_POP_STATE) placeTaskPopAt(DATE_POP, DATE_POP_STATE.btn); }, true);
+
 function reportFields(){
   if(REPORT_ROW){
     const r = REPORT_ROW, d = r.details || {};
@@ -4963,12 +5087,14 @@ function reportFields(){
       agent: r.agents ? r.agents.name : '', caller: d.caller || '', ticket: r.ticket_id || '', callId: r.call_id || '',
       order: d.orderId || '', reason: r.call_reason || '', evaluator: evaluatorLabel(r),
       date: r.call_date ? new Date(r.call_date + 'T12:00:00') : new Date(),
+      callDate: r.call_date || '', evalDay: evalDayOf(r),
     };
   }
   const v = id=> document.getElementById(id).value.trim();
   return {
     agent: v('fAgent'), caller: v('fCaller'), ticket: v('fTicket'), callId: v('fCallId'), order: v('fOrder'), reason: v('fReason'),
     evaluator: (CURRENT_USER && CURRENT_USER.display_name) ? CURRENT_USER.display_name : '', date: new Date(),
+    callDate: v('fCallDate'), evalDay: v('fEvalDay') || todayLocal(),
   };
 }
 
@@ -5076,8 +5202,11 @@ async function init(){
   CONFIG_SAVED_SNAPSHOT = configSnapshot();
   resetAnswersToDefault();
   renderScenarioSelect();
-  document.getElementById('fCallDate').value = todayLocal();
   document.getElementById('fCallDate').max = todayLocal();
+  document.getElementById('fEvalDay').max = todayLocal();
+  document.getElementById('editEvalDate').max = todayLocal();
+  document.getElementById('fCallDate').value = todayLocal();
+  startEvalDay();
 
   startPresenceHeartbeat();
   startTaskBell();
@@ -5139,8 +5268,11 @@ async function init(){
       refreshEval();
     });
   });
+  document.getElementById('fEvalDay').addEventListener('change', ()=>{ refreshEval(); saveCurrentDraftToLocal(); });
+  document.getElementById('fAgent').addEventListener('input', ()=>{ if(EVAL_DAY_AUTO) startEvalDay(); });
   document.getElementById('fCallDate').addEventListener('change', ()=>{
     setFieldError('fCallDate', 'errCallDate', '');
+    refreshEval();
     saveCurrentDraftToLocal();
     scheduleBannerSoon(0);
   });
@@ -5676,11 +5808,11 @@ function validateEvaluationForm(){
 
   const callDate = document.getElementById('fCallDate').value;
   if(!callDate){
-    setFieldError('fCallDate', 'errCallDate', 'Pick the date of the call.');
-    problems.push('call date');
+    setFieldError('fCallDate', 'errCallDate', 'Pick the date.');
+    problems.push('date');
   }else if(callDate > todayLocal()){
-    setFieldError('fCallDate', 'errCallDate', 'The call date can\'t be in the future.');
-    problems.push('a valid call date');
+    setFieldError('fCallDate', 'errCallDate', 'The date can\'t be in the future.');
+    problems.push('a valid date');
   }else{
     setFieldError('fCallDate', 'errCallDate', '');
   }
@@ -5727,6 +5859,7 @@ function buildEvaluationDetails(){
     version: 1,
     caller: document.getElementById('fCaller').value.trim() || null,
     orderId: document.getElementById('fOrder').value.trim() || null,
+    evalDay: document.getElementById('fEvalDay').value || todayLocal(),
     scenarioId, scenarioName: scenario ? scenario.name : null,
     answers: Object.assign({}, ANSWERS),
     choices: JSON.parse(JSON.stringify(CHOICES)),
@@ -5922,6 +6055,8 @@ function buildEmailBody(){
   if(f.callId) lines.push('Call ID: ' + f.callId);
   lines.push('Call Reason: ' + (rawReason || 'N/A'));
   if(rawOrder) lines.push('Order ID: ' + rawOrder);
+  lines.push('Date: ' + prettyDate(f.callDate));
+  lines.push('Evaluation day: ' + prettyDate(f.evalDay));
   lines.push('____________________________');
   lines.push('DEDUCTIONS');
   lines.push('----------');
@@ -6791,7 +6926,7 @@ async function openViewEvalModal(evalId, fromProfile){
     }
     const score = Math.round(Number(row.score));
     const meta = [
-      ['Call date', row.call_date], ['Ticket ID', row.ticket_id], ['Call ID', row.call_id], ['Call reason', row.call_reason],
+      ['Date', row.call_date ? prettyDate(row.call_date) : ''], ['Evaluation day', prettyDate(evalDayOf(row))], ['Ticket ID', row.ticket_id], ['Call ID', row.call_id], ['Call reason', row.call_reason],
       ['Time spent', formatDuration(row.time_spent_seconds)],
       ['Caller', d && d.caller], ['Order ID', d && d.orderId],
       ['Evaluated by', evaluatorLabel(row)], ['Assignment', row.assignment_id || row.kind ? (kindLabel(row.kind) || 'Yes') : 'Not scheduled'],
@@ -6850,6 +6985,7 @@ function startEditingEvaluation(row){
   document.getElementById('fOrder').value = d.orderId || '';
   document.getElementById('fReason').value = row.call_reason || '';
   document.getElementById('fCallDate').value = row.call_date || todayLocal();
+  setEvalDay(evalDayOf(row));
   ['fAgent', 'fCaller', 'fTicket', 'fCallId', 'fOrder', 'fReason'].forEach(id=> document.getElementById(id).classList.remove('invalid'));
   setFieldError('fAgent', 'errAgent', '');
   setFieldError('fCallDate', 'errCallDate', '');
@@ -6911,6 +7047,7 @@ function resetEvaluationForm(){
     document.getElementById(id).classList.remove('invalid');
   });
   document.getElementById('fCallDate').value = todayLocal();
+  startEvalDay();
   setFieldError('fAgent', 'errAgent', '');
   setFieldError('fCallDate', 'errCallDate', '');
   setFieldError('fTimeSpent', 'errTimeSpent', '');
@@ -7879,7 +8016,7 @@ document.getElementById('btnSaveEditEval').addEventListener('click', async ()=>{
   const dateInput = document.getElementById('editEvalDate');
   if(!dateInput.value || dateInput.value > todayLocal()){
     dateInput.classList.add('invalid');
-    showToast(dateInput.value ? 'The call date can\'t be in the future.' : 'The call date is required.');
+    showToast(dateInput.value ? 'The date can\'t be in the future.' : 'The date is required.');
     return;
   }
   dateInput.classList.remove('invalid');
@@ -7942,6 +8079,8 @@ function captureDraftSnapshot(){
     orderId: document.getElementById('fOrder').value.trim(),
     callReason: document.getElementById('fReason').value.trim(),
     callDate: document.getElementById('fCallDate').value,
+    evalDay: document.getElementById('fEvalDay').value,
+    evalDayAuto: EVAL_DAY_AUTO,
     summaryManual: SUMMARY_MANUAL,
     summaryText: SUMMARY_MANUAL ? document.getElementById('output').value : null,
     summaryAutoAtEdit: SUMMARY_MANUAL ? AUTO_SUMMARY_AT_EDIT : null,
@@ -8003,6 +8142,7 @@ function applyDraftSnapshot(snap){
   document.getElementById('fOrder').value = snap.orderId || '';
   document.getElementById('fReason').value = snap.callReason || '';
   document.getElementById('fCallDate').value = snap.callDate || todayLocal();
+  if(snap.evalDay) setEvalDay(snap.evalDay, snap.evalDayAuto); else startEvalDay();
   SUMMARY_MANUAL = !!(snap.summaryManual && typeof snap.summaryText === 'string');
   AUTO_SUMMARY_AT_EDIT = SUMMARY_MANUAL ? (snap.summaryAutoAtEdit || '') : '';
   if(SUMMARY_MANUAL) document.getElementById('output').value = snap.summaryText;
@@ -9046,7 +9186,7 @@ document.getElementById('cfgTourPrompt').addEventListener('change', async (e)=>{
 const TOUR_STEPS = [
   { view: 'eval', sel: '#mainTabs', title: 'The four pages', text: 'Evaluation is where you score a call. Agents shows scores and assignments, Tasks is the team to-do list, and Configuration holds the rubrics and your options. Click the iTero logo at any time to come back to Evaluation.' },
   { view: 'eval', sel: '#schedBanner', title: 'Your assigned evaluations', text: 'When an evaluation is assigned to you, it shows here. Use "Assign to me" to take one that is waiting.' },
-  { view: 'eval', sel: '#fAgent', title: 'Agent and call details', text: 'Start typing the agent’s name and pick it from the list. Then fill in the call date, ticket ID and call reason. They are required to save.' },
+  { view: 'eval', sel: '#fAgent', title: 'Agent and call details', text: 'Start typing the agent’s name and pick it from the list. Then fill in the date, ticket ID and call reason. They are required to save.' },
   { view: 'eval', sel: '#sections .item-card', title: 'Rubrics', text: 'Every rubric starts as met. Mark ✓ met, ✕ not met (it takes away its points) or ⚠ feedback (shown in the summary, no points lost).' },
   { view: 'eval', sel: '#sections .txt-pick', title: 'Summary texts', text: 'The 1/N button chooses which text goes in the summary. On a met rubric it adds it to the accomplishments (up to 4). The list closes when you pick one, tap the button again or click outside.' },
   { view: 'eval', sel: '.score-big', title: 'Score', text: 'The score starts at 100 and every failed rubric subtracts its points. An auto-zero rubric makes the whole evaluation 0.' },
@@ -9519,7 +9659,7 @@ function buildEvaluationsSheet(wb, evals, deductions){
   (AGENTS_LIST_CACHE || []).forEach(a=>{ agentsById[a.id] = a; });
   ws.columns = [
     { header: 'Agent', key: 'agent', width: 32 }, { header: 'Role', key: 'role', width: 11 },
-    { header: 'Supervisor', key: 'sup', width: 18 }, { header: 'Call date', key: 'date', width: 12 },
+    { header: 'Supervisor', key: 'sup', width: 18 }, { header: 'Date', key: 'date', width: 12 },
     { header: 'Evaluated by', key: 'by', width: 16 }, { header: 'Saved on', key: 'saved', width: 18 },
     { header: 'Type', key: 'kind', width: 9 }, { header: 'Ticket', key: 'ticket', width: 14 },
     { header: 'Call reason', key: 'reason', width: 28 }, { header: 'Score', key: 'score', width: 9 },
@@ -9681,7 +9821,7 @@ function buildAgentPdf(agent, evals, allDeductions, details){
   // All evaluations at a glance
   heading('Evaluations');
   if(evals.length){
-    table(['Call date', 'Score', 'Evaluated by', 'Type', 'Ticket', 'Failed'], evals.map(e=> [
+    table(['Date', 'Score', 'Evaluated by', 'Type', 'Ticket', 'Failed'], evals.map(e=> [
       e.call_date || '', scoreCell(Number(e.score), evalScoreClass(Math.round(Number(e.score)))), evaluatorLabel(e),
       kindLabel(e.kind) || '-', e.ticket_id || '-', String(deductions.filter(d=> d.evaluation_id === e.id).length),
     ]), { columnStyles: { 1: { halign: 'center' }, 5: { halign: 'center' } } });
