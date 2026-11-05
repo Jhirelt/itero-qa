@@ -71,7 +71,7 @@
   .tab-btn{ border:none; background:transparent; color:var(--text-dim); padding:7px 16px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; }
   .tab-btn.active{ background:var(--accent); color:#00110f; }
   .data-as-of{ font-size:11.5px; color:var(--text-dim); }
-  /* Section bubbles: each section of the site (Escalations, White Globe) has its own data, tabs and uploads. */
+  /* Section bubbles: each section of the site (Escalations, White Glove) has its own data, tabs and uploads. */
   .sections{ display:flex; gap:8px; padding:10px 22px; background:var(--bg); border-bottom:1px solid var(--border); }
   .sec-btn{ border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); padding:8px 18px; border-radius:999px; font-size:13.5px; font-weight:700; cursor:pointer; transition:.15s; }
   .sec-btn:hover{ color:var(--text); border-color:var(--accent); }
@@ -321,7 +321,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
 <div class="sections" id="sectionTabs" style="display:none;">
   <button class="sec-btn active" data-section="escalations">Escalations</button>
-  <button class="sec-btn" data-section="whiteglobe">White Globe</button>
+  <button class="sec-btn" data-section="whiteglove">White Glove</button>
 </div>
 
 <div class="wrap" style="display:none;">
@@ -471,9 +471,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
  </div>
 
- <!-- =============== WHITE GLOBE =============== -->
+ <!-- =============== WHITE GLOVE =============== -->
  <!-- Its own section: separate data and its own Excel. Nothing here reads or writes the escalations tables. -->
- <div id="section-whiteglobe" class="hidden">
+ <div id="section-whiteglove" class="hidden">
   <!-- Report built from the "All Team White Glove Review" uploads (wg_review_tickets + wg_review_comments), by the day the ticket was opened. -->
   <div id="wg-report">
     <div class="filters">
@@ -497,7 +497,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             </div>
           </div>
           <button class="btn btn-ghost" id="wgNext" title="Next"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="btn btn-ghost" id="wgLatest" title="Go to the latest period with White Globe reviews">Latest</button>
+          <button class="btn btn-ghost" id="wgLatest" title="Go to the latest period with White Glove reviews">Latest</button>
         </div>
       </div>
       <div class="spacer"></div>
@@ -810,7 +810,7 @@ async function startFor(user){
   $('userBadgeName').textContent = ME.display_name;
   setAppVisible(true);
   await loadAll(true);
-  if(currentSection() === 'whiteglobe') switchWgView(currentWgView());
+  if(currentSection() === 'whiteglove') switchWgView(currentWgView());
 }
 $('loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
@@ -1560,16 +1560,16 @@ function switchView(v){
 document.querySelectorAll('#escTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
 /* ============================================================
-   SECTIONS — Escalations and White Globe, switched by the bubbles on top
+   SECTIONS — Escalations and White Glove, switched by the bubbles on top
    ============================================================ */
-const SECTIONS = { escalations: 'Escalations', whiteglobe: 'White Globe' };
+const SECTIONS = { escalations: 'Escalations', whiteglove: 'White Glove' };
 function currentSection(){ return (document.querySelector('.sec-btn.active') || {}).dataset?.section || 'escalations'; }
 function switchSection(sec){
   if(!SECTIONS[sec]) sec = 'escalations';
   document.querySelectorAll('.sec-btn').forEach(b => b.classList.toggle('active', b.dataset.section === sec));
   const esc = sec === 'escalations';
   $('section-escalations').classList.toggle('hidden', !esc);
-  $('section-whiteglobe').classList.toggle('hidden', esc);
+  $('section-whiteglove').classList.toggle('hidden', esc);
   $('escTabs').classList.toggle('hidden', !esc || !T.length);
   $('wgTabs').classList.toggle('hidden', esc);
   $('dataAsOf').classList.toggle('hidden', !esc);
@@ -1586,7 +1586,7 @@ function switchWgView(v){
 
 const currentWgView = () => (document.querySelector('#wgTabs .tab-btn.active') || {}).dataset?.wgview || 'report';
 
-/* ---------- White Globe report: the "All Team White Glove Review" uploads ---------- */
+/* ---------- White Glove report: the "All Team White Glove Review" uploads ---------- */
 let WG = null;   // { tickets, uploads }
 const WGP = { period:'month', anchor:null, days:7 };   // same periods as Escalations, own selection
 async function loadWg(force){
@@ -1602,7 +1602,7 @@ async function loadWg(force){
     cm.forEach(c => (byTicket.get(c.ticket_number) || byTicket.set(c.ticket_number, []).get(c.ticket_number)).push(c));
     WG = { tickets: tk.map(t => wgPrepare(t, byTicket.get(t.ticket_number) || [])), uploads: up.data };
     if(!WGP.anchor || force) WGP.anchor = wgLatest() || new Date();
-  }catch(err){ console.error(err); toast('Could not load the White Globe data. Reload the page to try again.'); return; }
+  }catch(err){ console.error(err); toast('Could not load the White Glove data. Reload the page to try again.'); return; }
   renderWgView();
 }
 function renderWgView(){ const v = currentWgView(); if(v === 'report') renderWg(); else if(v === 'uploads') renderWgUploads(); }
@@ -1662,7 +1662,7 @@ makeCal({
   ids: { pop:'wgCalPop', months:'wgCalMonths', sel:'wgCalSel', apply:'wgCalApply', clear:'wgCalClear', prev:'wgCalPrev', next:'wgCalNext', label:'wgPeriodLabel' },
   range: () => { const [s, e] = wgBounds(WGP.anchor); return [s, addDays(e, -1)]; },
   marked: () => new Set((WG ? WG.tickets : []).filter(t => t._o).map(t => +startOfDay(t._o))),
-  markTitle: 'White Globe reviews opened this day',
+  markTitle: 'White Glove reviews opened this day',
   onApply: (a, b) => { WGP.days = dayCount(a, b); WGP.anchor = a; wgSetPeriod('custom'); renderWg(); },
 });
 
@@ -1743,11 +1743,11 @@ function renderWgList(rows){
       <td style="min-width:260px"><b>${esc(t._w.outcome)}</b>${t._w.feedback ? `<div class="sub">${esc(t._w.feedback)}</div>` : ''}</td>
       <td>${esc(t.status || '')}</td>
       <td>${esc(t.ticket_owner || '')}</td></tr>`).join('')
-    : `<tr><td colspan="8" class="empty">${rows.length ? 'No reviews match' : 'No White Globe reviews in this period'}</td></tr>`;
+    : `<tr><td colspan="8" class="empty">${rows.length ? 'No reviews match' : 'No White Glove reviews in this period'}</td></tr>`;
 }
 $('wSearch').addEventListener('input', () => WG && renderWgList());
 
-/* ---------- White Globe summary text ---------- */
+/* ---------- White Glove summary text ---------- */
 const listText = a => a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const countText = rows => listText(rows.map(r => `${r.label} (${r.value})`));
 function wgRangeText(s, e, rows){
@@ -1762,9 +1762,9 @@ function wgRangeText(s, e, rows){
 function buildWgSummary(){
   const { s, e, rows, prev } = wgPeriodData(), n = rows.length, pw = PERIOD_WORD[WGP.period];
   const during = wgRangeText(s, e, rows);
-  if(!n) return `${during}, no White Globe reviews were opened.`;
+  if(!n) return `${during}, no White Glove reviews were opened.`;
   const mats = new Set(rows.map(t => t.mat_id).filter(Boolean)).size;
-  const p1 = [`${during}, the team completed ${word(n)} White Globe ${n === 1 ? 'review' : 'reviews'} for ${word(mats)} ${mats === 1 ? 'customer' : 'customers'}` +
+  const p1 = [`${during}, the team completed ${word(n)} White Glove ${n === 1 ? 'review' : 'reviews'} for ${word(mats)} ${mats === 1 ? 'customer' : 'customers'}` +
     (prev.length || WGP.period !== 'custom' ? `, ${n === prev.length ? `the same as the previous ${pw}` : `${n > prev.length ? 'up' : 'down'} from ${word(prev.length)} the previous ${pw}`}.` : '.')];
   const offered = rows.filter(t => t._w.offered === 'Yes'), done = offered.filter(t => t._w.done);
   p1.push(`White Glove service was offered on ${offered.length === n ? (n === 1 ? 'the call' : `all ${word(n)} calls`) : `${word(offered.length)} of the ${word(n)} calls`} and was done on ${word(done.length)} (${pct(done.length, offered.length)}% of the calls where it was offered).`);
@@ -1796,8 +1796,8 @@ function buildWgSummary(){
 $('btnWgSummary').addEventListener('click', ()=>{
   if(!WG) return;
   const { s, e } = wgPeriodData();
-  $('summaryTitle').textContent = `White Globe summary: ${periodName(WGP.period, s, e)}`;
-  $('summaryNote').textContent = 'Written from the White Globe reviews opened in the selected period. You can edit it here before copying.';
+  $('summaryTitle').textContent = `White Glove summary: ${periodName(WGP.period, s, e)}`;
+  $('summaryNote').textContent = 'Written from the White Glove reviews opened in the selected period. You can edit it here before copying.';
   $('summaryText').value = buildWgSummary();
   $('scrim').classList.add('show'); $('summaryModal').classList.add('show');
 });
@@ -1813,18 +1813,18 @@ $('btnWgExport').addEventListener('click', ()=>{
     'SN verified': t._w.sn, 'Sales contract verified': t._w.contract, 'KB added': t._w.kb, 'Caller role': t._w.role,
   }));
   const ws = XLSX.utils.json_to_sheet(out, { cellDates:true, dateNF:'yyyy-mm-dd hh:mm' });
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'White Globe');
-  XLSX.writeFile(wb, `White Globe ${periodName(WGP.period, s, e).replace(/[\/\\:,]/g, '')}.xlsx`);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'White Glove');
+  XLSX.writeFile(wb, `White Glove ${periodName(WGP.period, s, e).replace(/[\/\\:,]/g, '')}.xlsx`);
 });
 
-/* ---------- White Globe uploads ---------- */
+/* ---------- White Glove uploads ---------- */
 function renderWgUploads(){
   $('btnWgUpload').classList.toggle('hidden', !(ME && ME.can_upload));
   const from = id => WG.tickets.filter(t => t.last_upload_id === id).length;
   $('wgUploadsTable').querySelector('tbody').innerHTML = WG.uploads.length ? WG.uploads.map(u => `<tr>
       <td class="nowrap">${esc(fmtDateTime(new Date(u.uploaded_at)))}</td><td>${esc(u.file_name)}</td>
       <td class="num">${u.row_count}</td><td class="num">${from(u.id)}</td></tr>`).join('')
-    : '<tr><td colspan="4" class="empty">No White Globe uploads yet</td></tr>';
+    : '<tr><td colspan="4" class="empty">No White Glove uploads yet</td></tr>';
 }
 // Export column -> wg_review_tickets column ("Ticket Comments" goes to wg_review_comments).
 const WG_COLUMNS = {
@@ -2012,7 +2012,8 @@ function renderPilotList(){
 }
 $('pSearch').addEventListener('input', () => PILOT && renderPilotList());
 document.querySelectorAll('#wgTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchWgView(b.dataset.wgview)));
-try{ switchSection(localStorage.getItem('itero-section') || 'escalations'); }catch(e){ switchSection('escalations'); }
+// 'whiteglobe' was the section's old key; people who had it open keep landing on it.
+try{ const saved = localStorage.getItem('itero-section'); switchSection(saved === 'whiteglobe' ? 'whiteglove' : saved || 'escalations'); }catch(e){ switchSection('escalations'); }
 
 let TICKET_PERIOD = null;   // [start, end) when opened from a report bar
 // filters: { tIssue: 'value', ... }; NOT_SET means tickets with the field empty.
