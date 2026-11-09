@@ -7475,20 +7475,26 @@ function renderMonthlyGrid(evals, scope, assignments){
   const doneCell = list=> '<td class="cell-progress' + (list.length >= MONTHLY_EVAL_TARGET ? ' complete' : '') + '">' +
     Math.min(list.length, MONTHLY_EVAL_TARGET) + ' / ' + MONTHLY_EVAL_TARGET + '</td>';
 
-  // --- Scores: only finished evaluations, in call-date order.
-  const cols = Math.max(MONTHLY_EVAL_TARGET, ...agents.map(a=> (byAgent[a.id] || []).length));
+  // Both tables share one column layout: an evaluation saved against an
+  // assignment stays in that assignment's column, so "Eval 2" is the same
+  // evaluation in Scores and in Assignments.
+  const placed = {};
+  agents.forEach(a=>{ placed[a.id] = positionSlots(slotsByAgent[a.id] || []); });
+
+  // --- Scores: only finished evaluations, each in its slot's column.
+  const cols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(placed).map(l=> l.length));
   let html = '<div class="monthly-scroll"><table class="monthly-table scores-table"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= cols; i++) html += '<th>Eval ' + i + '</th>';
   html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
   const colTotals = Array.from({ length: cols }, ()=> ({ total: 0, n: 0 }));
   agents.forEach(agent=>{
     const list = byAgent[agent.id] || [];
-    const slots = slotsByAgent[agent.id];
     html += rowStart(agent, cols + 3);
     for(let i = 0; i < cols; i++){
-      const e = list[i];
+      const sl = placed[agent.id][i];
+      const e = sl && sl.type === 'eval' ? sl.eval : null;
       if(e){
-        html += scoreCellHtml(slots.find(sl=> sl.type === 'eval' && sl.eval.id === e.id), e);
+        html += scoreCellHtml(sl, e);
         colTotals[i].total += Number(e.score || 0);
         colTotals[i].n++;
       }else html += '<td class="cell-empty">—</td>';
@@ -7509,8 +7515,6 @@ function renderMonthlyGrid(evals, scope, assignments){
   root.innerHTML = html;
 
   // --- Assignments: each slot of the month, who has it, and empty slots to assign.
-  const placed = {};
-  agents.forEach(a=>{ placed[a.id] = positionSlots(slotsByAgent[a.id] || []); });
   const acols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(placed).map(l=> l.length));
   let ahtml = '<div class="monthly-scroll"><table class="monthly-table assign-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= acols; i++) ahtml += '<th>Eval ' + i + '</th>';
@@ -9567,7 +9571,8 @@ function buildScoresSheet(wb, evals, scope, assignments){
   const byAgent = {};
   sortEvalsChrono(evals).forEach(e=> (byAgent[e.agent_id] = byAgent[e.agent_id] || []).push(e));
   const slotsByAgent = {};
-  agents.forEach(a=>{ slotsByAgent[a.id] = buildAgentSlots(byAgent[a.id] || [], assignments.filter(x=> x.agent_id === a.id)); });
+  // Same columns as the app tables: each evaluation in its assignment's slot.
+  agents.forEach(a=>{ slotsByAgent[a.id] = positionSlots(buildAgentSlots(byAgent[a.id] || [], assignments.filter(x=> x.agent_id === a.id))); });
   const cols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(slotsByAgent).map(l=> l.length));
 
   const header = ['Agent', 'Role', 'Supervisor'];
@@ -9600,7 +9605,8 @@ function buildScoresSheet(wb, evals, scope, assignments){
     const roleHex = role ? ROLE_HEX[roleColorKey(role)] : null;
     const values = [agent.name, role ? role.name : '', agent.supervisor || ''];
     const scoreCells = [];
-    slotsByAgent[agent.id].slice(0, cols).forEach((sl, i)=>{
+    Array.from({ length: cols }, (_, i)=> slotsByAgent[agent.id][i]).forEach((sl, i)=>{
+      if(!sl){ values.push('', '', ''); return; }
       if(sl.type === 'eval'){
         const e = sl.eval;
         values.push(Number(e.score) / 100, evaluatorLabel(e), e.call_date || '');
