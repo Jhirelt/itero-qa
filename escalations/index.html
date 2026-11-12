@@ -71,7 +71,7 @@
   .tab-btn{ border:none; background:transparent; color:var(--text-dim); padding:7px 16px; border-radius:999px; font-size:13px; font-weight:600; cursor:pointer; transition:.15s; }
   .tab-btn.active{ background:var(--accent); color:#00110f; }
   .data-as-of{ font-size:11.5px; color:var(--text-dim); }
-  /* Section bubbles: each section of the site (Escalations, White Globe) has its own data, tabs and uploads. */
+  /* Section bubbles: each section of the site (Escalations, White Glove) has its own data, tabs and uploads. */
   .sections{ display:flex; gap:8px; padding:10px 22px; background:var(--bg); border-bottom:1px solid var(--border); }
   .sec-btn{ border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); padding:8px 18px; border-radius:999px; font-size:13.5px; font-weight:700; cursor:pointer; transition:.15s; }
   .sec-btn:hover{ color:var(--text); border-color:var(--accent); }
@@ -93,6 +93,21 @@
   .icon-btn{ display:flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:50%; border:none; background:transparent; color:var(--text-faint); cursor:pointer; text-decoration:none; }
   .icon-btn:hover{ background:var(--bg-elev); color:var(--text); }
   .icon-btn.danger:hover{ color:var(--no); }
+  .role-tag{ font-size:10px; font-weight:800; text-transform:uppercase; letter-spacing:.5px; color:var(--accent); border:1px solid var(--border); border-radius:999px; padding:2px 7px; }
+  .rights-roles{ display:grid; grid-template-columns:repeat(3, 1fr); gap:8px; margin:0 0 14px; }
+  .rights-roles div{ border:1px solid var(--border); background:var(--bg-elev-2); border-radius:10px; padding:9px 11px; font-size:12px; color:var(--text-dim); line-height:1.4; }
+  .rights-roles b{ display:block; color:var(--text); font-size:12.5px; margin-bottom:2px; }
+  #rightsTable{ min-width:0; width:100%; }
+  #rightsTable td{ vertical-align:middle; white-space:nowrap; }
+  #rightsTable td.who{ white-space:normal; width:100%; }
+  #rightsTable .who b{ display:block; font-size:13px; }
+  #rightsTable .who span{ display:block; font-size:11.5px; color:var(--text-faint); }
+  #rightsTable .who input{ display:block; font:inherit; font-weight:700; font-size:13px; color:var(--text); background:transparent; border:1px solid transparent; border-radius:6px; padding:2px 5px; margin-left:-6px; width:100%; max-width:220px; }
+  #rightsTable .who input:hover{ border-color:var(--border); }
+  #rightsTable .who input:focus{ outline:none; border-color:var(--accent); background:var(--bg-elev-2); }
+  #rightsTable select{ min-width:130px; }
+  #rightsTable tr.no-access .who b, #rightsTable tr.no-access .who input{ color:var(--text-faint); }
+  @media (max-width:640px){ .rights-roles{ grid-template-columns:1fr; } }
   .icon-btn svg{ width:14px; height:14px; }
 
   /* ---------- Login ---------- */
@@ -311,6 +326,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
   <div class="user-badge" id="userBadge">
     <span class="name" id="userBadgeName"></span>
+    <span class="role-tag hidden" id="userRoleTag"></span>
+    <button class="icon-btn hidden" id="btnRights" title="Rights"><svg viewBox="0 0 24 24" fill="none"><path d="M12 3 4.5 6v5.5c0 4.6 3.2 8.3 7.5 9.5 4.3-1.2 7.5-4.9 7.5-9.5V6L12 3Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="m8.8 12.2 2.2 2.2 4.3-4.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     <button class="icon-btn danger" id="btnLogout" title="Log out"><svg viewBox="0 0 24 24" fill="none"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
   </div>
   <div class="theme-switch" id="themeSwitch" title="Light or dark">
@@ -321,7 +338,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
 <div class="sections" id="sectionTabs" style="display:none;">
   <button class="sec-btn active" data-section="escalations">Escalations</button>
-  <button class="sec-btn" data-section="whiteglobe">White Globe</button>
+  <button class="sec-btn" data-section="whiteglove">White Glove</button>
 </div>
 
 <div class="wrap" style="display:none;">
@@ -471,9 +488,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
  </div>
 
- <!-- =============== WHITE GLOBE =============== -->
+ <!-- =============== WHITE GLOVE =============== -->
  <!-- Its own section: separate data and its own Excel. Nothing here reads or writes the escalations tables. -->
- <div id="section-whiteglobe" class="hidden">
+ <div id="section-whiteglove" class="hidden">
   <!-- Report built from the "All Team White Glove Review" uploads (wg_review_tickets + wg_review_comments), by the day the ticket was opened. -->
   <div id="wg-report">
     <div class="filters">
@@ -497,7 +514,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             </div>
           </div>
           <button class="btn btn-ghost" id="wgNext" title="Next"><svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
-          <button class="btn btn-ghost" id="wgLatest" title="Go to the latest period with White Globe reviews">Latest</button>
+          <button class="btn btn-ghost" id="wgLatest" title="Go to the latest period with White Glove reviews">Latest</button>
         </div>
       </div>
       <div class="spacer"></div>
@@ -654,6 +671,22 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   </div>
 </div>
 
+<!-- =============== RIGHTS =============== -->
+<div class="modal" id="rightsModal" role="dialog" aria-label="Rights" style="width:min(720px, calc(100% - 32px));">
+  <h3>Rights</h3>
+  <p>Choose what each account can do on this page. Changes save right away and apply the next time that person opens or reloads the page.</p>
+  <div class="rights-roles">
+    <div><b>Admin</b>Everything, including this list.</div>
+    <div><b>Uploader</b>Uploads files and edits ticket details.</div>
+    <div><b>Viewer</b>Only sees the reports.</div>
+  </div>
+  <div class="table-wrap" style="max-height:52vh;"><table class="data" id="rightsTable"><thead><tr><th>Person</th><th>Last sign in</th><th>Rights</th></tr></thead><tbody></tbody></table></div>
+  <p style="margin:10px 0 0;">Everyone with an account for the iTero apps is listed. Names can be edited by clicking them.</p>
+  <div class="modal-actions">
+    <button class="btn btn-ghost" id="btnRightsClose">Close</button>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -800,17 +833,23 @@ function showNoAccess(){
 }
 async function startFor(user){
   // Only accounts in escalation_members get in; the database enforces the same list.
-  const { data: member, error } = await sb.from('escalation_members').select('display_name, can_upload').eq('user_id', user.id).maybeSingle();
+  const { data: member, error } = await sb.from('escalation_members').select('*').eq('user_id', user.id).maybeSingle();
   if(error){ console.error('Access check failed', error); setAppVisible(false); showLoginError('Could not check your access. Reload the page to try again.'); return; }
   if(!member){ showNoAccess(); return; }
-  ME = { id: user.id, email: user.email, display_name: member.display_name || user.email, can_upload: !!member.can_upload };
-  // Only members allowed to upload see the button; the database enforces the same rule.
+  const role = member.role || (member.can_upload ? 'admin' : 'viewer');
+  ME = { id: user.id, email: user.email, display_name: member.display_name || user.email, role, can_upload: role === 'admin' || role === 'uploader', is_admin: role === 'admin' };
+  // Viewers see no upload buttons or Uploads tabs; the database enforces the same rule.
   ['btnUpload','btnUploadFirst'].forEach(id => $(id).classList.toggle('hidden', !ME.can_upload));
+  document.querySelectorAll('#escTabs [data-view="uploads"], #wgTabs [data-wgview="uploads"]').forEach(b => b.classList.toggle('hidden', !ME.can_upload));
+  if(!ME.can_upload && currentView() === 'uploads') switchView('report');
+  if(!ME.can_upload && currentWgView() === 'uploads') switchWgView('report');
+  $('btnRights').classList.toggle('hidden', !ME.is_admin);
+  $('userRoleTag').textContent = cap(role); $('userRoleTag').classList.toggle('hidden', role === 'viewer');
   $('firstRunText').textContent = ME.can_upload ? 'Upload the "Closed CSC escalations" export from Salesforce to build the report.' : 'The report shows up here once escalations are uploaded.';
   $('userBadgeName').textContent = ME.display_name;
   setAppVisible(true);
   await loadAll(true);
-  if(currentSection() === 'whiteglobe') switchWgView(currentWgView());
+  if(currentSection() === 'whiteglove') switchWgView(currentWgView());
 }
 $('loginForm').addEventListener('submit', async e=>{
   e.preventDefault();
@@ -825,6 +864,64 @@ $('loginForm').addEventListener('submit', async e=>{
   finally{ btn.disabled = false; btn.textContent = 'Sign in'; }
 });
 $('btnLogout').addEventListener('click', async ()=>{ if(sb) await sb.auth.signOut(); location.reload(); });
+
+/* ============================================================
+   RIGHTS — admins choose who is admin, uploader or viewer
+   ============================================================ */
+const ROLE_OPTIONS = [['admin','Admin'],['uploader','Uploader'],['viewer','Viewer'],['none','No access']];
+let RIGHTS = [];
+function rightsError(error){
+  const m = (error && error.message) || '';
+  return /lower your own/i.test(m) ? 'You cannot lower your own rights.' : /only admins/i.test(m) ? 'Only admins can change rights.' : 'Could not save. Try again.';
+}
+function renderRights(){
+  const body = $('rightsTable').querySelector('tbody');
+  if(!RIGHTS.length){ body.innerHTML = '<tr><td colspan="3" class="empty">No accounts found.</td></tr>'; return; }
+  body.innerHTML = RIGHTS.map(u => {
+    const me = u.user_id === ME.id, member = u.role !== 'none';
+    const name = member ? `<input data-name="${esc(u.user_id)}" value="${esc(u.display_name)}" aria-label="Name" maxlength="60">` : `<b>${esc(u.display_name)}</b>`;
+    const opts = ROLE_OPTIONS.map(([v, l]) => `<option value="${v}"${v === u.role ? ' selected' : ''}${me && v !== 'admin' ? ' disabled' : ''}>${l}</option>`).join('');
+    return `<tr class="${member ? '' : 'no-access'}">
+      <td class="who">${name}<span>${esc(u.email || '')}${me ? ' · you' : ''}</span></td>
+      <td>${u.last_sign_in ? esc(fmtDate(new Date(u.last_sign_in))) : '<span style="color:var(--text-faint)">Never</span>'}</td>
+      <td><select class="ctl" data-role="${esc(u.user_id)}"${me ? ' title="You cannot lower your own rights"' : ''}>${opts}</select></td>
+    </tr>`;
+  }).join('');
+}
+async function loadRights(){
+  $('rightsTable').querySelector('tbody').innerHTML = '<tr><td colspan="3" class="empty">Loading…</td></tr>';
+  const { data, error } = await sb.rpc('escalation_admin_users');
+  if(error){ console.error(error); $('rightsTable').querySelector('tbody').innerHTML = `<tr><td colspan="3" class="empty">${/only admins/i.test(error.message || '') ? 'Only admins can see this list.' : 'Could not load the list. Reload the page to try again.'}</td></tr>`; return; }
+  RIGHTS = data || []; renderRights();
+}
+function openRights(){ if(!ME || !ME.is_admin) return; $('scrim').classList.add('show'); $('rightsModal').classList.add('show'); loadRights(); }
+function closeRights(){ $('rightsModal').classList.remove('show'); if(!document.querySelector('.modal.show') && !$('drawer').classList.contains('show')) $('scrim').classList.remove('show'); }
+$('btnRights').addEventListener('click', openRights);
+$('btnRightsClose').addEventListener('click', closeRights);
+$('rightsTable').addEventListener('change', async e => {
+  const sel = e.target.closest('select[data-role]'); if(!sel) return;
+  const u = RIGHTS.find(x => x.user_id === sel.dataset.role); if(!u) return;
+  const role = sel.value, before = u.role;
+  if(role === 'none' && !confirm(`Remove ${u.display_name}'s access to this page?`)){ sel.value = before; return; }
+  sel.disabled = true;
+  const { error } = await sb.rpc('escalation_set_role', { target: u.user_id, new_role: role });
+  sel.disabled = false;
+  if(error){ console.error(error); sel.value = before; toast(rightsError(error)); return; }
+  u.role = role; renderRights();
+  toast(role === 'none' ? `${u.display_name} no longer has access` : `${u.display_name} is now ${ROLE_OPTIONS.find(r => r[0] === role)[1].toLowerCase()}`);
+});
+$('rightsTable').addEventListener('keydown', e => { if(e.key === 'Enter' && e.target.matches('input[data-name]')) e.target.blur(); });
+$('rightsTable').addEventListener('focusout', async e => {
+  const inp = e.target.closest('input[data-name]'); if(!inp) return;
+  const u = RIGHTS.find(x => x.user_id === inp.dataset.name); if(!u) return;
+  const name = inp.value.trim();
+  if(!name){ inp.value = u.display_name; return; }
+  if(name === u.display_name) return;
+  const { error } = await sb.rpc('escalation_set_name', { target: u.user_id, new_name: name });
+  if(error){ console.error(error); inp.value = u.display_name; toast(rightsError(error)); return; }
+  u.display_name = name; toast('Name saved');
+  if(u.user_id === ME.id){ ME.display_name = name; $('userBadgeName').textContent = name; }
+});
 (async ()=>{
   if(!sb){ setAppVisible(false); return; }
   const { data } = await sb.auth.getSession();
@@ -1560,16 +1657,16 @@ function switchView(v){
 document.querySelectorAll('#escTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
 /* ============================================================
-   SECTIONS — Escalations and White Globe, switched by the bubbles on top
+   SECTIONS — Escalations and White Glove, switched by the bubbles on top
    ============================================================ */
-const SECTIONS = { escalations: 'Escalations', whiteglobe: 'White Globe' };
+const SECTIONS = { escalations: 'Escalations', whiteglove: 'White Glove' };
 function currentSection(){ return (document.querySelector('.sec-btn.active') || {}).dataset?.section || 'escalations'; }
 function switchSection(sec){
   if(!SECTIONS[sec]) sec = 'escalations';
   document.querySelectorAll('.sec-btn').forEach(b => b.classList.toggle('active', b.dataset.section === sec));
   const esc = sec === 'escalations';
   $('section-escalations').classList.toggle('hidden', !esc);
-  $('section-whiteglobe').classList.toggle('hidden', esc);
+  $('section-whiteglove').classList.toggle('hidden', esc);
   $('escTabs').classList.toggle('hidden', !esc || !T.length);
   $('wgTabs').classList.toggle('hidden', esc);
   $('dataAsOf').classList.toggle('hidden', !esc);
@@ -1586,7 +1683,7 @@ function switchWgView(v){
 
 const currentWgView = () => (document.querySelector('#wgTabs .tab-btn.active') || {}).dataset?.wgview || 'report';
 
-/* ---------- White Globe report: the "All Team White Glove Review" uploads ---------- */
+/* ---------- White Glove report: the "All Team White Glove Review" uploads ---------- */
 let WG = null;   // { tickets, uploads }
 const WGP = { period:'month', anchor:null, days:7 };   // same periods as Escalations, own selection
 async function loadWg(force){
@@ -1602,7 +1699,7 @@ async function loadWg(force){
     cm.forEach(c => (byTicket.get(c.ticket_number) || byTicket.set(c.ticket_number, []).get(c.ticket_number)).push(c));
     WG = { tickets: tk.map(t => wgPrepare(t, byTicket.get(t.ticket_number) || [])), uploads: up.data };
     if(!WGP.anchor || force) WGP.anchor = wgLatest() || new Date();
-  }catch(err){ console.error(err); toast('Could not load the White Globe data. Reload the page to try again.'); return; }
+  }catch(err){ console.error(err); toast('Could not load the White Glove data. Reload the page to try again.'); return; }
   renderWgView();
 }
 function renderWgView(){ const v = currentWgView(); if(v === 'report') renderWg(); else if(v === 'uploads') renderWgUploads(); }
@@ -1662,7 +1759,7 @@ makeCal({
   ids: { pop:'wgCalPop', months:'wgCalMonths', sel:'wgCalSel', apply:'wgCalApply', clear:'wgCalClear', prev:'wgCalPrev', next:'wgCalNext', label:'wgPeriodLabel' },
   range: () => { const [s, e] = wgBounds(WGP.anchor); return [s, addDays(e, -1)]; },
   marked: () => new Set((WG ? WG.tickets : []).filter(t => t._o).map(t => +startOfDay(t._o))),
-  markTitle: 'White Globe reviews opened this day',
+  markTitle: 'White Glove reviews opened this day',
   onApply: (a, b) => { WGP.days = dayCount(a, b); WGP.anchor = a; wgSetPeriod('custom'); renderWg(); },
 });
 
@@ -1743,11 +1840,11 @@ function renderWgList(rows){
       <td style="min-width:260px"><b>${esc(t._w.outcome)}</b>${t._w.feedback ? `<div class="sub">${esc(t._w.feedback)}</div>` : ''}</td>
       <td>${esc(t.status || '')}</td>
       <td>${esc(t.ticket_owner || '')}</td></tr>`).join('')
-    : `<tr><td colspan="8" class="empty">${rows.length ? 'No reviews match' : 'No White Globe reviews in this period'}</td></tr>`;
+    : `<tr><td colspan="8" class="empty">${rows.length ? 'No reviews match' : 'No White Glove reviews in this period'}</td></tr>`;
 }
 $('wSearch').addEventListener('input', () => WG && renderWgList());
 
-/* ---------- White Globe summary text ---------- */
+/* ---------- White Glove summary text ---------- */
 const listText = a => a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
 const countText = rows => listText(rows.map(r => `${r.label} (${r.value})`));
 function wgRangeText(s, e, rows){
@@ -1762,9 +1859,9 @@ function wgRangeText(s, e, rows){
 function buildWgSummary(){
   const { s, e, rows, prev } = wgPeriodData(), n = rows.length, pw = PERIOD_WORD[WGP.period];
   const during = wgRangeText(s, e, rows);
-  if(!n) return `${during}, no White Globe reviews were opened.`;
+  if(!n) return `${during}, no White Glove reviews were opened.`;
   const mats = new Set(rows.map(t => t.mat_id).filter(Boolean)).size;
-  const p1 = [`${during}, the team completed ${word(n)} White Globe ${n === 1 ? 'review' : 'reviews'} for ${word(mats)} ${mats === 1 ? 'customer' : 'customers'}` +
+  const p1 = [`${during}, the team completed ${word(n)} White Glove ${n === 1 ? 'review' : 'reviews'} for ${word(mats)} ${mats === 1 ? 'customer' : 'customers'}` +
     (prev.length || WGP.period !== 'custom' ? `, ${n === prev.length ? `the same as the previous ${pw}` : `${n > prev.length ? 'up' : 'down'} from ${word(prev.length)} the previous ${pw}`}.` : '.')];
   const offered = rows.filter(t => t._w.offered === 'Yes'), done = offered.filter(t => t._w.done);
   p1.push(`White Glove service was offered on ${offered.length === n ? (n === 1 ? 'the call' : `all ${word(n)} calls`) : `${word(offered.length)} of the ${word(n)} calls`} and was done on ${word(done.length)} (${pct(done.length, offered.length)}% of the calls where it was offered).`);
@@ -1796,8 +1893,8 @@ function buildWgSummary(){
 $('btnWgSummary').addEventListener('click', ()=>{
   if(!WG) return;
   const { s, e } = wgPeriodData();
-  $('summaryTitle').textContent = `White Globe summary: ${periodName(WGP.period, s, e)}`;
-  $('summaryNote').textContent = 'Written from the White Globe reviews opened in the selected period. You can edit it here before copying.';
+  $('summaryTitle').textContent = `White Glove summary: ${periodName(WGP.period, s, e)}`;
+  $('summaryNote').textContent = 'Written from the White Glove reviews opened in the selected period. You can edit it here before copying.';
   $('summaryText').value = buildWgSummary();
   $('scrim').classList.add('show'); $('summaryModal').classList.add('show');
 });
@@ -1813,18 +1910,18 @@ $('btnWgExport').addEventListener('click', ()=>{
     'SN verified': t._w.sn, 'Sales contract verified': t._w.contract, 'KB added': t._w.kb, 'Caller role': t._w.role,
   }));
   const ws = XLSX.utils.json_to_sheet(out, { cellDates:true, dateNF:'yyyy-mm-dd hh:mm' });
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'White Globe');
-  XLSX.writeFile(wb, `White Globe ${periodName(WGP.period, s, e).replace(/[\/\\:,]/g, '')}.xlsx`);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'White Glove');
+  XLSX.writeFile(wb, `White Glove ${periodName(WGP.period, s, e).replace(/[\/\\:,]/g, '')}.xlsx`);
 });
 
-/* ---------- White Globe uploads ---------- */
+/* ---------- White Glove uploads ---------- */
 function renderWgUploads(){
   $('btnWgUpload').classList.toggle('hidden', !(ME && ME.can_upload));
   const from = id => WG.tickets.filter(t => t.last_upload_id === id).length;
   $('wgUploadsTable').querySelector('tbody').innerHTML = WG.uploads.length ? WG.uploads.map(u => `<tr>
       <td class="nowrap">${esc(fmtDateTime(new Date(u.uploaded_at)))}</td><td>${esc(u.file_name)}</td>
       <td class="num">${u.row_count}</td><td class="num">${from(u.id)}</td></tr>`).join('')
-    : '<tr><td colspan="4" class="empty">No White Globe uploads yet</td></tr>';
+    : '<tr><td colspan="4" class="empty">No White Glove uploads yet</td></tr>';
 }
 // Export column -> wg_review_tickets column ("Ticket Comments" goes to wg_review_comments).
 const WG_COLUMNS = {
@@ -2012,7 +2109,8 @@ function renderPilotList(){
 }
 $('pSearch').addEventListener('input', () => PILOT && renderPilotList());
 document.querySelectorAll('#wgTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchWgView(b.dataset.wgview)));
-try{ switchSection(localStorage.getItem('itero-section') || 'escalations'); }catch(e){ switchSection('escalations'); }
+// 'whiteglobe' was the section's old key; people who had it open keep landing on it.
+try{ const saved = localStorage.getItem('itero-section'); switchSection(saved === 'whiteglobe' ? 'whiteglove' : saved || 'escalations'); }catch(e){ switchSection('escalations'); }
 
 let TICKET_PERIOD = null;   // [start, end) when opened from a report bar
 // filters: { tIssue: 'value', ... }; NOT_SET means tickets with the field empty.
@@ -2123,8 +2221,8 @@ async function saveDetails(t){
 }
 function closeDrawer(){ $('scrim').classList.remove('show'); $('drawer').classList.remove('show'); }
 $('btnCloseDrawer').addEventListener('click', closeDrawer);
-$('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); closeSummary(); closeOpenForm(); });
-document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); closeCal(); closeOpenForm(); } });
+$('scrim').addEventListener('click', ()=>{ closeDrawer(); closeUpload(); closeSummary(); closeOpenForm(); closeRights(); });
+document.addEventListener('keydown', ev => { if(ev.key === 'Escape'){ closeDrawer(); closeUpload(); closeSummary(); closeCal(); closeOpenForm(); closeRights(); } });
 
 /* ============================================================
    OPEN TICKETS — entered by hand, used by the Summary and the PDF report
