@@ -519,6 +519,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       </div>
       <div class="spacer"></div>
       <button class="btn btn-ghost" id="btnWgSummary" title="A written summary of the selected period, ready to paste"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 10h14M5 14h9M5 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Summary</button>
+      <button class="btn btn-ghost" id="btnWgPdf" title="A one-page report of the selected period, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13H7z M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>PDF report</button>
+      <button class="btn btn-ghost" id="btnWgDownload" title="Download the one-page report of the selected period as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Download PDF</button>
       <button class="btn btn-ghost" id="btnWgExport"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
     </div>
 
@@ -1508,6 +1510,10 @@ function buildReportHtml(autoDownload = false){
   </section>`;
 
   const title = `${PERIOD_ADJ[PERIOD]}Escalations ${R.range.short}${PERIOD === 'week' || PERIOD === 'custom' ? ' ' + R.range.last.getFullYear() : ''}`;
+  return reportDoc(title, page1 + page2, autoDownload);
+}
+// The report page around the pages: print styles, the top bar and the PDF download. Shared by Escalations and White Glove.
+function reportDoc(title, pages, autoDownload){
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(title)}</title><style>
   @page{ size: letter landscape; margin: 0; }
   *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
@@ -1570,7 +1576,7 @@ function buildReportHtml(autoDownload = false){
   body.pdf{ background:#fff; } body.pdf .bar{ display:none; } body.pdf .page{ margin:0; box-shadow:none; break-after:auto; min-height:calc(8.5in - 2px); } body.pdf .page + .page{ break-before:page; }
   </style><link rel="preconnect" href="https://fonts.googleapis.com"><link id="fontcss" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'"></head><body>
   <div class="bar"><span>${esc(title)}</span><button class="primary" id="dl" onclick="makePdf()">Download PDF</button><button onclick="window.print()">Print</button></div>
-  <div id="pages">${page1}${page2}</div>
+  <div id="pages">${pages}</div>
   <script>
   // Draws the pages straight into a PDF file, letter size landscape. The PDF library loads the first time it is needed.
   const loadPdfLib = () => window.html2pdf ? Promise.resolve() : new Promise((ok, fail) => { const sc = document.createElement('script'); sc.src = ${JSON.stringify(HTML2PDF_URL)}; sc.onload = ok; sc.onerror = fail; document.head.appendChild(sc); });
@@ -1584,7 +1590,7 @@ function buildReportHtml(autoDownload = false){
       await document.fonts.ready;
       await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
       document.body.classList.add('pdf');
-      await html2pdf().set({ margin:0, filename:${JSON.stringify(title.replace(/[\/\\:,]/g, '') + '.pdf')}, image:{ type:'jpeg', quality:0.96 },
+      await html2pdf().set({ margin:0, filename:${JSON.stringify(title.replace(/[\/\\:,]/g, '').replace(/[–—]/g, '-') + '.pdf')}, image:{ type:'jpeg', quality:0.96 },
         html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff' }, jsPDF:{ unit:'in', format:'letter', orientation:'landscape' },
         pagebreak:{ mode:['css'], avoid:'tr' } }).from(document.getElementById('pages')).save();
       if(parent !== window) parent.postMessage({ reportPdf:'done' }, '*');
@@ -1597,14 +1603,13 @@ function buildReportHtml(autoDownload = false){
 }
 const REPORT_LOGO = new URL('report-logo.png', location.href).href;
 const HTML2PDF_URL = 'https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js';
-$('btnPdfReport').addEventListener('click', ()=>{
+function openReport(html){
   const w = window.open('', '_blank');
   if(!w){ toast('Your browser blocked the new tab. Allow pop-ups for this page and try again.'); return; }
-  w.document.open(); w.document.write(buildReportHtml()); w.document.close();
-});
+  w.document.open(); w.document.write(html); w.document.close();
+}
 // Download: the same report drawn in a hidden frame and saved as a PDF, without opening it.
-$('btnDownloadReport').addEventListener('click', ()=>{
-  const btn = $('btnDownloadReport');
+function downloadReport(btn, build){
   if(btn.disabled) return;
   btn.disabled = true; toast('Preparing the PDF…');
   const f = document.createElement('iframe');
@@ -1618,8 +1623,10 @@ $('btnDownloadReport').addEventListener('click', ()=>{
   };
   window.addEventListener('message', done);
   document.body.appendChild(f);
-  f.contentDocument.open(); f.contentDocument.write(buildReportHtml(true)); f.contentDocument.close();
-});
+  f.contentDocument.open(); f.contentDocument.write(build()); f.contentDocument.close();
+}
+$('btnPdfReport').addEventListener('click', ()=> openReport(buildReportHtml()));
+$('btnDownloadReport').addEventListener('click', ()=> downloadReport($('btnDownloadReport'), ()=> buildReportHtml(true)));
 
 /* ---------- Export ---------- */
 function exportRows(rows, name){
@@ -1843,6 +1850,56 @@ function renderWgList(rows){
     : `<tr><td colspan="8" class="empty">${rows.length ? 'No reviews match' : 'No White Glove reviews in this period'}</td></tr>`;
 }
 $('wSearch').addEventListener('input', () => WG && renderWgList());
+
+/* ---------- White Glove PDF report: one page, key numbers only ---------- */
+const REPORT_LOGO_WG = new URL('report-logo-wg.png', location.href).href;
+function buildWgReportHtml(autoDownload = false){
+  const { s, e, rows, prev } = wgPeriodData(), n = rows.length, pw = PERIOD_WORD[WGP.period], range = periodName(WGP.period, s, e);
+  const pctOr = (a, b) => b ? `${pct(a, b)}%` : '–';
+  const offered = rows.filter(t => t._w.offered === 'Yes'), done = offered.filter(t => t._w.done);
+  const mats = new Set(rows.map(t => t.mat_id).filter(Boolean)).size;
+  const parts = rows.filter(t => t._w.part).length, open = rows.filter(t => !t._w.closed);
+  const d = n - prev.length, vsPrev = WGP.period === 'custom' && !prev.length ? '' : d === 0 ? `Same as previous ${pw}` : `${d > 0 ? '+' : '−'}${Math.abs(d)} vs previous ${pw} (${prev.length})`;
+  const bars = (list, label, max = 6) => {
+    const tot = list.reduce((a, r) => a + r.value, 0), top = Math.max(1, ...list.map(r => r.value));
+    return `<div class="block"><h2>${esc(label)}</h2>${list.length ? `<table class="vol"><tbody>${list.slice(0, max).map(r => `<tr>
+      <td class="vl">${esc(r.label)}</td><td class="vb"><span class="track"><span class="fill" style="width:${(r.value / top * 100).toFixed(1)}%"></span></span></td>
+      <td class="r b">${r.value} (${pct(r.value, tot)}%)</td></tr>`).join('')}</tbody></table>${list.length > max ? `<p class="note">${list.length - max} more not shown.</p>` : ''}` : '<p class="note">No reviews in this period.</p>'}</div>`;
+  };
+  const checks = [['Serial number verified', 'sn'], ['Sales contract verified', 'contract'], ['KB added', 'kb']].map(([label, k]) => {
+    const y = rows.filter(t => t._w[k] === 'Yes').length, no = rows.filter(t => t._w[k] === 'No').length;
+    return `<tr><td>${label}</td><td>${y}</td><td>${no}</td><td>${n - y - no}</td><td class="hl">${pctOr(y, y + no)}</td></tr>`;
+  }).join('');
+  const notDone = rows.filter(t => !t._w.done), MAXND = 6;
+  const short = (x, max) => x.length > max ? x.slice(0, max - 3).replace(/\s+\S*$/, '') + '…' : x;
+  const header = `<header><img class="logo" src="${REPORT_LOGO_WG}" alt="iTero White Glove"><div class="ht"><h1>${esc(PERIOD_ADJ[WGP.period])}White Glove Summary</h1><p>${esc(range)}<i></i>Reviews opened this ${esc(pw)}</p></div><span class="pg">CSC White Glove</span></header>`;
+  const page = `<section class="page">
+    ${header}
+    <div class="body">
+      <div class="kpis">
+        <div class="kpi navy"><div class="kl">Reviews</div><div class="kv">${n}</div><div class="kf">${mats} ${mats === 1 ? 'customer' : 'customers'}${vsPrev ? '<br>' + esc(vsPrev) : ''}</div></div>
+        <div class="kpi teal"><div class="kl">White Glove done</div><div class="kv">${pctOr(done.length, offered.length)}</div><div class="kf">${done.length} of ${offered.length} calls where it was offered<br>Offered on ${offered.length} of ${n}</div></div>
+        <div class="kpi amber"><div class="kl">Part replacement</div><div class="kv">${parts}</div><div class="kf">${pctOr(parts, n)} of reviews ended in a<br>part replacement request</div></div>
+        <div class="kpi red"><div class="kl">Still open</div><div class="kv">${open.length}</div><div class="kf">${n ? (open.length ? esc(countBy(open, t => t.status).map(r => `${r.value} ${r.label}`).join(', ')) : 'All closed') : ''}</div></div>
+      </div>
+      <div class="cols">${bars(countBy(rows, t => t._w.outcome), 'Outcome of the call')}${bars(countBy(rows, t => t._w.request), 'Request type')}</div>
+      <div class="cols">
+        <div class="block"><h2>Checks on the call</h2>
+          <table class="grid"><thead><tr><th>Check</th><th>Yes</th><th>No</th><th>Not stated</th><th>Rate</th></tr></thead><tbody>${checks}</tbody></table></div>
+        ${bars(countBy(rows, t => t.issue_type), 'Top issue types', 4)}
+      </div>
+      <div class="block"><h2>Not done: what the customer said (${notDone.length})</h2>
+        ${notDone.length ? `<table class="grid"><thead><tr><th style="width:11%">Ticket</th><th style="width:9%">Opened</th><th style="width:16%">Outcome</th><th>Customer's feedback</th></tr></thead><tbody>
+        ${notDone.slice(0, MAXND).map(t => `<tr><td>${esc(t.ticket_number)}</td><td>${t._o ? esc(fmtShort(t._o)) : ''}</td><td class="b">${esc(t._w.outcome)}</td><td>${esc(short(t._w.feedback || 'No feedback in the comment.', 190))}</td></tr>`).join('')}
+        </tbody></table>${notDone.length > MAXND ? `<p class="note">${notDone.length - MAXND} more in the White Glove tab.</p>` : ''}` : `<p class="note">${n ? 'White Glove was done on every review.' : 'No reviews in this period.'}</p>`}
+      </div>
+    </div>
+    <footer>Source: White Glove reviews uploaded to the tracker, opened from ${esc(fmtLong(s))} to ${esc(fmtLong(addDays(e, -1)))}, ${addDays(e, -1).getFullYear()}. Outcome and checks are read from the agent's ticket comment; "done" means the customer's feedback shows the review was carried out.</footer>
+  </section>`;
+  return reportDoc(`${PERIOD_ADJ[WGP.period]}White Glove ${range.replace(/[\/\\:,]/g, '')}`, page, autoDownload);
+}
+$('btnWgPdf').addEventListener('click', ()=>{ if(WG) openReport(buildWgReportHtml()); });
+$('btnWgDownload').addEventListener('click', ()=>{ if(WG) downloadReport($('btnWgDownload'), ()=> buildWgReportHtml(true)); });
 
 /* ---------- White Glove summary text ---------- */
 const listText = a => a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
