@@ -418,6 +418,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="panel"><h4>By scanner model</h4><p class="sub">Set on each ticket</p><div class="hbars" id="scannerBars"></div></div>
       <div class="panel"><h4>Days to close</h4><p class="sub">Closed in the period</p><div class="hbars" id="durationBars"></div></div>
     </div>
+    <div class="panel" style="margin-bottom:12px">
+      <div class="list-head" style="margin:0"><h4 style="margin:0">By origin</h4><span class="count" id="originCount"></span><button class="btn btn-ghost" id="btnOriginsToggle" aria-expanded="false"></button></div>
+      <p class="sub">Closed in the period, most common first</p>
+      <div class="hbars" id="originBars" style="max-width:860px"></div>
+    </div>
 
     <details class="panel more-stats" id="moreStats">
       <summary><h4>More breakdowns</h4><span class="sub">Sub-issue type, ticket type, priority, requestor, avoidable and root cause, for the same period</span></summary>
@@ -1088,6 +1093,18 @@ function renderHbars(el, rows, onClick, max = 8){
       <span class="hb-val">${r.value}</span></div>`).join('');
   if(onClick) el.querySelectorAll('.hbar.clickable').forEach(n => n.addEventListener('click', ()=> onClick(list[+n.dataset.i])));
 }
+// By origin on the Report: top 5 of the fixed list, the whole list when expanded.
+let ORIGINS_EXPANDED = false;
+function renderOriginBars(closed, onClick){
+  const top = countBy(closed.filter(t => ORIGINS.includes(t._sp.details.origin)), t => t._sp.details.origin);
+  const set = top.reduce((a, r) => a + r.value, 0);
+  const all = top.concat(ORIGINS.filter(o => !top.some(r => r.label === o)).map(o => ({ label:o, value:0 })));
+  $('originCount').textContent = set ? `${set} of ${closed.length} tickets with origin` : '';
+  $('btnOriginsToggle').textContent = ORIGINS_EXPANDED ? 'Show top 5' : `Show all ${ORIGINS.length}`;
+  $('btnOriginsToggle').setAttribute('aria-expanded', ORIGINS_EXPANDED);
+  renderHbars($('originBars'), set ? (ORIGINS_EXPANDED ? all : top.slice(0, 5)) : [], (r => r.value && onClick(r)), ORIGINS.length);
+}
+$('btnOriginsToggle').addEventListener('click', ()=>{ ORIGINS_EXPANDED = !ORIGINS_EXPANDED; renderReport(); });
 function deltaText(cur, prev){
   const d = cur - prev;
   return d === 0 ? `Same as previous ${PERIOD_WORD[PERIOD]}` : `${d > 0 ? '+' : '−'}${Math.abs(d)} vs previous ${PERIOD_WORD[PERIOD]} (${prev})`;
@@ -1144,6 +1161,7 @@ function renderReport(){
   renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('tIssue'));
   renderMoreStats(closed, durs, toTickets);
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
+  renderOriginBars(closed, toTickets('tOrigin'));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
   renderHbars($('durationBars'), durs.length ? durRows : [], null);
@@ -1720,6 +1738,16 @@ function buildNewsletterHtml(autoDownload = false){
     return `<div class="blk"><h2>Closed per week</h2><div class="wk">${out.map(w => `<div><b>${w.v}</b><i style="height:${Math.max(2, w.v / top * 56)}px;${w.v ? '' : 'background:#e4e0db'}"></i>${esc(w.label)}</div>`).join('')}</div></div>`;
   };
   const os = originStats(R.closed), range = `${fmtLong(R.s)} to ${fmtLong(R.range.last)}, ${R.range.last.getFullYear()}`;
+  // Group, then origin, then the solutions provided on those same tickets.
+  const breakdown = () => {
+    if(!os.set) return '<div class="blk"><h2>Origins by group</h2><p class="dim">Origin not set on the tickets closed this month.</p></div>';
+    const rows = ORIGIN_GROUPS.map(([g, list]) => {
+      const origins = list.map(o => ({ o, ts: R.closed.filter(t => t._sp.details.origin === o) })).filter(x => x.ts.length).sort((a, b) => b.ts.length - a.ts.length);
+      return { g, origins, n: origins.reduce((a, x) => a + x.ts.length, 0) };
+    }).filter(x => x.n).sort((a, b) => b.n - a.n);
+    const sol = ts => countBy(ts, t => t._sp.solution).map(r => `${esc(r.label)}${r.value > 1 ? ` <span class="dim">×${r.value}</span>` : ''}`).join('<br>') || '<span class="dim">–</span>';
+    return `<div class="blk"><h2>Origins by group</h2><table class="ob"><thead><tr><th style="width:24%">Group</th><th style="width:34%">Origin</th><th>Solution provided</th><th class="n">Tickets</th></tr></thead><tbody>${rows.map(r => r.origins.map((x, i) => `<tr${i === 0 ? ' class="gs"' : ''}>${i === 0 ? `<td rowspan="${r.origins.length}" class="g">${esc(r.g)}<span>${r.n} · ${pct(r.n, os.set)}%</span></td>` : ''}<td class="o">${esc(x.o)}</td><td>${sol(x.ts)}</td><td class="n">${x.ts.length}</td></tr>`).join('')).join('')}</tbody></table></div>`;
+  };
   const types = countBy(R.closed, t => t.ticket_type), sols = countBy(R.closed, t => t._sp.solution);
   const avoid = R.stories.filter(x => x.avoidable), slow = R.stories.filter(x => x.days != null).sort((a, b) => b.days - a.days).slice(0, 3);
   const ob = R.openBiz, open = R.open;
@@ -1765,6 +1793,15 @@ function buildNewsletterHtml(autoDownload = false){
   .nl .cols > div:nth-child(2) .fl{ background:#2cbfb4; }
   .nl .bn{ text-align:right; font-weight:600; white-space:nowrap; }
   .nl .bn span{ font-weight:400; color:#9b958d; margin-left:5px; display:inline-block; width:24px; }
+  .nl .ob{ width:100%; border-collapse:collapse; font-size:8.5px; }
+  .nl .ob th{ text-align:left; font-size:7px; font-weight:600; letter-spacing:.9px; text-transform:uppercase; color:#9b958d; padding:0 6px 5px 0; }
+  .nl .ob td{ padding:3.5px 6px 3.5px 0; vertical-align:top; border-top:1px solid #f0ede9; line-height:1.4; }
+  .nl .ob tr.gs td{ border-top:1px solid #d9d4ce; }
+  .nl .ob td.g{ font-weight:600; color:#3d3935; }
+  .nl .ob td.g span{ display:block; font-weight:400; color:#9b958d; margin-top:1px; }
+  .nl .ob td.o{ font-weight:500; }
+  .nl .ob .n{ text-align:right; font-weight:600; width:44px; padding-right:0; }
+  .nl .ob .dim{ color:#9b958d; }
   .nl .item{ display:grid; grid-template-columns:62px 1fr; gap:10px; padding:7px 0; border-bottom:1px solid #f0ede9; line-height:1.45; }
   .nl .item:last-child{ border-bottom:none; }
   .nl .item .no{ font-weight:600; color:#3d3935; }
@@ -1794,12 +1831,7 @@ function buildNewsletterHtml(autoDownload = false){
       <div class="kpi t"><div class="kl">Closed within 3 days</div><div class="kv">${pct(cur.in3, cur.durs.length)}%</div><div class="kf">${cur.in3} of ${cur.durs.length} tickets</div></div>
       <div class="kpi kr"><div class="kl">Avoidable</div><div class="kv">${R.avoid}</div><div class="kf">${pct(R.avoid, R.valid + R.avoid)}% of classified cases</div></div>
     </div>
-    <div class="cols">
-      <div>${os.set ? bars(os.top, `Top ${Math.min(5, os.top.length)} origins`) + bars(os.groups, 'Origins by group', 4) : '<div class="blk"><h2>Top origins</h2><p class="dim">Origin not set on the tickets closed this month.</p></div>'}${weeks()}</div>
-      <div>${bars(sols, 'How they were resolved')}
-        <div class="blk"><h2>Took the longest</h2>${slow.map(x => `<div class="item"><span class="no">${esc(x.t.ticket_number)}</span><span><span class="days ${x.days >= 14 ? 't-red' : x.days >= 7 ? 't-amber' : 't-green'}">${d1(x.days)} days</span> · ${esc(short(!na(x.t._sp.details.rootcause) ? x.t._sp.details.rootcause : x.issue, 60))}<br><span class="dim">${esc(short(x.resolution, 80))}</span></span></div>`).join('')}</div>
-      </div>
-    </div>
+    ${breakdown()}
     <div class="cols">
       <div class="blk"><h2>What could have been avoided (${avoid.length})</h2><div class="panel">${avoid.length ? avoid.map(x => `<div class="item"><span class="no">${esc(x.t.ticket_number)}</span><span><b>${esc(short(!na(x.t._sp.details.rootcause) ? x.t._sp.details.rootcause : x.t.sub_issue_type || x.issue, 50))}</b><br><span class="dim">${esc(short(sentence(x.origin), 110))}</span></span></div>`).join('') : '<div class="item"><span></span><span class="dim">No avoidable escalations this month.</span></div>'}</div></div>
       <div class="blk"><h2>Still open (${open.length})</h2>${open.slice(0, 5).map(o => `<div class="item"><span class="no">${esc(o.ticket_number)}</span><span>${esc(short(o.subject, 62))}<br><span class="tag ${o.business ? 'biz' : 'csc'}">${o.business ? 'Business' : 'CSC'}</span> <span class="dim">${esc(short(o.status_note || '', 50))}</span></span></div>`).join('') || '<p class="dim">Nothing open.</p>'}</div>
