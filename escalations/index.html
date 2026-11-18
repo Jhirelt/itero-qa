@@ -1506,13 +1506,7 @@ function buildReportHtml(autoDownload = false){
         ${ofD ? `<div class="dist">${dist.filter(b => b.value).map(b => `<span style="flex:${b.value};background:${b.color}">${pct(b.value, ofD)}%</span>`).join('')}</div>
         <div class="dist-l">${dist.map(b => `<span>${b.label} (${b.value})</span>`).join('')}</div>` : '<p class="note">Nothing closed in this period.</p>'}
       </div>
-      <div class="cols">${vol(t => t._sp.details.scanner, 'Volume by Model')}
-        <div class="block"><h2>This ${PW} vs Previous ${PW}${cmp ? ` and ${esc(cmp.label)}` : ''}</h2>
-          <table class="grid"><thead><tr><th>Metric</th><th>This ${pw}</th><th>Previous ${pw}</th>${cmp ? `<th>${esc(cmp.label)}</th>` : ''}</tr></thead><tbody>
-          ${cmpRows.map(([label, f]) => `<tr><td>${label}</td><td class="hl">${f(cur)}</td><td>${f(prev)}</td>${cmp ? `<td>${f(cmp)}</td>` : ''}</tr>`).join('')}
-          </tbody></table>
-        </div>
-      </div>
+      <div class="cols">${originsBlock}${vol(t => t._sp.details.scanner, 'Volume by Model')}</div>
     </div>
     <footer>Source: escalations uploaded to the tracker, tickets closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}. Open escalations are the tickets currently listed in Open tickets.${asOf} Resolution time is calendar time from ticket opening to closure.</footer>
   </section>`;
@@ -1520,7 +1514,11 @@ function buildReportHtml(autoDownload = false){
   const page2 = `<section class="page">
     ${header(`${PERIOD_ADJ[PERIOD]}Root Causes, Resolutions and Open Items`, 'What happened, how it was resolved and what remains open')}
     <div class="body">
-      ${originsBlock}
+      <div class="block"><h2>This ${PW} vs Previous ${PW}${cmp ? ` and ${esc(cmp.label)}` : ''}</h2>
+          <table class="grid"><thead><tr><th>Metric</th><th>This ${pw}</th><th>Previous ${pw}</th>${cmp ? `<th>${esc(cmp.label)}</th>` : ''}</tr></thead><tbody>
+          ${cmpRows.map(([label, f]) => `<tr><td>${label}</td><td class="hl">${f(cur)}</td><td>${f(prev)}</td>${cmp ? `<td>${f(cmp)}</td>` : ''}</tr>`).join('')}
+          </tbody></table>
+        </div>
       <div class="block"><h2>Root Cause and Resolution Summary</h2>
         ${causeRows.length ? `<table class="grid"><thead><tr><th style="width:17%">Root Cause</th><th style="width:7%">Tickets</th><th style="width:7%">Avg Days</th><th>What Happened</th><th style="width:27%">How It Was Resolved</th></tr></thead><tbody>
         ${causeRows.map(c => { const a = avgOf(c.items.map(x => x.days).filter(v => v != null)); return `<tr><td class="b">${esc(c.title)}</td><td>${c.items.length} (${pct(c.items.length, n)}%)</td><td class="b ${daysCls(a)}">${fd(a)}</td>
@@ -1588,7 +1586,7 @@ function reportDoc(title, pages, autoDownload, portrait = false){
   h2::after{ content:''; position:absolute; left:0; bottom:-1px; width:30px; height:2px; background:#2cd4c8; }
   table{ width:100%; border-collapse:collapse; }
   .vol td, .vol th{ padding:3.5px 4px; }
-  .origins .vol{ width:62%; } .origins .vol .vl{ width:46%; } .origins tr.dim td{ color:#b3ada5; }
+  .origins .vol .vl{ width:46%; } .cols .origins .fill{ background:#3d3935; } .origins tr.dim td{ color:#b3ada5; }
   .origins tr[data-extra]{ display:none; } #oMore:checked ~ table tr[data-extra]{ display:table-row; }
   label.more{ display:inline-block; cursor:pointer; font-size:8px; font-weight:600; color:#1f8f87; margin-top:5px; }
   label.more .sl, #oMore:checked ~ label.more .sm{ display:none; } #oMore:checked ~ label.more .sl{ display:inline; }
