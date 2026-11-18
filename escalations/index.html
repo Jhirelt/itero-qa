@@ -142,11 +142,11 @@
   .hidden{ display:none !important; }
 
   /* ---------- Report header ---------- */
-  .filters{ display:flex; flex-wrap:wrap; gap:8px; align-items:flex-end; margin-bottom:16px; }
+  .filters{ display:flex; flex-wrap:wrap; gap:7px; align-items:flex-end; margin-bottom:16px; }
   .filters .field{ min-width:140px; }
   .filters .field.grow{ flex:1 1 220px; }
   .filters .spacer{ flex:1 1 auto; }
-  .filters > .btn{ padding:9px 11px; }
+  .filters > .btn{ padding:9px 10px; }
   .seg{ display:flex; gap:2px; background:var(--bg-elev-2); border:1px solid var(--border); border-radius:var(--radius-sm); padding:3px; }
   .seg button{ border:none; background:transparent; color:var(--text-dim); padding:6px 10px; font-size:12px; font-weight:700; border-radius:4px; cursor:pointer; }
   .seg button.active{ background:var(--bg-elev); color:var(--text); box-shadow:0 0 0 1px var(--border); }
@@ -379,10 +379,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="spacer"></div>
       <button class="mini-stat" id="reincidence" title="Closed tickets in the period that had been closed before and came back (reopened). Click to see them."><span class="ms-label">Reincidence</span><span class="ms-value" id="reinValue">–</span><span class="ms-foot" id="reinFoot"></span></button>
       <button class="btn btn-ghost" id="btnSummary" title="A written summary of the selected period, ready to paste"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 10h14M5 14h9M5 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Summary</button>
-      <button class="btn btn-ghost" id="btnPdfReport" title="A two-page report of the selected period, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13H7z M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>PDF report</button>
-      <button class="btn btn-ghost" id="btnDownloadReport" title="Download the two-page report of the selected period as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Download PDF</button>
+      <button class="btn btn-ghost" id="btnPdfReport" title="A two-page report of the selected period, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13H7z M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Report</button>
+      <button class="btn btn-ghost" id="btnDownloadReport" title="Download the two-page report of the selected period as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Download</button>
       <button class="btn btn-ghost" id="btnMonthlyReport" title="Download a one-page report of the month: key numbers and the origin of each escalation"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Monthly</button>
-      <button class="btn btn-ghost" id="btnExportPeriod"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
+      <button class="btn btn-ghost" id="btnNewsletter" title="Download the one-page newsletter of the month as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11a2 2 0 0 1 2 2v13a1 1 0 0 0 2 0V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 4v15a1 1 0 0 0 1 1h13M8 8h6M8 12h6M8 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Newsletter</button>
+      <button class="btn btn-ghost" id="btnExportPeriod" title="Export the tickets closed in the period to Excel"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</button>
     </div>
 
     <div class="kpis">
@@ -1516,9 +1517,9 @@ function buildReportHtml(autoDownload = false){
   return reportDoc(title, page1 + page2, autoDownload);
 }
 // The report page around the pages: print styles, the top bar and the PDF download. Shared by Escalations and White Glove.
-function reportDoc(title, pages, autoDownload){
+function reportDoc(title, pages, autoDownload, portrait = false){
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><title>${esc(title)}</title><style>
-  @page{ size: letter landscape; margin: 0; }
+  @page{ size: letter ${portrait ? 'portrait' : 'landscape'}; margin: 0; }
   *{ box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
   body{ margin:0; background:#e8e6e3; font-family:Inter,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif; color:#2b2926; font-size:9.5px; font-feature-settings:"tnum" 1; -webkit-font-smoothing:antialiased; }
   .bar{ position:sticky; top:0; z-index:5; display:flex; gap:10px; align-items:center; justify-content:center; padding:10px; background:#2b2926; color:#f2efeb; font-size:13px; }
@@ -1577,6 +1578,7 @@ function reportDoc(title, pages, autoDownload){
   @media print{ body{ background:#fff; } .bar{ display:none; } .page{ margin:0; box-shadow:none; } }
   /* While the PDF is drawn: pages edge to edge, each report page starting a PDF page (2px short so the break never adds a blank page). */
   body.pdf{ background:#fff; } body.pdf .bar{ display:none; } body.pdf .page{ margin:0; box-shadow:none; break-after:auto; min-height:calc(8.5in - 2px); } body.pdf .page + .page{ break-before:page; }
+  ${portrait ? 'body.pdf .page{ min-height:calc(11in - 2px); }' : ''}
   </style><link rel="preconnect" href="https://fonts.googleapis.com"><link id="fontcss" rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" media="print" onload="this.media='all'"></head><body>
   <div class="bar"><span>${esc(title)}</span><button class="primary" id="dl" onclick="makePdf()">Download PDF</button><button onclick="window.print()">Print</button></div>
   <div id="pages">${pages}</div>
@@ -1594,7 +1596,7 @@ function reportDoc(title, pages, autoDownload){
       await Promise.all([...document.images].map(i => i.complete ? 0 : new Promise(r => { i.onload = i.onerror = r; })));
       document.body.classList.add('pdf');
       await html2pdf().set({ margin:0, filename:${JSON.stringify(title.replace(/[\/\\:,]/g, '').replace(/[–—]/g, '-') + '.pdf')}, image:{ type:'jpeg', quality:0.96 },
-        html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff' }, jsPDF:{ unit:'in', format:'letter', orientation:'landscape' },
+        html2canvas:{ scale:2, useCORS:true, backgroundColor:'#ffffff' }, jsPDF:{ unit:'in', format:'letter', orientation:${portrait ? "'portrait'" : "'landscape'"} },
         pagebreak:{ mode:['css'], avoid:'tr' } }).from(document.getElementById('pages')).save();
       if(parent !== window) parent.postMessage({ reportPdf:'done' }, '*');
     }catch(err){ console.error(err); if(parent !== window) parent.postMessage({ reportPdf:'error' }, '*'); else alert('Could not create the PDF. Use Print and save as PDF instead.'); }
@@ -1651,6 +1653,123 @@ function buildMonthlyHtml(autoDownload = false){
   return reportDoc(`Monthly Escalations Origins ${month}`, page, autoDownload);
 }
 $('btnMonthlyReport').addEventListener('click', ()=> downloadReport($('btnMonthlyReport'), ()=> buildMonthlyHtml(true)));
+
+/* ---------- Newsletter: one portrait page for the month of the selected period ---------- */
+function buildNewsletterHtml(autoDownload = false){
+  // Uses the month that contains the selected period, whatever the period is.
+  const keep = [PERIOD, ANCHOR];
+  PERIOD = 'month'; ANCHOR = bounds(keep[0], keep[1])[0];
+  let R;
+  try{ R = reportData(); } finally { [PERIOD, ANCHOR] = keep; }
+
+  const { cur, prev } = R, n = cur.n;
+  const month = periodName('month', R.s, R.e), pmName = new Date(R.s.getFullYear(), R.s.getMonth() - 1, 1).toLocaleDateString('en-US', { month:'long' });
+  const short = (x, max) => { x = String(x || '').replace(/\s*\n\s*/g, ' ').trim(); return x.length > max ? x.slice(0, max - 1).replace(/\s+\S*$/, '') + '…' : x; };
+  const na = v => /^\s*(n\/?a|none|-)?\s*$/i.test(v || '');
+  const sentence = x => { x = String(x || '').trim(); return x ? cap(x).replace(/[.\s]*$/, '.') : ''; };
+  const bars = (list, label, max = 5) => {
+    const tot = list.reduce((a, r) => a + r.value, 0), top = Math.max(1, ...list.map(r => r.value));
+    return `<div class="blk"><h2>${esc(label)}</h2><table class="bars">${list.slice(0, max).map(r => `<tr><td class="bl">${esc(r.label)}</td><td class="bb"><span class="tr"><span class="fl" style="width:${(r.value / top * 100).toFixed(1)}%"></span></span></td><td class="bn">${r.value}<span>${pct(r.value, tot)}%</span></td></tr>`).join('')}</table></div>`;
+  };
+  const weeks = () => {
+    const out = []; let x = mondayOf(R.s);
+    // Weeks before the tracker's first closed ticket have no data, so they are left out.
+    const first = reportBase().reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
+    while(x < R.e){ const nx = addDays(x, 7), a = x < R.s ? R.s : x, z = addDays(nx < R.e ? nx : R.e, -1);
+      if(first && nx <= first){ x = nx; continue; }
+      out.push({ label: a.getDate() === z.getDate() ? fmtShort(a) : `${fmtShort(a)}–${z.getDate()}`, v: R.closed.filter(t => inRange(t._c, x, nx)).length }); x = nx; }
+    const top = Math.max(1, ...out.map(w => w.v));
+    return `<div class="blk"><h2>Closed per week</h2><div class="wk">${out.map(w => `<div><b>${w.v}</b><i style="height:${Math.max(2, w.v / top * 56)}px;${w.v ? '' : 'background:#e4e0db'}"></i>${esc(w.label)}</div>`).join('')}</div></div>`;
+  };
+  const types = countBy(R.closed, t => t.ticket_type), sols = countBy(R.closed, t => t._sp.solution);
+  const avoid = R.stories.filter(x => x.avoidable), slow = R.stories.filter(x => x.days != null).sort((a, b) => b.days - a.days).slice(0, 3);
+  const ob = R.openBiz, open = R.open;
+  const d = n - prev.n;
+  const lead = [
+    `${cap(word(n))} escalations were closed in ${month.split(' ')[0]}${prev.n ? `, ${d === 0 ? 'the same as' : `${word(Math.abs(d))} ${d > 0 ? 'more than' : 'fewer than'}`} ${pmName}` : ''}.`,
+    cur.avg != null ? `They took ${d1(cur.avg)} days on average to resolve, and ${word(cur.in3)} of the ${word(cur.durs.length)} were closed within three days.` : '',
+    types[0] ? `${types[0].label} accounted for ${pct(types[0].value, n)}% of the volume${sols[0] ? `, and ${sols[0].label} was the most common resolution` : ''}.` : '',
+    `${cap(word(R.avoid))} ${R.avoid === 1 ? 'case was' : 'cases were'} classified as avoidable, and ${word(open.length)} ${open.length === 1 ? 'escalation remains' : 'escalations remain'} open.`,
+  ].filter(Boolean).join(' ');
+  const css = `<style>
+  .nl.page{ width:8.5in; min-height:11in; }
+  .nl .kpi{ background:none; border:none; border-radius:0; overflow:visible; padding:0; } .nl .kpi::before{ display:none; }
+  .nl .page::before, .nl.page::before{ height:5px; background:linear-gradient(90deg,#2cd4c8 0 88px,#3d3935 88px); }
+  .nl header{ padding:34px 44px 18px; display:flex; align-items:center; gap:22px; }
+  .nl header img{ height:54px; display:block; }
+  .nl .ht{ flex:1; padding-left:22px; border-left:1px solid #e4e0db; }
+  .nl .eyebrow{ font-size:7.5px; font-weight:600; letter-spacing:1.6px; text-transform:uppercase; color:#18a99e; margin-bottom:5px; }
+  .nl h1{ margin:0 0 4px; font-size:23px; font-weight:600; letter-spacing:-.4px; }
+  .nl .ht p{ margin:0; font-size:10px; color:#7c766e; }
+  .nl .issue{ align-self:flex-start; text-align:right; font-size:7.5px; font-weight:600; letter-spacing:1.4px; text-transform:uppercase; color:#9b958d; line-height:1.7; padding-top:3px; }
+  .nl .body{ padding:0 44px; flex:1; }
+  .nl .lead{ font-size:11.5px; line-height:1.6; color:#3d3935; margin:4px 0 20px; padding:14px 18px; background:#faf9f7; border:1px solid #ece8e3; border-left:3px solid #2cd4c8; border-radius:8px; }
+  .nl .kpis{ display:grid; grid-template-columns:repeat(4,1fr); gap:12px; margin-bottom:22px; }
+  .nl .kpi{ border-top:2px solid #3d3935; padding-top:9px; }
+  .nl .kpi.t{ border-color:#2cd4c8; }
+  .nl .kpi.a{ border-color:#c98a2e; }
+  .nl .kpi.kr{ border-color:#c2453d; }
+  .nl .kl{ font-size:7.5px; font-weight:600; letter-spacing:1.1px; text-transform:uppercase; color:#8a847b; }
+  .nl .kv{ font-size:26px; font-weight:600; letter-spacing:-.6px; margin:4px 0 2px; }
+  .nl .kv small{ font-size:12px; font-weight:500; color:#7c766e; margin-left:3px; letter-spacing:0; }
+  .nl .kf{ font-size:8.5px; color:#7c766e; }
+  .nl .cols{ display:grid; grid-template-columns:1fr 1fr; gap:30px; }
+  .nl .blk{ margin-bottom:18px; break-inside:avoid; }
+  .nl h2{ position:relative; font-size:8.5px; font-weight:600; letter-spacing:1.3px; text-transform:uppercase; color:#3d3935; margin:0 0 9px; padding-bottom:7px; border-bottom:1px solid #e4e0db; }
+  .nl h2::after{ content:''; position:absolute; left:0; bottom:-1px; width:28px; height:2px; background:#2cd4c8; }
+  .nl .bars{ width:100%; border-collapse:collapse; }
+  .nl .bars td{ padding:3.5px 0; }
+  .nl .bl{ width:46%; font-weight:500; padding-right:8px !important; }
+  .nl .bb{ width:38%; }
+  .nl .tr{ display:block; height:5px; border-radius:3px; background:#efece8; overflow:hidden; }
+  .nl .fl{ display:block; height:5px; border-radius:3px; background:#3d3935; }
+  .nl .cols > div:nth-child(2) .fl{ background:#2cbfb4; }
+  .nl .bn{ text-align:right; font-weight:600; white-space:nowrap; }
+  .nl .bn span{ font-weight:400; color:#9b958d; margin-left:5px; display:inline-block; width:24px; }
+  .nl .item{ display:grid; grid-template-columns:62px 1fr; gap:10px; padding:7px 0; border-bottom:1px solid #f0ede9; line-height:1.45; }
+  .nl .item:last-child{ border-bottom:none; }
+  .nl .item .no{ font-weight:600; color:#3d3935; }
+  .nl .item b{ font-weight:600; }
+  .nl .item .dim{ color:#7c766e; }
+  .nl .tag{ display:inline-block; font-size:7px; font-weight:600; letter-spacing:.8px; text-transform:uppercase; padding:1.5px 6px; border-radius:999px; margin-right:4px; vertical-align:1px; }
+  .nl .wk{ display:flex; align-items:flex-end; gap:10px; height:92px; padding-top:14px; }
+  .nl .wk div{ flex:1; text-align:center; font-size:8px; color:#8a847b; }
+  .nl .wk i{ display:block; background:#3d3935; border-radius:3px 3px 0 0; margin:0 auto 5px; width:70%; }
+  .nl .wk b{ display:block; color:#2b2926; font-size:9px; margin-bottom:3px; }
+  .nl .tag.biz{ background:#e6f7f5; color:#13887f; }
+  .nl .tag.csc{ background:#f1efec; color:#6f6961; }
+  .nl .days{ font-weight:600; }
+  .nl .t-red{ color:#c2453d; }
+  .nl .t-amber{ color:#b67a22; }
+  .nl .t-green{ color:#3f8f63; }
+  .nl .panel{ background:#fbf6f5; border:1px solid #f0e2df; border-radius:8px; padding:4px 14px; }
+  .nl footer{ margin:0 44px 22px; padding-top:8px; border-top:1px solid #e4e0db; font-size:7.5px; color:#9b958d; line-height:1.5; display:flex; justify-content:space-between; gap:20px; }
+  </style>`;
+  return reportDoc(`Escalations Newsletter ${month}`, css + `<section class="page nl">
+  <header><img src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><div class="eyebrow">CSC Escalations</div><h1>Escalations Newsletter</h1><p>${esc(month)} edition</p></div><div class="issue">Monthly<br>${esc(month)}</div></header>
+  <div class="body">
+    <p class="lead">${esc(lead)}</p>
+    <div class="kpis">
+      <div class="kpi"><div class="kl">Closed</div><div class="kv">${n}</div><div class="kf">${prev.n ? `${d > 0 ? '+' : d < 0 ? '−' : ''}${Math.abs(d)} vs ${esc(pmName)}` : '&nbsp;'}</div></div>
+      <div class="kpi a"><div class="kl">Avg resolution</div><div class="kv">${cur.avg == null ? '–' : d1(cur.avg)}<small>days</small></div><div class="kf">${prev.avg == null ? '&nbsp;' : `${esc(pmName)}: ${d1(prev.avg)} days`}</div></div>
+      <div class="kpi t"><div class="kl">Closed within 3 days</div><div class="kv">${pct(cur.in3, cur.durs.length)}%</div><div class="kf">${cur.in3} of ${cur.durs.length} tickets</div></div>
+      <div class="kpi kr"><div class="kl">Avoidable</div><div class="kv">${R.avoid}</div><div class="kf">${pct(R.avoid, R.valid + R.avoid)}% of classified cases</div></div>
+    </div>
+    <div class="cols">
+      <div>${bars(types, 'By ticket type')}${bars(countBy(R.closed, t => t._sp.details.scanner), 'By scanner model', 4)}${weeks()}</div>
+      <div>${bars(sols, 'How they were resolved')}
+        <div class="blk"><h2>Took the longest</h2>${slow.map(x => `<div class="item"><span class="no">${esc(x.t.ticket_number)}</span><span><span class="days ${x.days >= 14 ? 't-red' : x.days >= 7 ? 't-amber' : 't-green'}">${d1(x.days)} days</span> · ${esc(short(!na(x.t._sp.details.rootcause) ? x.t._sp.details.rootcause : x.issue, 60))}<br><span class="dim">${esc(short(x.resolution, 80))}</span></span></div>`).join('')}</div>
+      </div>
+    </div>
+    <div class="cols">
+      <div class="blk"><h2>What could have been avoided (${avoid.length})</h2><div class="panel">${avoid.length ? avoid.map(x => `<div class="item"><span class="no">${esc(x.t.ticket_number)}</span><span><b>${esc(short(!na(x.t._sp.details.rootcause) ? x.t._sp.details.rootcause : x.t.sub_issue_type || x.issue, 50))}</b><br><span class="dim">${esc(short(sentence(x.origin), 110))}</span></span></div>`).join('') : '<div class="item"><span></span><span class="dim">No avoidable escalations this month.</span></div>'}</div></div>
+      <div class="blk"><h2>Still open (${open.length})</h2>${open.slice(0, 5).map(o => `<div class="item"><span class="no">${esc(o.ticket_number)}</span><span>${esc(short(o.subject, 62))}<br><span class="tag ${o.business ? 'biz' : 'csc'}">${o.business ? 'Business' : 'CSC'}</span> <span class="dim">${esc(short(o.status_note || '', 50))}</span></span></div>`).join('') || '<p class="dim">Nothing open.</p>'}</div>
+    </div>
+  </div>
+  <footer><span>Source: escalations closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, uploaded to the Escalations tracker. Avoidable, root cause and origin are set on each ticket.</span><span>iTero Technical Support</span></footer>
+  </section>`, autoDownload, true);
+}
+$('btnNewsletter').addEventListener('click', ()=> downloadReport($('btnNewsletter'), ()=> buildNewsletterHtml(true)));
 
 function openReport(html){
   const w = window.open('', '_blank');
