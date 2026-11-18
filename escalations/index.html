@@ -789,11 +789,16 @@ function solutionOf(t){ const s = solutionText(t.solution_provided); return s.le
    They live apart from the uploaded data, so a new upload of the same ticket keeps them. */
 const SCANNER_MODELS = ['Office PC', 'Lumina PC', 'Element 2', 'Element 2 5D', '5D Plus - Cart', '5D Plus Lite - Cart', 'Lumina - Cart', 'Lumina Pro - Cart',
   '5D Plus - Mobile', '5D Plus Lite - Mobile', 'Lumina - Mobile', 'Lumina Pro - Mobile', 'Flex', '5D Flex', '5D Plus LC', '5D Plus Lite LC'];
+const ORIGINS = ['RM replacement request', 'RM request', 'IL request', 'Management request', 'Internal team request',
+  'Recurrent software issue', 'Outdated or wrong software version', 'Physical damage / out of warranty', 'Scan quality / lab rejection',
+  'Customer dissatisfaction with process / delays', 'Admin / logistics request', 'Failed EFRA / reinstall', 'Replacement arrived faulty (DOA)',
+  'Hardware failure', 'Recurrent connectivity (network / wand)', 'Customer error / knowledge gap',
+  'Not an escalation (already resolved / out of scope)', 'Internal process / documentation error'];
 const DETAIL_FIELDS = [
   { key:'avoidable',   col:'avoidable',         label:'Avoidable', options:['Yes','No'] },
   { key:'scanner',     col:'scanner_model',     label:'Scanner model', options:SCANNER_MODELS },
   { key:'rootcause',   col:'root_cause',        label:'Root cause', hint:'Short title, e.g. Incomplete network troubleshooting' },
-  { key:'origin',      col:'origin',            label:'Origin of the escalation', long:true, hint:'What happened and why it was escalated' },
+  { key:'origin',      col:'origin',            label:'Origin of the escalation', options:ORIGINS },
   { key:'prevtickets', col:'previous_tickets',  label:'Previous tickets' },
   { key:'handlers',    col:'previous_handlers', label:'Previous case handlers' },
 ];
@@ -990,6 +995,7 @@ const TFILTERS = [
   { id:'tScanner',   label:'Scanner model',         get:t=>t._sp.details.scanner, more:true },
   { id:'tAvoidable', label:'Avoidable',             get:t=>t._sp.details.avoidable, more:true },
   { id:'tRootCause', label:'Root cause',            get:t=>t._sp.details.rootcause, more:true },
+  { id:'tOrigin',    label:'Origin',                get:t=>t._sp.details.origin, more:true },
   { id:'tCsat',      label:'Customer satisfaction', get:t=>isCsat(t) ? 'Yes' : 'No', more:true },
 ];
 $('tFiltersMain').innerHTML = TFILTERS.filter(f => !f.more).map(f => `<div class="field"><label for="${f.id}">${f.label}</label><select class="ctl" id="${f.id}"></select></div>`).join('');
@@ -1458,6 +1464,18 @@ function buildReportHtml(autoDownload = false){
   R.stories.forEach(x => { const k = x.title.toLowerCase(); if(!causes.has(k)) causes.set(k, { title: x.title, items: [] }); causes.get(k).items.push(x); });
   const causeRows = [...causes.values()].sort((a,b) => b.items.length - a.items.length || (avgOf(b.items.map(x=>x.days).filter(v=>v!=null)) ?? 0) - (avgOf(a.items.map(x=>x.days).filter(v=>v!=null)) ?? 0));
 
+  // Origins: top 5 of the fixed list; the rest opens on screen (the PDF keeps the top 5).
+  const oCnt = new Map(ORIGINS.map(o => [o, []]));
+  R.closed.forEach(t => { const o = t._sp.details.origin; if(oCnt.has(o)) oCnt.get(o).push(t); });
+  const oAll = ORIGINS.map((o, i) => ({ o, rows: oCnt.get(o), i })).sort((a, b) => b.rows.length - a.rows.length || a.i - b.i);
+  const oSet = oAll.reduce((a, x) => a + x.rows.length, 0), oTop = Math.max(1, ...oAll.map(x => x.rows.length));
+  const oRow = x => `<tr${x.rows.length ? '' : ' class="dim"'}><td class="vl">${esc(x.o)}</td><td class="vb"><span class="track"><span class="fill" style="width:${(x.rows.length / oTop * 100).toFixed(1)}%"></span></span></td>
+      <td class="r b">${x.rows.length}${x.rows.length ? ` (${pct(x.rows.length, oSet)}%)` : ''}</td><td class="r dim">${fd(avgDays(x.rows))}</td></tr>`;
+  const oHead = '<thead><tr><th></th><th></th><th class="r">Tickets (%)</th><th class="r">Avg days</th></tr></thead>';
+  const top5 = oAll.filter(x => x.rows.length).slice(0, 5), rest = oAll.filter(x => !top5.includes(x));
+  const originsBlock = `<div class="block origins"><h2>Top Escalation Origins</h2>${oSet ? `${autoDownload ? '' : '<input type="checkbox" id="oMore" hidden>'}<table class="vol">${oHead}<tbody>${top5.map(oRow).join('')}${autoDownload ? '' : rest.map(x => oRow(x).replace('<tr', '<tr data-extra')).join('')}</tbody></table>${autoDownload ? '' : `<label for="oMore" class="more"><span class="sm">Show all ${ORIGINS.length} origins</span><span class="sl">Show top 5</span></label>`}`
+    : `<p class="note">${n ? 'Origin not set on the tickets closed in this period.' : 'Nothing closed in this period.'}</p>`}</div>`;
+
   const header = (title, sub) => `<header><img class="logo" src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><h1>${esc(title)}</h1><p>${esc(R.range.title)}<i></i>${esc(sub)}</p></div><span class="pg">CSC Escalations</span></header>`;
   const asOf = UPLOADS[0] ? ` Data as of the upload of ${fmtDateTime(new Date(UPLOADS[0].uploaded_at))}.` : '';
 
@@ -1489,6 +1507,7 @@ function buildReportHtml(autoDownload = false){
   const page2 = `<section class="page">
     ${header(`${PERIOD_ADJ[PERIOD]}Root Causes, Resolutions and Open Items`, 'What happened, how it was resolved and what remains open')}
     <div class="body">
+      ${originsBlock}
       <div class="block"><h2>Root Cause and Resolution Summary</h2>
         ${causeRows.length ? `<table class="grid"><thead><tr><th style="width:17%">Root Cause</th><th style="width:7%">Tickets</th><th style="width:7%">Avg Days</th><th>What Happened</th><th style="width:27%">How It Was Resolved</th></tr></thead><tbody>
         ${causeRows.map(c => { const a = avgOf(c.items.map(x => x.days).filter(v => v != null)); return `<tr><td class="b">${esc(c.title)}</td><td>${c.items.length} (${pct(c.items.length, n)}%)</td><td class="b ${daysCls(a)}">${fd(a)}</td>
@@ -1556,6 +1575,11 @@ function reportDoc(title, pages, autoDownload, portrait = false){
   h2::after{ content:''; position:absolute; left:0; bottom:-1px; width:30px; height:2px; background:#2cd4c8; }
   table{ width:100%; border-collapse:collapse; }
   .vol td, .vol th{ padding:3.5px 4px; }
+  .origins .vol{ width:62%; } .origins .vol .vl{ width:46%; } .origins tr.dim td{ color:#b3ada5; }
+  .origins tr[data-extra]{ display:none; } #oMore:checked ~ table tr[data-extra]{ display:table-row; }
+  label.more{ display:inline-block; cursor:pointer; font-size:8px; font-weight:600; color:#1f8f87; margin-top:5px; }
+  label.more .sl, #oMore:checked ~ label.more .sm{ display:none; } #oMore:checked ~ label.more .sl{ display:inline; }
+  @media print{ label.more{ display:none; } }
   .vol th{ font-size:7px; letter-spacing:.6px; text-transform:uppercase; color:#9b958d; font-weight:600; }
   .vl{ width:34%; font-weight:500; } .vb{ width:38%; }
   .track{ display:block; height:6px; border-radius:3px; background:#efece8; overflow:hidden; } .fill{ display:block; height:6px; border-radius:3px; background:#3d3935; }
@@ -1829,6 +1853,7 @@ function switchView(v){
   ['report','tickets','open','uploads'].forEach(x => $('view-'+x).classList.toggle('hidden', x !== v));
   if(v === 'report') renderReport(); else if(v === 'tickets') renderTickets(); else if(v === 'open') renderOpen(); else renderUploads();
 }
+
 document.querySelectorAll('#escTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
 /* ============================================================
