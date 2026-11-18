@@ -217,7 +217,6 @@
   #originTable tr.row td.zero{ color:var(--text-dim); }
   #originTable tr.zero-row td{ color:var(--text-dim); }
   #originTable .o-bar{ height:10px; background:var(--bar); border-radius:0 4px 4px 0; min-width:2px; }
-  .k-value.o-top{ font-size:18px; line-height:1.25; }
   .hb-val{ font-weight:700; font-variant-numeric:tabular-nums; min-width:24px; text-align:right; }
   .empty{ font-size:12.5px; color:var(--text-faint); padding:18px 0; text-align:center; }
 
@@ -321,7 +320,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
   <div class="tabs" id="escTabs">
     <button class="tab-btn active" data-view="report">Report</button>
     <button class="tab-btn" data-view="tickets">Tickets</button>
-    <button class="tab-btn" data-view="origins">Origins</button>
     <button class="tab-btn" data-view="open">Open tickets</button>
     <button class="tab-btn" data-view="uploads">Uploads</button>
   </div>
@@ -424,6 +422,21 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="panel"><h4>Days to close</h4><p class="sub">Closed in the period</p><div class="hbars" id="durationBars"></div></div>
     </div>
 
+    <div class="grid-2">
+      <div class="panel">
+        <div class="list-head" style="margin:0"><h4 style="margin:0">By origin</h4><span class="count" id="originCount"></span><button class="btn btn-ghost" id="btnOriginsToggle" aria-expanded="false"></button></div>
+        <p class="sub" id="originSub">Closed in the period, most common first. Click a row to see its tickets.</p>
+        <div class="table-wrap" style="border:none;">
+          <table class="data" id="originTable" style="min-width:520px;"><thead><tr><th style="width:36px">#</th><th>Origin</th><th>Group</th><th style="text-align:right">Tickets</th><th style="text-align:right">Share</th><th style="width:26%"></th></tr></thead><tbody></tbody></table>
+        </div>
+      </div>
+      <div class="panel">
+        <h4>Origins by group</h4>
+        <p class="sub">Closed in the period</p>
+        <div class="hbars" id="originGroupBars"></div>
+      </div>
+    </div>
+
     <details class="panel more-stats" id="moreStats">
       <summary><h4>More breakdowns</h4><span class="sub">Sub-issue type, ticket type, priority, requestor, avoidable and root cause, for the same period</span></summary>
       <div class="grid-3" id="moreBars"></div>
@@ -467,38 +480,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         </tr></thead>
         <tbody></tbody>
       </table>
-    </div>
-  </div>
-
-  <!-- =============== ORIGINS =============== -->
-  <div id="view-origins" class="hidden">
-    <div class="filters">
-      <div class="field"><label>Show</label>
-        <div class="seg" id="originSeg">
-          <button data-range="all" class="active">All time</button>
-          <button data-range="period">Selected period</button>
-        </div>
-      </div>
-      <span class="sub" id="originRangeNote" style="font-size:12px;align-self:center"></span>
-    </div>
-    <div class="kpis">
-      <div class="kpi"><div class="k-label">Tickets with origin</div><div class="k-value" id="oSet">–</div><div class="k-foot" id="oSetFoot"></div></div>
-      <div class="kpi"><div class="k-label">Most common origin</div><div class="k-value o-top" id="oTop">–</div><div class="k-foot" id="oTopFoot"></div></div>
-      <div class="kpi"><div class="k-label">Internal requests</div><div class="k-value" id="oReq">–</div><div class="k-foot" id="oReqFoot"></div></div>
-    </div>
-    <div class="grid-2">
-      <div class="panel">
-        <div class="list-head" style="margin:0"><h4 style="margin:0">Origins list</h4><span class="count" id="originCount"></span></div>
-        <p class="sub">The fixed list of origins, most common first. Click a row to see its tickets.</p>
-        <div class="table-wrap" style="border:none;">
-          <table class="data" id="originTable" style="min-width:520px;"><thead><tr><th style="width:36px">#</th><th>Origin</th><th>Group</th><th style="text-align:right">Tickets</th><th style="text-align:right">Share</th><th style="width:28%"></th></tr></thead><tbody></tbody></table>
-        </div>
-      </div>
-      <div class="panel">
-        <h4>By group</h4>
-        <p class="sub">Origins grouped by where the escalation came from</p>
-        <div class="hbars" id="originGroupBars"></div>
-      </div>
     </div>
   </div>
 
@@ -1176,6 +1157,7 @@ function renderReport(){
   renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('tIssue'));
   renderMoreStats(closed, durs, toTickets);
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
+  renderOrigins(closed);
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
   const durRows = BUCKETS.map(([label,lo,hi]) => ({ label, value: durs.filter(v => v >= lo && v < hi).length }));
   renderHbars($('durationBars'), durs.length ? durRows : [], null);
@@ -1877,40 +1859,31 @@ $('btnExportAll').addEventListener('click', ()=> exportRows(ticketRows(), 'Escal
 function currentView(){ return (document.querySelector('#escTabs .tab-btn.active') || {}).dataset?.view || 'report'; }
 function switchView(v){
   document.querySelectorAll('#escTabs .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.view === v));
-  ['report','tickets','origins','open','uploads'].forEach(x => $('view-'+x).classList.toggle('hidden', x !== v));
-  if(v === 'report') renderReport(); else if(v === 'tickets') renderTickets(); else if(v === 'origins') renderOrigins(); else if(v === 'open') renderOpen(); else renderUploads();
+  ['report','tickets','open','uploads'].forEach(x => $('view-'+x).classList.toggle('hidden', x !== v));
+  if(v === 'report') renderReport(); else if(v === 'tickets') renderTickets(); else if(v === 'open') renderOpen(); else renderUploads();
 }
 
-/* ---------- Origins: how often each origin of the fixed list comes up ---------- */
-let ORIGIN_RANGE = 'all';   // 'all' or 'period' (the period picked on the Report tab)
-function renderOrigins(){
-  const per = ORIGIN_RANGE === 'period' ? bounds(PERIOD, ANCHOR) : null;
-  const pname = periodName(PERIOD, ...bounds(PERIOD, ANCHOR));
-  document.querySelectorAll('#originSeg button').forEach(b => b.classList.toggle('active', b.dataset.range === ORIGIN_RANGE));
-  $('originRangeNote').textContent = per ? `Closed in ${pname}. Change the period on the Report tab.` : `All ${T.length} tickets in the tracker.`;
-  const rows = per ? T.filter(t => inRange(t._c, per[0], per[1])) : T;
+/* ---------- By origin (Report tab): top 5 of the fixed list, the whole list when expanded ---------- */
+let ORIGINS_EXPANDED = false;
+function renderOrigins(closed){
   const cnt = new Map(ORIGINS.map(o => [o, 0])); let set = 0;
-  rows.forEach(t => { const o = t._sp.details.origin; if(o && cnt.has(o)){ cnt.set(o, cnt.get(o) + 1); set++; } });
-  const list = ORIGINS.map((o, i) => ({ o, n: cnt.get(o), i })).sort((a, b) => b.n - a.n || a.i - b.i);
-  const top = list[0] && list[0].n ? list[0] : null, max = top ? top.n : 1;
-  const pct = n => set ? Math.round(n / set * 100) + '%' : '–';
-  $('oSet').textContent = set;
-  $('oSetFoot').textContent = rows.length ? `${Math.round(set / rows.length * 100)}% of ${rows.length} tickets` : 'No tickets in this range';
-  $('oTop').textContent = top ? top.o : '–';
-  $('oTopFoot').textContent = top ? `${top.n} tickets, ${pct(top.n)} of those with origin` : '';
-  const req = ORIGIN_GROUPS[0][1].reduce((a, o) => a + cnt.get(o), 0);
-  $('oReq').textContent = req;
-  $('oReqFoot').textContent = set ? `${pct(req)} came from RM, IL, management or another team, without a replacement` : '';
-  $('originCount').textContent = `${ORIGINS.length} origins`;
-  let rank = 0;
-  $('originTable').querySelector('tbody').innerHTML = list.map(x => `<tr class="${x.n ? 'row' : 'zero-row'}" data-o="${esc(x.o)}">
-      <td class="num">${x.n ? ++rank : ''}</td><td>${esc(x.o)}</td><td class="nowrap">${esc(originGroup(x.o))}</td>
+  closed.forEach(t => { const o = t._sp.details.origin; if(o && cnt.has(o)){ cnt.set(o, cnt.get(o) + 1); set++; } });
+  const all = ORIGINS.map((o, i) => ({ o, n: cnt.get(o), i })).sort((a, b) => b.n - a.n || a.i - b.i);
+  const list = ORIGINS_EXPANDED ? all : all.filter(x => x.n).slice(0, 5);
+  const max = Math.max(1, ...all.map(x => x.n));
+  const pct = n => set ? Math.round(n / set * 100) + '%' : '';
+  $('originCount').textContent = set ? `${set} of ${closed.length} tickets with origin` : '';
+  $('btnOriginsToggle').textContent = ORIGINS_EXPANDED ? 'Show top 5' : `Show all ${ORIGINS.length}`;
+  $('btnOriginsToggle').setAttribute('aria-expanded', ORIGINS_EXPANDED);
+  $('originTable').querySelector('tbody').innerHTML = list.length ? list.map((x, k) => `<tr class="${x.n ? 'row' : 'zero-row'}" data-o="${esc(x.o)}">
+      <td class="num">${x.n ? k + 1 : ''}</td><td>${esc(x.o)}</td><td class="nowrap">${esc(originGroup(x.o))}</td>
       <td class="num"><b>${x.n}</b></td><td class="num">${x.n ? pct(x.n) : ''}</td>
-      <td>${x.n ? `<div class="o-bar" style="width:${(x.n / max * 100).toFixed(1)}%"></div>` : ''}</td></tr>`).join('');
-  $('originTable').querySelectorAll('tr.row').forEach(tr => tr.addEventListener('click', ()=> openTicketsWith({ filters:{ tOrigin: tr.dataset.o }, period: !!per })));
+      <td>${x.n ? `<div class="o-bar" style="width:${(x.n / max * 100).toFixed(1)}%"></div>` : ''}</td></tr>`).join('')
+    : '<tr><td colspan="6" class="empty">No origin set in this period</td></tr>';
+  $('originTable').querySelectorAll('tr.row').forEach(tr => tr.addEventListener('click', ()=> openTicketsWith({ filters:{ tOrigin: tr.dataset.o }, period:true })));
   renderHbars($('originGroupBars'), set ? ORIGIN_GROUPS.map(([g, l]) => ({ label:g, value: l.reduce((a, o) => a + cnt.get(o), 0) })) : [], null);
 }
-document.querySelectorAll('#originSeg button').forEach(b => b.addEventListener('click', ()=>{ ORIGIN_RANGE = b.dataset.range; renderOrigins(); }));
+$('btnOriginsToggle').addEventListener('click', ()=>{ ORIGINS_EXPANDED = !ORIGINS_EXPANDED; renderReport(); });
 document.querySelectorAll('#escTabs .tab-btn').forEach(b => b.addEventListener('click', ()=>switchView(b.dataset.view)));
 
 /* ============================================================
