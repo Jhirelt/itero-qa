@@ -832,9 +832,10 @@ const ORIGINS = ['RM replacement request', 'RM request', 'IL request', 'Manageme
   'Hardware failure', 'Recurrent connectivity (network / wand)', 'Customer error / knowledge gap',
   'Not an escalation (already resolved / out of scope)', 'Internal process / documentation error'];
 const ORIGIN_GROUPS = [
-  ['Internal requests', ['RM replacement request', 'RM request', 'IL request', 'Management request', 'Internal team request']],
+  ['Internal requests', ['RM request', 'IL request', 'Management request', 'Internal team request']],
   ['Software and connectivity', ['Recurrent software issue', 'Outdated or wrong software version', 'Failed EFRA / reinstall', 'Recurrent connectivity (network / wand)']],
-  ['Hardware and scan quality', ['Physical damage / out of warranty', 'Replacement arrived faulty (DOA)', 'Hardware failure', 'Scan quality / lab rejection']],
+  // An RM replacement request always ended in a part replacement, so it counts as hardware (user rule).
+  ['Hardware and scan quality', ['RM replacement request', 'Physical damage / out of warranty', 'Replacement arrived faulty (DOA)', 'Hardware failure', 'Scan quality / lab rejection']],
   ['Customer and process', ['Customer dissatisfaction with process / delays', 'Customer error / knowledge gap', 'Admin / logistics request', 'Internal process / documentation error', 'Not an escalation (already resolved / out of scope)']],
 ];
 const originGroup = o => (ORIGIN_GROUPS.find(([, l]) => l.includes(o)) || ['Other'])[0];
@@ -1899,7 +1900,7 @@ function renderOrigins(){
   $('oTopFoot').textContent = top ? `${top.n} tickets, ${pct(top.n)} of those with origin` : '';
   const req = ORIGIN_GROUPS[0][1].reduce((a, o) => a + cnt.get(o), 0);
   $('oReq').textContent = req;
-  $('oReqFoot').textContent = set ? `${pct(req)} came from RM, IL, management or another team` : '';
+  $('oReqFoot').textContent = set ? `${pct(req)} came from RM, IL, management or another team, without a replacement` : '';
   $('originCount').textContent = `${ORIGINS.length} origins`;
   let rank = 0;
   $('originTable').querySelector('tbody').innerHTML = list.map(x => `<tr class="${x.n ? 'row' : 'zero-row'}" data-o="${esc(x.o)}">
