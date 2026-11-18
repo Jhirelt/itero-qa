@@ -1042,7 +1042,8 @@ function setPeriod(p){
   PERIOD = p;
   document.querySelectorAll('#periodSeg button').forEach(x => x.classList.toggle('active', x.dataset.period === p));
 }
-document.querySelectorAll('#periodSeg button').forEach(b => b.addEventListener('click', ()=>{ setPeriod(b.dataset.period); renderReport(); }));
+// Week always jumps back to the current week.
+document.querySelectorAll('#periodSeg button').forEach(b => b.addEventListener('click', ()=>{ setPeriod(b.dataset.period); if(b.dataset.period === 'week') ANCHOR = new Date(); renderReport(); }));
 $('btnPrev').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], -1); renderReport(); });
 $('btnNext').addEventListener('click', ()=>{ ANCHOR = shift(PERIOD, bounds(PERIOD, ANCHOR)[0], 1); renderReport(); });
 $('btnLatest').addEventListener('click', ()=>{ ANCHOR = latestClosed() || new Date(); if(PERIOD === 'custom') ANCHOR = addDays(startOfDay(ANCHOR), 1 - CUSTOM_DAYS); renderReport(); });
@@ -1806,7 +1807,7 @@ function wgPeriodData(){
   const [s, e] = wgBounds(WGP.anchor), [ps, pe] = wgBounds(wgShift(s, -1));
   return { s, e, rows: WG.tickets.filter(t => inRange(t._o, s, e)).sort((a, b) => b._o - a._o), prev: WG.tickets.filter(t => inRange(t._o, ps, pe)) };
 }
-document.querySelectorAll('#wgPeriodSeg button').forEach(b => b.addEventListener('click', ()=>{ wgSetPeriod(b.dataset.period); renderWg(); }));
+document.querySelectorAll('#wgPeriodSeg button').forEach(b => b.addEventListener('click', ()=>{ wgSetPeriod(b.dataset.period); if(b.dataset.period === 'week') WGP.anchor = new Date(); renderWg(); }));
 $('wgPrev').addEventListener('click', ()=>{ WGP.anchor = wgShift(wgBounds(WGP.anchor)[0], -1); renderWg(); });
 $('wgNext').addEventListener('click', ()=>{ WGP.anchor = wgShift(wgBounds(WGP.anchor)[0], 1); renderWg(); });
 $('wgLatest').addEventListener('click', ()=>{ WGP.anchor = wgLatest() || new Date(); if(WGP.period === 'custom') WGP.anchor = addDays(startOfDay(WGP.anchor), 1 - WGP.days); renderWg(); });
