@@ -1149,7 +1149,21 @@ $('btnHeatExport').addEventListener('click', ev => {
   if(!HEAT) return;
   if(!window.XLSX){ toast('Excel export could not load. Check your connection.'); return; }
   const ws = XLSX.utils.aoa_to_sheet([HEAT.head, ...HEAT.rows]); ws['!cols'] = [{ wch:26 }, { wch:44 }, ...HEAT.head.slice(2).map(()=>({ wch:10 }))];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Origins heatmap'); XLSX.writeFile(wb, 'Origins heatmap.xlsx');
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Origins heatmap');
+  // Excel's own green-yellow-red color scale (conditional formatting) on the month cells, without the totals.
+  const lastCol = XLSX.utils.encode_col(HEAT.head.length - 2), lastRow = HEAT.rows.length;   // header is row 1, total row is left out
+  const range = `C2:${lastCol}${lastRow}`;
+  try{
+    const zip = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { type:'array', bookType:'xlsx' })), { type:'array' });
+    const i = zip.FullPaths.findIndex(p => /xl\/worksheets\/sheet1\.xml$/.test(p));
+    const cf = `<conditionalFormatting sqref="${range}"><cfRule type="colorScale" priority="1"><colorScale><cfvo type="min"/><cfvo type="percentile" val="50"/><cfvo type="max"/><color rgb="FF63BE7B"/><color rgb="FFFFEB84"/><color rgb="FFF8696B"/></colorScale></cfRule></conditionalFormatting>`;
+    let xml = new TextDecoder().decode(zip.FileIndex[i].content);
+    xml = xml.includes('<ignoredErrors') ? xml.replace('<ignoredErrors', cf + '<ignoredErrors') : xml.replace('</worksheet>', cf + '</worksheet>');
+    zip.FileIndex[i].content = new TextEncoder().encode(xml); zip.FileIndex[i].size = zip.FileIndex[i].content.length;
+    const blob = new Blob([XLSX.CFB.write(zip, { fileType:'zip', type:'array' })], { type:'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'Origins heatmap.xlsx'; document.body.appendChild(a); a.click();
+    setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); }, 1000);
+  }catch(e){ console.error(e); XLSX.writeFile(wb, 'Origins heatmap.xlsx'); }
 });
 function deltaText(cur, prev){
   const d = cur - prev;
