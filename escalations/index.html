@@ -1141,6 +1141,8 @@ function monthSpans(from, last, max = 12){
 const firstClosed = () => T.reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
 
 /* ---------- iTero Support (Report): Salesforce cases export, each issue category Technical or Regular ---------- */
+// Technical categories left out of the annual heatmap (they still count as Technical everywhere else).
+const SUP_HEAT_SKIP = ['upgrade/update', 'resto', 'crash'];
 let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [], SUP_MONTHLY = null;
 const supKey = x => String(x ?? '').trim().toLowerCase();
 const supKind = cat => (SUP_CATS.get(supKey(cat)) || {}).kind || null;
@@ -1194,7 +1196,7 @@ function renderSupport(){
     const last = ANCHOR ? addDays(bounds(PERIOD, ANCHOR)[1], -1) : new Date(), ys = new Date(last.getFullYear(), 0, 1);
     const months = monthSpans(ys, last, 12).filter(m => SUP_CASES.some(r => r._d && inRange(r._d, m.s, m.e)));
     const yRows = SUP_CASES.filter(r => r._d && inRange(r._d, ys, months.length ? months[months.length - 1].e : ys));
-    const top = supCount(yRows).filter(r => supKind(r.label) === 'Technical').slice(0, 10);
+    const top = supCount(yRows).filter(r => supKind(r.label) === 'Technical' && !SUP_HEAT_SKIP.includes(supKey(r.label))).slice(0, 10);
     const grid = top.map(t => ({ label:t.label, tot:t.value, v: months.map(m => yRows.filter(r => supKey(r.issue_category) === supKey(t.label) && inRange(r._d, m.s, m.e)).reduce((a, r) => a + r.cases, 0)) }));
     const max = Math.max(1, ...grid.flatMap(r => r.v));
     const colTot = months.map((m, i) => grid.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
@@ -1208,7 +1210,7 @@ function renderSupport(){
       .concat(spikes.map(x => `${esc(x.label)} spiked in ${fullM(x.m)} (${n(x.v)} cases, against ${n(Math.round(x.avg))} a month on average).`));
     SUP_MONTHLY = { months, grid, colTot, year: last.getFullYear() };
     if(grid.length) $('supStats').insertAdjacentHTML('beforeend', `<div class="sup-heat">
-      <h4 style="margin:22px 0 2px">${last.getFullYear()} | Annual Issue Heatmap</h4><p class="sub" style="margin:0 0 10px">Top 10 Technical issue categories, ${fullM(months[0])} to ${fullM(months[months.length - 1])}${months[months.length - 1].e > new Date() ? ' (month in progress)' : ''}.</p>
+      <h4 style="margin:22px 0 2px">${last.getFullYear()} | Annual Issue Heatmap</h4><p class="sub" style="margin:0 0 10px">Top 10 Technical issue categories (without Upgrade/Update, Resto and Crash), ${fullM(months[0])} to ${fullM(months[months.length - 1])}${months[months.length - 1].e > new Date() ? ' (month in progress)' : ''}.</p>
       <div class="table-wrap" style="border:none;"><table class="data heat" style="min-width:640px;"><thead><tr><th>Issue Category</th>${months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>
       ${grid.map(r => `<tr><td>${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="c b">${n(r.tot)}</td></tr>`).join('')}
       <tr class="tot"><td>Total Cases</td>${colTot.map(v => `<td class="c b">${n(v)}</td>`).join('')}<td class="c b">${n(all)}</td></tr></tbody></table></div>
