@@ -445,6 +445,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="list-head" style="margin:0 0 8px"><span class="spacer"></span><button class="btn btn-ghost" id="btnHeatExport"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button></div>
       <div class="table-wrap" style="border:none;"><table class="data heat" id="heatTable" style="min-width:640px;"></table></div>
     </details>
+    <details class="panel more-stats" id="supportPanel" style="margin-top:12px" open>
+      <summary><h4>iTero Support</h4><span class="sub" id="supSub">Salesforce cases by issue category, Technical or Regular</span></summary>
+      <div class="list-head" style="margin:0 0 10px"><span class="sub" id="supAsOf"></span><span class="spacer"></span>
+        <button class="btn btn-ghost" id="btnSupCats">Categories</button>
+        <button class="btn btn-ghost hidden" id="btnSupUpload"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20V9m0 0-4 4m4-4 4 4M5 4h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Upload Excel</button>
+        <input type="file" id="supFile" accept=".xlsx,.xls,.csv,.htm,.html" hidden></div>
+      <div id="supStats"></div>
+      <div id="supCats" class="hidden" style="margin-top:14px"></div>
+    </details>
 
     <div class="panel">
       <h4 id="closedTitle">Closed in the period</h4>
@@ -893,6 +902,7 @@ async function startFor(user){
   $('userBadgeName').textContent = ME.display_name;
   setAppVisible(true);
   await loadAll(true);
+  loadSupport();
   if(currentSection() === 'whiteglove') switchWgView(currentWgView());
 }
 $('loginForm').addEventListener('submit', async e=>{
@@ -1130,6 +1140,126 @@ function monthSpans(from, last, max = 12){
 }
 const firstClosed = () => T.reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
 
+/* ---------- iTero Support (Report): Salesforce cases export, each issue category Technical or Regular ---------- */
+let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [];
+const supKey = x => String(x ?? '').trim().toLowerCase();
+const supKind = cat => (SUP_CATS.get(supKey(cat)) || {}).kind || null;
+async function loadSupport(){
+  try{
+    const [cats, ups] = await Promise.all([ fetchAll('support_issue_categories', 'category'), fetchAll('support_case_uploads', 'uploaded_at') ]);
+    SUP_CATS = new Map(cats.map(c => [supKey(c.category), c]));
+    SUP_UPLOAD = ups[0] || null;
+    SUP_CASES = [];
+    if(SUP_UPLOAD){
+      for(let from = 0; ; from += 1000){
+        const { data, error } = await sb.from('support_cases').select('opened_on, issue_category, cases').eq('upload_id', SUP_UPLOAD.id).order('id').range(from, from + 999);
+        if(error) throw error;
+        SUP_CASES.push(...data.map(r => ({ ...r, _d: parseTs(r.opened_on) })));
+        if(data.length < 1000) break;
+      }
+    }
+  }catch(err){ console.error(err); $('supStats').innerHTML = '<div class="empty">Could not load iTero Support. Reload the page to try again.</div>'; return; }
+  SUP_LOADED = true; renderSupport();
+}
+// Cases summed by category, biggest first.
+function supCount(rows){
+  const m = new Map();
+  rows.forEach(r => { const k = supKey(r.issue_category); if(!k) return; const cur = m.get(k) || { label: String(r.issue_category).trim(), value:0 }; cur.value += r.cases; m.set(k, cur); });
+  return [...m.values()].sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+}
+function renderSupport(){
+  $('btnSupUpload').classList.toggle('hidden', !(ME && ME.can_upload));
+  $('supAsOf').textContent = SUP_UPLOAD ? `${SUP_UPLOAD.file_name || 'Excel'} uploaded ${fmtDateTime(new Date(SUP_UPLOAD.uploaded_at))}` : '';
+  if(!SUP_LOADED){ $('supStats').innerHTML = '<div class="empty">Loading…</div>'; return; }
+  if(!SUP_UPLOAD){ SUP_UNCLASSIFIED = []; renderSupCats(); $('supStats').innerHTML = `<div class="empty">${ME && ME.can_upload ? 'Upload the Salesforce cases Excel to see Technical and Regular cases by issue category.' : 'Shows up here once the Salesforce cases Excel is uploaded.'}</div>`; return; }
+  // Cases opened in the Report period when the export has dates; the whole file otherwise.
+  const dated = SUP_CASES.some(r => r._d);
+  let rows = SUP_CASES, when = 'in the whole file';
+  if(dated && ANCHOR){ const [s, e] = bounds(PERIOD, ANCHOR); rows = SUP_CASES.filter(r => r._d && inRange(r._d, s, e)); when = `opened in ${periodName(PERIOD, s, e)}`; }
+  const all = supCount(rows), sum = list => list.reduce((a, r) => a + r.value, 0);
+  const tech = all.filter(r => supKind(r.label) === 'Technical'), reg = all.filter(r => supKind(r.label) === 'Regular'), none = all.filter(r => !supKind(r.label));
+  const tot = sum(all), pc = v => tot ? ` · ${Math.round(v / tot * 100)}%` : '';
+  $('supSub').textContent = `${tot} Salesforce cases ${when}, by issue category`;
+  $('supStats').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="mini-stat" style="cursor:default"><span class="ms-label">Technical</span><span class="ms-value">${sum(tech)}</span><span class="ms-foot">${pc(sum(tech)).slice(3)}</span></span>
+      <span class="mini-stat" style="cursor:default"><span class="ms-label">Regular</span><span class="ms-value">${sum(reg)}</span><span class="ms-foot">${pc(sum(reg)).slice(3)}</span></span>
+      ${none.length ? `<span class="mini-stat" style="cursor:default" title="Categories not in the list yet. Set them in Categories."><span class="ms-label">Not classified</span><span class="ms-value">${sum(none)}</span><span class="ms-foot">${none.length} categor${none.length === 1 ? 'y' : 'ies'}</span></span>` : ''}
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px"><div><h4 style="margin:0 0 8px">Top 10 Technical issue categories</h4><div class="hbars" id="supTechBars"></div></div>
+    <div><h4 style="margin:0 0 8px">Top 10 Regular issue categories</h4><div class="hbars" id="supRegBars"></div></div></div>`;
+  renderHbars($('supTechBars'), tech, null, 10);
+  renderHbars($('supRegBars'), reg, null, 10);
+  SUP_UNCLASSIFIED = none; renderSupCats();
+  if(none.length && !SUP_SHOW_CATS) $('supStats').insertAdjacentHTML('beforeend', `<p class="sub" style="margin-top:10px">${none.length} issue categor${none.length === 1 ? 'y is' : 'ies are'} not classified yet: ${none.slice(0, 6).map(r => esc(r.label)).join(', ')}${none.length > 6 ? '…' : ''}. Open Categories to set ${none.length === 1 ? 'it' : 'them'}.</p>`);
+}
+function renderSupCats(){
+  $('supCats').classList.toggle('hidden', !SUP_SHOW_CATS);
+  $('btnSupCats').textContent = SUP_SHOW_CATS ? 'Hide categories' : 'Categories';
+  if(!SUP_SHOW_CATS) return;
+  const can = ME && ME.can_upload;
+  const known = [...SUP_CATS.values()].map(c => ({ category:c.category, kind:c.kind }));
+  const extra = SUP_UNCLASSIFIED.filter(r => !SUP_CATS.has(supKey(r.label))).map(r => ({ category:r.label, kind:'' }));
+  const list = extra.concat(known.sort((a, b) => a.kind.localeCompare(b.kind) || a.category.localeCompare(b.category)));
+  const pick = c => can ? `<select class="ctl" style="min-width:130px" data-supcat="${esc(c.category)}">${c.kind ? '' : '<option value="" selected>Not classified</option>'}${['Technical','Regular'].map(k => `<option${k === c.kind ? ' selected' : ''}>${k}</option>`).join('')}</select>` : esc(c.kind || 'Not classified');
+  $('supCats').innerHTML = `<p class="sub" style="margin:0 0 8px">${known.length} issue categories in the list${extra.length ? `, ${extra.length} from the Excel not classified yet (on top)` : ''}. ${can ? 'Change one and it saves right away.' : ''}</p>
+    <div class="table-wrap" style="border:none;max-height:360px;overflow:auto"><table class="data"><thead><tr><th>Issue category</th><th>Type</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.category)}</td><td>${pick(c)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+$('btnSupCats').addEventListener('click', ev => { ev.preventDefault(); SUP_SHOW_CATS = !SUP_SHOW_CATS; renderSupport(); });
+$('supCats').addEventListener('change', async e => {
+  const sel = e.target.closest('select[data-supcat]'); if(!sel || !sel.value) return;
+  const category = sel.dataset.supcat, kind = sel.value; sel.disabled = true;
+  const { error } = await sb.from('support_issue_categories').upsert({ category, kind, updated_at: new Date().toISOString() }, { onConflict:'category' });
+  sel.disabled = false;
+  if(error){ console.error(error); toast('Could not save the category.'); return; }
+  SUP_CATS.set(supKey(category), { category, kind }); toast(`${category} is ${kind}`); renderSupport();
+});
+$('btnSupUpload').addEventListener('click', ev => { ev.preventDefault(); $('supFile').value = ''; $('supFile').click(); });
+// Excel to rows: the issue category column is the one whose values match the category list best.
+function supParse(tables){
+  const known = new Set([...SUP_CATS.keys()]);
+  let best = null;
+  tables.forEach(tb => tb.slice(0, 30).forEach((head, h) => {
+    const body = tb.slice(h + 1, h + 501);
+    head.forEach((t, c) => { if(!String(t ?? '').trim() || known.has(supKey(t))) return; const sc = body.filter(r => known.has(supKey(r[c]))).length; if(sc > 0 && (!best || sc > best.sc)) best = { tb, h, c, sc }; });
+  }));
+  if(!best) return null;
+  const head = best.tb[best.h].map(normHead);
+  const find = res => { for(const re of res){ const i = head.findIndex(x => re.test(x)); if(i >= 0) return i; } return -1; };
+  const iDate = find([/opened/, /created/, /date/]), iCase = find([/^case number$/, /case num/, /^case$/]), iCnt = find([/record count/, /^count$/, /^cases$/, /^total$/]);
+  const toDay = v => { if(v instanceof Date && !isNaN(v)) return v; const s = String(v ?? '').trim(); if(!s) return null; const iso = parseTs(s); if(iso) return iso;
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(m) return new Date(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[1] - 1, +m[2]); const d = new Date(s); return isNaN(d) ? null : d; };
+  const ymd = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : null;
+  const rows = [];
+  best.tb.slice(best.h + 1).forEach(r => {
+    const cat = String(r[best.c] ?? '').trim();
+    if(!cat || /^(sub)?total\b|^grand total/i.test(cat)) return;
+    const n = iCnt >= 0 ? parseInt(String(r[iCnt]).replace(/[^\d]/g, ''), 10) : 1;
+    rows.push({ issue_category: cat, case_number: iCase >= 0 ? String(r[iCase] ?? '').trim() || null : null, opened_on: iDate >= 0 ? ymd(toDay(r[iDate])) : null, cases: isNaN(n) ? 1 : n });
+  });
+  return { rows, catHead: best.tb[best.h][best.c], dateHead: iDate >= 0 ? best.tb[best.h][iDate] : null };
+}
+$('supFile').addEventListener('change', async () => {
+  const file = $('supFile').files[0]; if(!file) return;
+  try{
+    const buf = await file.arrayBuffer();
+    const isHtml = new TextDecoder('latin1').decode(buf.slice(0, 512)).trimStart().startsWith('<');
+    if(!isHtml && !window.XLSX){ toast('The Excel reader could not load. Check your connection and reload.'); return; }
+    const parsed = supParse(isHtml ? [tableFromHtml(new TextDecoder('windows-1252').decode(buf))] : tablesFromWorkbook(buf));
+    if(!parsed || !parsed.rows.length){ toast('No issue category column found in this file.'); return; }
+    const total = parsed.rows.reduce((a, r) => a + r.cases, 0);
+    if(!confirm(`${file.name}: ${total} cases, issue category from "${parsed.catHead}"${parsed.dateHead ? `, dates from "${parsed.dateHead}"` : ', no date column'}. This replaces the previous iTero Support upload. Continue?`)) return;
+    toast('Uploading…');
+    const { data: up, error: uErr } = await sb.from('support_case_uploads').insert({ file_name: file.name, row_count: parsed.rows.length, case_count: total }).select().single();
+    if(uErr) throw uErr;
+    for(let i = 0; i < parsed.rows.length; i += 500){
+      const { error } = await sb.from('support_cases').insert(parsed.rows.slice(i, i + 500).map(r => ({ ...r, upload_id: up.id })));
+      if(error){ await sb.from('support_case_uploads').delete().eq('id', up.id); throw error; }
+    }
+    await sb.from('support_case_uploads').delete().neq('id', up.id);
+    toast(`${total} cases uploaded`); await loadSupport();
+  }catch(err){ console.error(err); toast('Could not upload the file. Try again.'); }
+});
+
 /* ---------- Origins heatmap (Report, collapsed): origin by month, grouped, with Excel export ---------- */
 let HEAT = null;   // { head, rows } as exported
 function renderHeatmap(){
@@ -1230,6 +1360,7 @@ function renderReport(){
   renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('tIssue'));
   renderMoreStats(closed, durs, toTickets);
   renderHeatmap();
+  renderSupport();
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
   renderOriginBars(closed, toTickets('tOrigin'));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
