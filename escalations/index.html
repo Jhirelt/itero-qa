@@ -445,6 +445,15 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="list-head" style="margin:0 0 8px"><span class="spacer"></span><button class="btn btn-ghost" id="btnHeatExport"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button></div>
       <div class="table-wrap" style="border:none;"><table class="data heat" id="heatTable" style="min-width:640px;"></table></div>
     </details>
+    <details class="panel more-stats" id="supportPanel" style="margin-top:12px" open>
+      <summary><h4>iTero Support</h4><span class="sub" id="supSub">Technical Salesforce cases by issue category</span></summary>
+      <div class="list-head" style="margin:0 0 10px"><span class="sub" id="supAsOf"></span><span class="spacer"></span>
+        <button class="btn btn-ghost" id="btnSupCats">Categories</button>
+        <button class="btn btn-ghost hidden" id="btnSupUpload"><svg viewBox="0 0 24 24" fill="none"><path d="M12 20V9m0 0-4 4m4-4 4 4M5 4h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Upload Excel</button>
+        <input type="file" id="supFile" accept=".xlsx,.xls,.csv,.htm,.html" hidden></div>
+      <div id="supStats"></div>
+      <div id="supCats" class="hidden" style="margin-top:14px"></div>
+    </details>
 
     <div class="panel">
       <h4 id="closedTitle">Closed in the period</h4>
@@ -893,6 +902,7 @@ async function startFor(user){
   $('userBadgeName').textContent = ME.display_name;
   setAppVisible(true);
   await loadAll(true);
+  loadSupport();
   if(currentSection() === 'whiteglove') switchWgView(currentWgView());
 }
 $('loginForm').addEventListener('submit', async e=>{
@@ -1130,6 +1140,171 @@ function monthSpans(from, last, max = 12){
 }
 const firstClosed = () => T.reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
 
+/* ---------- iTero Support (Report): Salesforce cases export, each issue category Technical or Regular ---------- */
+let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [];
+const supKey = x => String(x ?? '').trim().toLowerCase();
+const supKind = cat => (SUP_CATS.get(supKey(cat)) || {}).kind || null;
+async function loadSupport(){
+  try{
+    const [cats, ups] = await Promise.all([ fetchAll('support_issue_categories', 'category'), fetchAll('support_case_uploads', 'uploaded_at') ]);
+    SUP_CATS = new Map(cats.map(c => [supKey(c.category), c]));
+    SUP_UPLOAD = ups[0] || null;
+    SUP_CASES = [];
+    if(SUP_UPLOAD){
+      for(let from = 0; ; from += 1000){
+        const { data, error } = await sb.from('support_cases').select('opened_on, issue_category, cases').eq('upload_id', SUP_UPLOAD.id).order('id').range(from, from + 999);
+        if(error) throw error;
+        SUP_CASES.push(...data.map(r => ({ ...r, _d: parseTs(r.opened_on) })));
+        if(data.length < 1000) break;
+      }
+    }
+  }catch(err){ console.error(err); $('supStats').innerHTML = '<div class="empty">Could not load iTero Support. Reload the page to try again.</div>'; return; }
+  SUP_LOADED = true; renderSupport();
+}
+// Cases summed by category, biggest first.
+function supCount(rows){
+  const m = new Map();
+  rows.forEach(r => { const k = supKey(r.issue_category); if(!k) return; const cur = m.get(k) || { label: String(r.issue_category).trim(), value:0 }; cur.value += r.cases; m.set(k, cur); });
+  return [...m.values()].sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
+}
+// Issue categories month by month for the year of `last` (January to that month, months with data only).
+// `keep` picks the categories, `topN` how many; bullets summarise the drivers and spikes for the newsletter.
+function supAnnual(last, keep, topN){
+  const ys = new Date(last.getFullYear(), 0, 1);
+  const months = monthSpans(ys, last, 12).filter(m => SUP_CASES.some(r => r._d && inRange(r._d, m.s, m.e)));
+  if(!months.length) return { months, grid:[], colTot:[], all:0, bullets:[], last, year: last.getFullYear(), range:'' };
+  const yRows = SUP_CASES.filter(r => r._d && inRange(r._d, ys, months[months.length - 1].e));
+  const idx = new Map(), grid = [];
+  supCount(yRows).filter(keep).slice(0, topN).forEach(t => { idx.set(supKey(t.label), grid.length); grid.push({ label:t.label, tot:t.value, v: months.map(() => 0) }); });
+  yRows.forEach(r => { const i = idx.get(supKey(r.issue_category)); if(i == null) return; const mi = months.findIndex(m => inRange(r._d, m.s, m.e)); if(mi >= 0) grid[i].v[mi] += r.cases; });
+  const colTot = months.map((m, i) => grid.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
+  const n = v => v.toLocaleString('en-US'), fullM = m => m.s.toLocaleDateString('en-US', { month:'long' });
+  // Spikes: a month at least 1.5 times the category's own monthly average (and 50+ cases over it).
+  const spikes = grid.map(r => { const avg = r.tot / months.length; let bi = 0; r.v.forEach((v, i) => { if(v > r.v[bi]) bi = i; });
+    return { label:r.label, m: months[bi], v: r.v[bi], avg, up: r.v[bi] >= avg * 1.5 && r.v[bi] - avg >= 50 }; }).filter(x => x.up).sort((a, b) => b.v / b.avg - a.v / a.avg).slice(0, 3);
+  const bullets = grid.slice(0, 3).map((r, i) => i === 0 ? `${esc(r.label)} is the largest call driver at ${n(r.tot)} cases (${Math.round(r.tot / all * 100)}% of the volume).` : `${esc(r.label)} (${Math.round(r.tot / all * 100)}%).`)
+    .concat(spikes.map(x => `${esc(x.label)} spiked in ${fullM(x.m)} (${n(x.v)} cases, against ${n(Math.round(x.avg))} a month on average).`));
+  const range = `${fullM(months[0])} to ${fullM(months[months.length - 1])}${months[months.length - 1].e > new Date() ? ' (month in progress)' : ''}`;
+  return { months, grid, colTot, all, bullets, last, year: last.getFullYear(), range };
+}
+function renderSupport(){
+  $('btnSupUpload').classList.toggle('hidden', !(ME && ME.can_upload));
+  $('supAsOf').textContent = SUP_UPLOAD ? `${SUP_UPLOAD.file_name || 'Excel'} uploaded ${fmtDateTime(new Date(SUP_UPLOAD.uploaded_at))}` : '';
+  if(!SUP_LOADED){ $('supStats').innerHTML = '<div class="empty">Loading…</div>'; return; }
+  if(!SUP_UPLOAD){ SUP_UNCLASSIFIED = []; renderSupCats(); $('supStats').innerHTML = `<div class="empty">${ME && ME.can_upload ? 'Upload the Salesforce cases Excel to see the Technical cases by issue category.' : 'Shows up here once the Salesforce cases Excel is uploaded.'}</div>`; return; }
+  // Cases opened in the Report period when the export has dates; the whole file otherwise.
+  const dated = SUP_CASES.some(r => r._d);
+  let rows = SUP_CASES, when = 'in the whole file';
+  if(dated && ANCHOR){ const [s, e] = bounds(PERIOD, ANCHOR); rows = SUP_CASES.filter(r => r._d && inRange(r._d, s, e)); when = `opened in ${periodName(PERIOD, s, e)}`; }
+  // Regular categories are left out everywhere (they are not stored on upload either).
+  const all = supCount(rows).filter(r => supKind(r.label) !== 'Regular'), sum = list => list.reduce((a, r) => a + r.value, 0);
+  const tech = all.filter(r => supKind(r.label) === 'Technical'), none = all.filter(r => !supKind(r.label));
+  $('supSub').textContent = `${sum(tech).toLocaleString('en-US')} Technical Salesforce cases ${when}, by issue category`;
+  $('supStats').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
+      <span class="mini-stat" style="cursor:default"><span class="ms-label">Technical</span><span class="ms-value">${sum(tech).toLocaleString('en-US')}</span><span class="ms-foot">${tech.length} categories</span></span>
+      ${none.length ? `<span class="mini-stat" style="cursor:default" title="Categories not in the list yet. Set them in Categories."><span class="ms-label">Not classified</span><span class="ms-value">${sum(none).toLocaleString('en-US')}</span><span class="ms-foot">${none.length} categor${none.length === 1 ? 'y' : 'ies'}</span></span>` : ''}
+    </div>
+    <h4 style="margin:0 0 8px">Top 10 Technical issue categories</h4><div class="hbars" id="supTechBars" style="max-width:860px"></div>`;
+  renderHbars($('supTechBars'), tech, null, 10);
+  // Annual heatmap: every issue category month by month, January to the month the Report period ends in.
+  const A = dated ? supAnnual(ANCHOR ? addDays(bounds(PERIOD, ANCHOR)[1], -1) : new Date(), r => supKind(r.label) !== 'Regular', Infinity) : null;
+  if(A && A.grid.length){
+    const n = v => v.toLocaleString('en-US'), max = Math.max(1, ...A.grid.flatMap(r => r.v));
+    const cell = v => `<td class="c" style="background:rgba(94,60,160,${(0.06 + 0.55 * Math.sqrt(v / max)).toFixed(2)})">${v ? n(v) : '–'}</td>`;
+    const T12 = supAnnual(A.last, r => supKind(r.label) === 'Technical', 12);
+    const kindTot = k => A.grid.filter(r => (supKind(r.label) || 'Not classified') === k).reduce((a, r) => a + r.tot, 0), showType = kindTot('Not classified') > 0;
+    $('supStats').insertAdjacentHTML('beforeend', `<div class="sup-heat">
+      <h4 style="margin:22px 0 2px">${A.year} | Annual Issue Heatmap</h4><p class="sub" style="margin:0 0 10px">All ${A.grid.length} Technical issue categories${kindTot('Not classified') ? ' (and the ones not classified yet)' : ''}, ${A.range}. The newsletter PDF shows the top 12 Technical.</p>
+      <div class="table-wrap" style="border:none;max-height:560px;overflow:auto"><table class="data heat" style="min-width:760px;"><thead style="position:sticky;top:0;z-index:1"><tr><th>Issue Category</th>${showType ? '<th>Type</th>' : ''}${A.months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>
+      ${A.grid.map(r => `<tr><td>${esc(r.label)}</td>${showType ? `<td class="dim">${supKind(r.label) || 'Not classified'}</td>` : ''}${r.v.map(cell).join('')}<td class="c b">${n(r.tot)}</td></tr>`).join('')}
+      <tr class="tot"><td>Total Cases</td>${showType ? '<td></td>' : ''}${A.colTot.map(v => `<td class="c b">${n(v)}</td>`).join('')}<td class="c b">${n(A.all)}</td></tr></tbody></table></div>
+      <p style="margin:12px 0 4px;font-size:13px">Year to date, the Support teams have handled ${n(A.all)} Technical cases${kindTot('Not classified') ? `, plus ${n(kindTot('Not classified'))} in categories not classified yet` : ''}.</p>
+      <ul style="margin:0;padding-left:20px;line-height:1.7;font-size:13px">${T12.bullets.map(x => `<li>${x}</li>`).join('')}</ul></div>`);
+  }
+  SUP_UNCLASSIFIED = none; renderSupCats();
+  if(none.length && !SUP_SHOW_CATS) $('supStats').insertAdjacentHTML('beforeend', `<p class="sub" style="margin-top:10px">${none.length} issue categor${none.length === 1 ? 'y is' : 'ies are'} not classified yet: ${none.slice(0, 6).map(r => esc(r.label)).join(', ')}${none.length > 6 ? '…' : ''}. Open Categories to set ${none.length === 1 ? 'it' : 'them'}.</p>`);
+}
+function renderSupCats(){
+  $('supCats').classList.toggle('hidden', !SUP_SHOW_CATS);
+  $('btnSupCats').textContent = SUP_SHOW_CATS ? 'Hide categories' : 'Categories';
+  if(!SUP_SHOW_CATS) return;
+  const can = ME && ME.can_upload;
+  const known = [...SUP_CATS.values()].map(c => ({ category:c.category, kind:c.kind }));
+  const extra = SUP_UNCLASSIFIED.filter(r => !SUP_CATS.has(supKey(r.label))).map(r => ({ category:r.label, kind:'' }));
+  const list = extra.concat(known.sort((a, b) => a.kind.localeCompare(b.kind) || a.category.localeCompare(b.category)));
+  const pick = c => can ? `<select class="ctl" style="min-width:130px" data-supcat="${esc(c.category)}">${c.kind ? '' : '<option value="" selected>Not classified</option>'}${['Technical','Regular'].map(k => `<option${k === c.kind ? ' selected' : ''}>${k}</option>`).join('')}</select>` : esc(c.kind || 'Not classified');
+  $('supCats').innerHTML = `<p class="sub" style="margin:0 0 8px">${known.length} issue categories in the list${extra.length ? `, ${extra.length} from the Excel not classified yet (on top)` : ''}. ${can ? 'Change one and it saves right away.' : ''}</p>
+    <div class="table-wrap" style="border:none;max-height:360px;overflow:auto"><table class="data"><thead><tr><th>Issue category</th><th>Type</th></tr></thead><tbody>${list.map(c => `<tr><td>${esc(c.category)}</td><td>${pick(c)}</td></tr>`).join('')}</tbody></table></div>`;
+}
+$('btnSupCats').addEventListener('click', ev => { ev.preventDefault(); SUP_SHOW_CATS = !SUP_SHOW_CATS; renderSupport(); });
+$('supCats').addEventListener('change', async e => {
+  const sel = e.target.closest('select[data-supcat]'); if(!sel || !sel.value) return;
+  const category = sel.dataset.supcat, kind = sel.value; sel.disabled = true;
+  const { error } = await sb.from('support_issue_categories').upsert({ category, kind, updated_at: new Date().toISOString() }, { onConflict:'category' });
+  sel.disabled = false;
+  if(error){ console.error(error); toast('Could not save the category.'); return; }
+  SUP_CATS.set(supKey(category), { category, kind }); toast(`${category} is ${kind}`); renderSupport();
+});
+$('btnSupUpload').addEventListener('click', ev => { ev.preventDefault(); $('supFile').value = ''; $('supFile').click(); });
+// Big Salesforce ".xls" (an HTML table, 60k rows) read with a plain scan instead of a DOM, which is too heavy at that size.
+function tableFromHtmlFast(text){
+  const ent = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'", nbsp:' ' };
+  const dec = x => x.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, c) => c[0] === '#' ? String.fromCharCode(c[1].toLowerCase() === 'x' ? parseInt(c.slice(2), 16) : +c.slice(1)) : (ent[c.toLowerCase()] ?? m)).trim();
+  const out = [], cellRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+  text.split(/<tr[\s>]/i).slice(1).forEach(tr => { const row = []; let m; cellRe.lastIndex = 0; while((m = cellRe.exec(tr))) row.push(dec(m[1])); if(row.length) out.push(row); });
+  return out;
+}
+// Excel to rows: the issue category column is the one whose values match the category list best.
+function supParse(tables){
+  const known = new Set([...SUP_CATS.keys()]);
+  let best = null;
+  tables.forEach(tb => tb.slice(0, 30).forEach((head, h) => {
+    const body = tb.slice(h + 1, h + 501);
+    head.forEach((t, c) => { if(!String(t ?? '').trim() || known.has(supKey(t))) return; const sc = body.filter(r => known.has(supKey(r[c]))).length; if(sc > 0 && (!best || sc > best.sc)) best = { tb, h, c, sc }; });
+  }));
+  if(!best) return null;
+  const head = best.tb[best.h].map(normHead);
+  const find = res => { for(const re of res){ const i = head.findIndex(x => re.test(x)); if(i >= 0) return i; } return -1; };
+  const iDate = find([/opened/, /created/, /date/]), iCnt = find([/record count/, /^count$/, /^cases$/, /^total$/]);
+  const toDay = v => { if(v instanceof Date && !isNaN(v)) return v; const s = String(v ?? '').trim(); if(!s) return null; const iso = parseTs(s); if(iso) return iso;
+    const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(m) return new Date(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[1] - 1, +m[2]); const d = new Date(s); return isNaN(d) ? null : d; };
+  const ymd = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : null;
+  // Stored as cases per day and category (60k tickets become about 10k rows); no ticket numbers or owners are kept.
+  const agg = new Map(); let tickets = 0, skipped = 0;
+  best.tb.slice(best.h + 1).forEach(r => {
+    const cat = String(r[best.c] ?? '').trim();
+    if(!cat || /^(sub)?total\b|^grand total/i.test(cat)) return;
+    if(supKind(cat) === 'Regular'){ skipped++; return; }
+    let n = iCnt >= 0 ? parseInt(String(r[iCnt]).replace(/[^\d]/g, ''), 10) : 1; if(isNaN(n)) n = 1;
+    const day = iDate >= 0 ? ymd(toDay(r[iDate])) : null, k = day + '|' + supKey(cat);
+    const cur = agg.get(k); if(cur) cur.cases += n; else agg.set(k, { issue_category: cat, opened_on: day, cases: n });
+    tickets += n;
+  });
+  return { rows: [...agg.values()], tickets, skipped, catHead: best.tb[best.h][best.c], dateHead: iDate >= 0 ? best.tb[best.h][iDate] : null };
+}
+$('supFile').addEventListener('change', async () => {
+  const file = $('supFile').files[0]; if(!file) return;
+  try{
+    const buf = await file.arrayBuffer();
+    const isHtml = new TextDecoder('latin1').decode(buf.slice(0, 512)).trimStart().startsWith('<');
+    if(!isHtml && !window.XLSX){ toast('The Excel reader could not load. Check your connection and reload.'); return; }
+    const parsed = supParse(isHtml ? [tableFromHtmlFast(new TextDecoder('windows-1252').decode(buf))] : tablesFromWorkbook(buf));
+    if(!parsed || !parsed.rows.length){ toast('No issue category column found in this file.'); return; }
+    const total = parsed.tickets;
+    if(!confirm(`${file.name}: ${total.toLocaleString('en-US')} cases to keep${parsed.skipped ? ` (${parsed.skipped.toLocaleString('en-US')} Regular left out)` : ''}, issue category from "${parsed.catHead}"${parsed.dateHead ? `, dates from "${parsed.dateHead}"` : ', no date column'}. This replaces the previous iTero Support upload. Continue?`)) return;
+    toast('Uploading…');
+    const { data: up, error: uErr } = await sb.from('support_case_uploads').insert({ file_name: file.name, row_count: parsed.rows.length, case_count: total }).select().single();
+    if(uErr) throw uErr;
+    for(let i = 0; i < parsed.rows.length; i += 1000){
+      toast(`Uploading… ${Math.round(i / parsed.rows.length * 100)}%`);
+      const { error } = await sb.from('support_cases').insert(parsed.rows.slice(i, i + 1000).map(r => ({ ...r, upload_id: up.id })));
+      if(error){ await sb.from('support_case_uploads').delete().eq('id', up.id); throw error; }
+    }
+    await sb.from('support_case_uploads').delete().neq('id', up.id);
+    toast(`${total.toLocaleString('en-US')} cases uploaded`); await loadSupport();
+  }catch(err){ console.error(err); toast('Could not upload the file. Try again.'); }
+});
+
 /* ---------- Origins heatmap (Report, collapsed): origin by month, grouped, with Excel export ---------- */
 let HEAT = null;   // { head, rows } as exported
 function renderHeatmap(){
@@ -1230,6 +1405,7 @@ function renderReport(){
   renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('tIssue'));
   renderMoreStats(closed, durs, toTickets);
   renderHeatmap();
+  renderSupport();
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
   renderOriginBars(closed, toTickets('tOrigin'));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
@@ -1873,6 +2049,26 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
     <footer><span>Source: escalations closed, by ${unit} and by month. Issue category is the sub-issue type of each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
     </section>`;
   };
+  // iTero Support annual heatmap (Salesforce cases): top 12 Technical issue categories month by month, only when an export is uploaded.
+  const supportPage = () => {
+    if(!SUP_CASES.some(r => r._d)) return '';
+    const A = supAnnual(addDays(R.e, -1), r => supKind(r.label) === 'Technical', 12);
+    if(!A.grid.length) return '';
+    const n = v => v.toLocaleString('en-US'), max = Math.max(1, ...A.grid.flatMap(r => r.v));
+    const cell = v => `<td style="background:rgba(94,60,160,${(0.06 + 0.5 * v / max).toFixed(2)})">${v ? n(v) : '–'}</td>`;
+    return `<section class="page nl">
+    <header><img src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><div class="eyebrow">iTero Support</div><h1>${A.year} | Annual Issue Heatmap</h1><p>Top ${A.grid.length} Technical issue categories, ${esc(A.range)}</p></div><div class="issue">Year to date<br>${esc(A.months[A.months.length - 1].s.toLocaleDateString('en-US', { month:'long', year:'numeric' }))}</div></header>
+    <div class="body">
+      <table class="vt sup"><thead><tr><th class="cat">Issue Category</th>${A.months.map(m => `<th>${esc(m.label)}</th>`).join('')}<th class="t">Total</th></tr></thead><tbody>
+        ${A.grid.map(r => `<tr><td class="cat">${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="t">${n(r.tot)}</td></tr>`).join('')}
+        <tr class="tt"><td class="cat">Total Cases</td>${A.colTot.map(v => `<td>${n(v)}</td>`).join('')}<td class="t">${n(A.all)}</td></tr>
+      </tbody></table>
+      <p class="lead" style="margin-top:18px">Year to date, the Support teams have handled ${n(A.all)} cases in these ${A.grid.length} Technical categories.</p>
+      <ul class="supl">${A.bullets.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>
+    <footer><span>Source: Salesforce cases by Date/Time Opened and Sub-Issue Type; Technical per the iTero Support category list.</span><span>iTero Tech Support | Escalations team</span></footer>
+    </section>`;
+  };
   // Group, then origin, then the solutions provided on those same tickets.
   const breakdown = () => {
     if(!os.set) return `<div class="blk"><h2>Origins by group</h2><p class="dim">Origin not set on the tickets closed ${monthly ? 'this month' : 'in this period'}.</p></div>`;
@@ -1939,6 +2135,8 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
   .nl .vt th.t{ background:#18a99e; }
   .nl .vt tr.tt td{ font-weight:700; background:#e6f7f5; }
   .nl .vt tr.tt td.cat{ background:#3d3935; }
+  .nl .vt.sup th, .nl .vt.sup .cat, .nl .vt.sup tr.tt td.cat{ background:#4b2e83; } .nl .vt.sup th.t{ background:#4b2e83; } .nl .vt.sup td.t, .nl .vt.sup tr.tt td{ background:#efeaf7; }
+  .nl .supl{ margin:0; padding-left:18px; font-size:11px; line-height:1.7; color:#3d3935; }
   .nl .vnote{ font-size:8px; color:#9b958d; margin:8px 0 0; }
   .nl .ob{ width:100%; border-collapse:collapse; font-size:8.5px; }
   .nl .ob th{ text-align:left; font-size:7px; font-weight:600; letter-spacing:.9px; text-transform:uppercase; color:#9b958d; padding:0 6px 5px 0; }
@@ -1985,7 +2183,7 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
     </div>
   </div>
   <footer><span>Source: escalations closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, uploaded to the Escalations tracker. Avoidable, root cause and origin are set on each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
-  </section>${volumePage()}`, autoDownload, true);
+  </section>${volumePage()}${supportPage()}`, autoDownload, true);
 }
 $('btnNewsletter').addEventListener('click', ()=> openReport(buildNewsletterHtml()));
 
