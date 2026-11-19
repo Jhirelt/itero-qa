@@ -1854,7 +1854,7 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
         <tr class="tt"><td class="cat">Total Cases</td>${tot.map(v => `<td>${v}</td>`).join('')}<td class="t">${tot.reduce((a, x) => a + x, 0)}</td></tr>
       </tbody></table><p class="vnote">Only ${unit}s with closed escalations are shown. Total Cases counts every escalation closed in the ${unit}, including sub-issue types outside the top ${cats.length}.</p>` : '<p class="dim">No sub-issue types on the tickets closed in these dates.</p>'}
     </div>
-    <footer><span>Source: escalations closed from ${esc(range)}, by the ${unit} they were closed. Issue category is the sub-issue type of each ticket.</span><span>iTero Technical Support</span></footer>
+    <footer><span>Source: escalations closed from ${esc(range)}, by the ${unit} they were closed. Issue category is the sub-issue type of each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
     </section>`;
   };
   // Group, then origin, then the solutions provided on those same tickets.
@@ -1864,7 +1864,7 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
       const origins = list.map(o => ({ o, ts: R.closed.filter(t => t._sp.details.origin === o) })).filter(x => x.ts.length).sort((a, b) => b.ts.length - a.ts.length);
       return { g, origins, n: origins.reduce((a, x) => a + x.ts.length, 0) };
     }).filter(x => x.n).sort((a, b) => b.n - a.n);
-    const sol = ts => countBy(ts, t => t._sp.solution).map(r => `${esc(r.label)}${r.value > 1 ? ` <span class="dim">×${r.value}</span>` : ''}`).join('<br>') || '<span class="dim">–</span>';
+    const sol = ts => countBy(ts, t => t._sp.solution).map(r => `${esc(short(r.label, 48))}${r.value > 1 ? ` <span class="dim">×${r.value}</span>` : ''}`).join('<br>') || '<span class="dim">–</span>';
     return `<div class="blk"><h2>Origins by group</h2><table class="ob"><thead><tr><th style="width:24%">Group</th><th style="width:34%">Origin</th><th>Solution provided</th><th class="n">Tickets</th></tr></thead><tbody>${rows.map(r => r.origins.map((x, i) => `<tr${i === 0 ? ' class="gs"' : ''}>${i === 0 ? `<td rowspan="${r.origins.length}" class="g">${esc(r.g)}<span>${r.n} · ${pct(r.n, os.set)}%</span></td>` : ''}<td class="o">${esc(x.o)}</td><td>${sol(x.ts)}</td><td class="n">${x.ts.length}</td></tr>`).join('')).join('')}</tbody></table></div>`;
   };
   const types = countBy(R.closed, t => t.ticket_type), sols = countBy(R.closed, t => t._sp.solution);
@@ -1878,7 +1878,8 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
     `${cap(word(R.avoid))} ${R.avoid === 1 ? 'case was' : 'cases were'} classified as avoidable, and ${word(open.length)} ${open.length === 1 ? 'escalation remains' : 'escalations remain'} open.`,
   ].filter(Boolean).join(' ');
   const css = `<style>
-  .nl.page{ width:8.5in; min-height:11in; }
+  .nl.page{ width:8.5in; min-height:calc(11in - 4px); }
+  body.pdf .nl.page{ height:calc(11in - 4px); overflow:hidden; } body.pdf .nl .body{ min-height:0; overflow:hidden; }
   .nl .kpi{ background:none; border:none; border-radius:0; overflow:visible; padding:0; } .nl .kpi::before{ display:none; }
   .nl .page::before, .nl.page::before{ height:5px; background:linear-gradient(90deg,#2cd4c8 0 88px,#3d3935 88px); }
   .nl header{ padding:34px 44px 18px; display:flex; align-items:center; gap:22px; }
@@ -1962,11 +1963,11 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
     </div>
     ${breakdown()}
     <div class="cols">
-      <div class="blk"><h2>What could have been avoided (${avoid.length})</h2><div class="panel">${avoid.length ? avoid.map(x => `<div class="item"><span class="no">${esc(x.t.ticket_number)}</span><span><b>${esc(short(!na(x.t._sp.details.rootcause) ? x.t._sp.details.rootcause : x.t.sub_issue_type || x.issue, 50))}</b><br><span class="dim">${esc(short(sentence(x.origin), 110))}</span></span></div>`).join('') : '<div class="item"><span></span><span class="dim">No avoidable escalations this month.</span></div>'}</div></div>
+      <div class="blk"><h2>What could have been avoided (${avoid.length})</h2><div class="panel">${avoid.length ? avoid.slice(0, 4).map(x => `<div class="item"><span class="no">${esc(x.t.ticket_number)}</span><span><b>${esc(short(!na(x.t._sp.details.rootcause) ? x.t._sp.details.rootcause : x.t.sub_issue_type || x.issue, 50))}</b><br><span class="dim">${esc(short(sentence(x.origin), 110))}</span></span></div>`).join('') + (avoid.length > 4 ? `<div class="item"><span></span><span class="dim">+${avoid.length - 4} more avoidable, listed in the tracker.</span></div>` : '') : '<div class="item"><span></span><span class="dim">No avoidable escalations this month.</span></div>'}</div></div>
       <div class="blk"><h2>Still open (${open.length})</h2>${open.slice(0, 5).map(o => `<div class="item"><span class="no">${esc(o.ticket_number)}</span><span>${esc(short(o.subject, 62))}<br><span class="tag ${o.business ? 'biz' : 'csc'}">${o.business ? 'Business' : 'CSC'}</span> <span class="dim">${esc(short(o.status_note || '', 50))}</span></span></div>`).join('') || '<p class="dim">Nothing open.</p>'}</div>
     </div>
   </div>
-  <footer><span>Source: escalations closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, uploaded to the Escalations tracker. Avoidable, root cause and origin are set on each ticket.</span><span>iTero Technical Support</span></footer>
+  <footer><span>Source: escalations closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, uploaded to the Escalations tracker. Avoidable, root cause and origin are set on each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
   </section>${volumePage()}`, autoDownload, true);
 }
 $('btnNewsletter').addEventListener('click', ()=> openReport(buildNewsletterHtml()));
