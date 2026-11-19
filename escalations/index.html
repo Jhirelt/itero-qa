@@ -1823,38 +1823,54 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
   // Weeks or months without tickets are left out.
   const volumePage = () => {
     const rows = R.closed;
-    let cols = [];
+    const key = t => String(t.sub_issue_type || '').trim().toLowerCase();
+    // One heat table: top sub-issue types (rows) by time spans (columns); spans without closed tickets are dropped.
+    const vtable = (src, spans, unit, topN) => {
+      const cols = spans.filter(c => src.some(t => inRange(t._c, c.s, c.e)));
+      const cats = countBy(src, t => t.sub_issue_type).slice(0, topN);
+      if(!cats.length || !cols.length) return { html: '<p class="dim">No sub-issue types on the tickets closed in these dates.</p>', cats };
+      const grid = cats.map(c => ({ label:c.label, v: cols.map(col => src.filter(t => inRange(t._c, col.s, col.e) && key(t) === c.label.toLowerCase()).length) }));
+      const max = Math.max(1, ...grid.flatMap(r => r.v));
+      const tot = cols.map(c => src.filter(t => inRange(t._c, c.s, c.e)).length);
+      const cell = v => `<td style="${v ? `background:rgba(44,191,180,${(0.1 + 0.7 * v / max).toFixed(2)})` : 'color:#c9c4bd'}">${v}</td>`;
+      return { cats, html: `<table class="vt"><thead><tr><th class="cat">Issue Category</th>${cols.map(c => `<th>${esc(c.label)}</th>`).join('')}<th class="t">Total</th></tr></thead><tbody>
+        ${grid.map(r => `<tr><td class="cat">${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="t">${r.v.reduce((a, x) => a + x, 0)}</td></tr>`).join('')}
+        <tr class="tt"><td class="cat">Total Cases</td>${tot.map(v => `<td>${v}</td>`).join('')}<td class="t">${tot.reduce((a, x) => a + x, 0)}</td></tr>
+      </tbody></table>` };
+    };
+    // Weekly table for the dates of this newsletter (by month only if the range is longer than 10 weeks).
+    let spans = [];
     for(let x = mondayOf(R.s); x < R.e; x = addDays(x, 7)){ const a = x < R.s ? R.s : x, nx = addDays(x, 7), z = nx < R.e ? nx : R.e;
-      cols.push({ s:a, e:z, label: sameDay(a, addDays(z, -1)) ? fmtShort(a) : `${fmtShort(a)}–${a.getMonth() === addDays(z, -1).getMonth() ? addDays(z, -1).getDate() : fmtShort(addDays(z, -1))}` }); }
+      spans.push({ s:a, e:z, label: sameDay(a, addDays(z, -1)) ? fmtShort(a) : `${fmtShort(a)}–${a.getMonth() === addDays(z, -1).getMonth() ? addDays(z, -1).getDate() : fmtShort(addDays(z, -1))}` }); }
     let unit = 'week';
-    if(cols.length > 10){ unit = 'month'; cols = monthSpans(R.s, addDays(R.e, -1), 60).map(m => ({ s: m.s < R.s ? R.s : m.s, e: m.e > R.e ? R.e : m.e, label: m.label })); }
-    cols = cols.filter(c => rows.some(t => inRange(t._c, c.s, c.e)));
-    const cats = countBy(rows, t => t.sub_issue_type).slice(0, 10);
-    const val = (label, c) => rows.filter(t => inRange(t._c, c.s, c.e) && String(t.sub_issue_type || '').trim().toLowerCase() === label.toLowerCase()).length;
-    const grid = cats.map(c => ({ label:c.label, v: cols.map(col => val(c.label, col)) }));
-    const max = Math.max(1, ...grid.flatMap(r => r.v));
-    const tot = cols.map(c => rows.filter(t => inRange(t._c, c.s, c.e)).length);
-    const cell = v => `<td style="${v ? `background:rgba(44,191,180,${(0.1 + 0.7 * v / max).toFixed(2)})` : 'color:#c9c4bd'}">${v}</td>`;
+    if(spans.length > 10){ unit = 'month'; spans = monthSpans(R.s, addDays(R.e, -1), 60).map(m => ({ s: m.s < R.s ? R.s : m.s, e: m.e > R.e ? R.e : m.e, label: m.label })); }
+    const wk = vtable(rows, spans, unit, 10);
+    // Monthly comparison, always shown: January to the month this newsletter ends in.
+    const last = addDays(R.e, -1), ys = new Date(last.getFullYear(), 0, 1), me = new Date(last.getFullYear(), last.getMonth() + 1, 1);
+    const yRows = T.filter(t => inRange(t._c, ys, me));
+    const mo = vtable(yRows, monthSpans(ys, last, 12), 'month', 10);
     // What moved: the categories that rose the most against the previous period of the same length.
     const len = R.e - R.s, ps = new Date(+R.s - len);
     const prevRows = T.filter(t => inRange(t._c, ps, R.s));
-    const ups = cats.map(c => { const now = rows.filter(t => String(t.sub_issue_type || '').trim().toLowerCase() === c.label.toLowerCase()).length;
-      return { label:c.label, now, d: now - prevRows.filter(t => String(t.sub_issue_type || '').trim().toLowerCase() === c.label.toLowerCase()).length }; }).filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 3);
+    const ups = wk.cats.map(c => { const now = rows.filter(t => key(t) === c.label.toLowerCase()).length;
+      return { label:c.label, now, d: now - prevRows.filter(t => key(t) === c.label.toLowerCase()).length }; }).filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 3);
     const first = firstClosed();
     const dTot = rows.length - prevRows.length;
     const why = !rows.length ? 'No escalations were closed in these dates.'
       : first && first >= R.s ? `${cap(when)} is the first ${monthly ? 'month' : 'period'} with data in the tracker, so there is nothing earlier to compare with.`
       : `${cap(when)} closed ${rows.length} escalations, ${dTot === 0 ? 'the same as' : `${Math.abs(dTot)} ${dTot > 0 ? 'more than' : 'fewer than'}`} ${pmName}.${ups.length ? ` The biggest increases were ${ups.map(x => `${x.label} (+${x.d}, ${x.now} now)`).join(', ').replace(/, ([^,]*)$/, ' and $1')}.` : ' No issue category grew against the previous period.'}`;
+    const yLabel = `${ys.toLocaleDateString('en-US', { month:'short' })}–${last.toLocaleDateString('en-US', { month:'short', year:'numeric' })}`;
     return `<section class="page nl">
-    <header><img src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><div class="eyebrow">CSC Escalations</div><h1>Volume by Issue Category</h1><p>Top ${cats.length} sub-issue types by ${unit}, ${esc(range)}</p></div><div class="issue">${monthly ? 'Monthly' : 'Custom range'}<br>${esc(monthly ? month : `${dayCount(R.s, addDays(R.e, -1))} days`)}</div></header>
+    <header><img src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><div class="eyebrow">CSC Escalations</div><h1>Volume by Issue Category</h1><p>Top sub-issue types by ${unit}, ${esc(range)}, and by month, ${esc(yLabel)}</p></div><div class="issue">${monthly ? 'Monthly' : 'Custom range'}<br>${esc(monthly ? month : `${dayCount(R.s, addDays(R.e, -1))} days`)}</div></header>
     <div class="body">
       <p class="lead">${esc(why)}</p>
-      ${cats.length ? `<table class="vt"><thead><tr><th class="cat">Issue Category</th>${cols.map(c => `<th>${esc(c.label)}</th>`).join('')}<th class="t">Total</th></tr></thead><tbody>
-        ${grid.map(r => `<tr><td class="cat">${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="t">${r.v.reduce((a, x) => a + x, 0)}</td></tr>`).join('')}
-        <tr class="tt"><td class="cat">Total Cases</td>${tot.map(v => `<td>${v}</td>`).join('')}<td class="t">${tot.reduce((a, x) => a + x, 0)}</td></tr>
-      </tbody></table><p class="vnote">Only ${unit}s with closed escalations are shown. Total Cases counts every escalation closed in the ${unit}, including sub-issue types outside the top ${cats.length}.</p>` : '<p class="dim">No sub-issue types on the tickets closed in these dates.</p>'}
+      <h2 class="vh">By ${unit}, ${esc(range)}</h2>
+      ${wk.html}
+      <h2 class="vh">By month, ${esc(yLabel)}</h2>
+      ${mo.html}
+      <p class="vnote">Only ${unit}s and months with closed escalations are shown. Total Cases counts every escalation closed in the column, including sub-issue types outside the top ones listed.</p>
     </div>
-    <footer><span>Source: escalations closed from ${esc(range)}, by the ${unit} they were closed. Issue category is the sub-issue type of each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
+    <footer><span>Source: escalations closed, by ${unit} and by month. Issue category is the sub-issue type of each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
     </section>`;
   };
   // Group, then origin, then the solutions provided on those same tickets.
@@ -1913,9 +1929,10 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
   .nl .cols > div:nth-child(2) .fl{ background:#2cbfb4; }
   .nl .bn{ text-align:right; font-weight:600; white-space:nowrap; }
   .nl .bn span{ font-weight:400; color:#9b958d; margin-left:5px; display:inline-block; width:24px; }
+  .nl .vh{ margin:16px 0 6px; }
   .nl .vt{ width:100%; border-collapse:separate; border-spacing:2px; font-size:9px; margin-top:4px; }
-  .nl .vt th{ background:#3d3935; color:#fff; font-weight:600; padding:7px 4px; text-align:center; font-size:8.5px; }
-  .nl .vt td{ text-align:center; padding:7px 4px; background:#f6f4f1; font-variant-numeric:tabular-nums; }
+  .nl .vt th{ background:#3d3935; color:#fff; font-weight:600; padding:5px 4px; text-align:center; font-size:8.5px; }
+  .nl .vt td{ text-align:center; padding:5px 4px; background:#f6f4f1; font-variant-numeric:tabular-nums; }
   .nl .vt .cat{ background:#3d3935; color:#fff; text-align:left; padding-left:10px; font-weight:500; width:30%; }
   .nl .vt th.cat{ font-weight:600; }
   .nl .vt td.t{ font-weight:700; background:#e6f7f5; }
