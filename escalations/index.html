@@ -1141,9 +1141,7 @@ function monthSpans(from, last, max = 12){
 const firstClosed = () => T.reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
 
 /* ---------- iTero Support (Report): Salesforce cases export, each issue category Technical or Regular ---------- */
-// Technical categories left out of the annual heatmap (they still count as Technical everywhere else).
-const SUP_HEAT_SKIP = ['upgrade/update', 'resto', 'crash'];
-let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [], SUP_MONTHLY = null;
+let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [];
 const supKey = x => String(x ?? '').trim().toLowerCase();
 const supKind = cat => (SUP_CATS.get(supKey(cat)) || {}).kind || null;
 async function loadSupport(){
@@ -1169,6 +1167,26 @@ function supCount(rows){
   rows.forEach(r => { const k = supKey(r.issue_category); if(!k) return; const cur = m.get(k) || { label: String(r.issue_category).trim(), value:0 }; cur.value += r.cases; m.set(k, cur); });
   return [...m.values()].sort((a, b) => b.value - a.value || a.label.localeCompare(b.label));
 }
+// Issue categories month by month for the year of `last` (January to that month, months with data only).
+// `keep` picks the categories, `topN` how many; bullets summarise the drivers and spikes for the newsletter.
+function supAnnual(last, keep, topN){
+  const ys = new Date(last.getFullYear(), 0, 1);
+  const months = monthSpans(ys, last, 12).filter(m => SUP_CASES.some(r => r._d && inRange(r._d, m.s, m.e)));
+  if(!months.length) return { months, grid:[], colTot:[], all:0, bullets:[], last, year: last.getFullYear(), range:'' };
+  const yRows = SUP_CASES.filter(r => r._d && inRange(r._d, ys, months[months.length - 1].e));
+  const idx = new Map(), grid = [];
+  supCount(yRows).filter(keep).slice(0, topN).forEach(t => { idx.set(supKey(t.label), grid.length); grid.push({ label:t.label, tot:t.value, v: months.map(() => 0) }); });
+  yRows.forEach(r => { const i = idx.get(supKey(r.issue_category)); if(i == null) return; const mi = months.findIndex(m => inRange(r._d, m.s, m.e)); if(mi >= 0) grid[i].v[mi] += r.cases; });
+  const colTot = months.map((m, i) => grid.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
+  const n = v => v.toLocaleString('en-US'), fullM = m => m.s.toLocaleDateString('en-US', { month:'long' });
+  // Spikes: a month at least 1.5 times the category's own monthly average (and 50+ cases over it).
+  const spikes = grid.map(r => { const avg = r.tot / months.length; let bi = 0; r.v.forEach((v, i) => { if(v > r.v[bi]) bi = i; });
+    return { label:r.label, m: months[bi], v: r.v[bi], avg, up: r.v[bi] >= avg * 1.5 && r.v[bi] - avg >= 50 }; }).filter(x => x.up).sort((a, b) => b.v / b.avg - a.v / a.avg).slice(0, 3);
+  const bullets = grid.slice(0, 3).map((r, i) => i === 0 ? `${esc(r.label)} is the largest call driver at ${n(r.tot)} cases (${Math.round(r.tot / all * 100)}% of the volume).` : `${esc(r.label)} (${Math.round(r.tot / all * 100)}%).`)
+    .concat(spikes.map(x => `${esc(x.label)} spiked in ${fullM(x.m)} (${n(x.v)} cases, against ${n(Math.round(x.avg))} a month on average).`));
+  const range = `${fullM(months[0])} to ${fullM(months[months.length - 1])}${months[months.length - 1].e > new Date() ? ' (month in progress)' : ''}`;
+  return { months, grid, colTot, all, bullets, last, year: last.getFullYear(), range };
+}
 function renderSupport(){
   $('btnSupUpload').classList.toggle('hidden', !(ME && ME.can_upload));
   $('supAsOf').textContent = SUP_UPLOAD ? `${SUP_UPLOAD.file_name || 'Excel'} uploaded ${fmtDateTime(new Date(SUP_UPLOAD.uploaded_at))}` : '';
@@ -1191,31 +1209,20 @@ function renderSupport(){
     <div><h4 style="margin:0 0 8px">Top 10 Regular issue categories</h4><div class="hbars" id="supRegBars"></div></div></div>`;
   renderHbars($('supTechBars'), tech, null, 10);
   renderHbars($('supRegBars'), reg, null, 10);
-  // Top 10 Technical month by month: January to the month the Report period ends in.
-  if(dated){
-    const last = ANCHOR ? addDays(bounds(PERIOD, ANCHOR)[1], -1) : new Date(), ys = new Date(last.getFullYear(), 0, 1);
-    const months = monthSpans(ys, last, 12).filter(m => SUP_CASES.some(r => r._d && inRange(r._d, m.s, m.e)));
-    const yRows = SUP_CASES.filter(r => r._d && inRange(r._d, ys, months.length ? months[months.length - 1].e : ys));
-    const top = supCount(yRows).filter(r => supKind(r.label) === 'Technical' && !SUP_HEAT_SKIP.includes(supKey(r.label))).slice(0, 10);
-    const grid = top.map(t => ({ label:t.label, tot:t.value, v: months.map(m => yRows.filter(r => supKey(r.issue_category) === supKey(t.label) && inRange(r._d, m.s, m.e)).reduce((a, r) => a + r.cases, 0)) }));
-    const max = Math.max(1, ...grid.flatMap(r => r.v));
-    const colTot = months.map((m, i) => grid.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
-    const n = v => v.toLocaleString('en-US');
-    const cell = v => `<td class="c" style="background:rgba(94,60,160,${(0.08 + 0.5 * v / max).toFixed(2)})">${v ? n(v) : '–'}</td>`;
-    // Spikes: a month at least 1.5 times the category's own monthly average (and 50+ cases over it).
-    const spikes = grid.map(r => { const avg = r.tot / Math.max(1, months.length); let bi = 0; r.v.forEach((v, i) => { if(v > r.v[bi]) bi = i; });
-      return { label:r.label, m: months[bi], v: r.v[bi], avg, up: r.v[bi] >= avg * 1.5 && r.v[bi] - avg >= 50 }; }).filter(x => x.up).sort((a, b) => b.v / b.avg - a.v / a.avg).slice(0, 3);
-    const fullM = m => m.s.toLocaleDateString('en-US', { month:'long' });
-    const bullets = grid.slice(0, 3).map((r, i) => i === 0 ? `${esc(r.label)} is the largest call driver at ${n(r.tot)} cases (${Math.round(r.tot / all * 100)}% of the volume).` : `${esc(r.label)} (${Math.round(r.tot / all * 100)}%).`)
-      .concat(spikes.map(x => `${esc(x.label)} spiked in ${fullM(x.m)} (${n(x.v)} cases, against ${n(Math.round(x.avg))} a month on average).`));
-    SUP_MONTHLY = { months, grid, colTot, year: last.getFullYear() };
-    if(grid.length) $('supStats').insertAdjacentHTML('beforeend', `<div class="sup-heat">
-      <h4 style="margin:22px 0 2px">${last.getFullYear()} | Annual Issue Heatmap</h4><p class="sub" style="margin:0 0 10px">Top 10 Technical issue categories (without Upgrade/Update, Resto and Crash), ${fullM(months[0])} to ${fullM(months[months.length - 1])}${months[months.length - 1].e > new Date() ? ' (month in progress)' : ''}.</p>
-      <div class="table-wrap" style="border:none;"><table class="data heat" style="min-width:640px;"><thead><tr><th>Issue Category</th>${months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>
-      ${grid.map(r => `<tr><td>${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="c b">${n(r.tot)}</td></tr>`).join('')}
-      <tr class="tot"><td>Total Cases</td>${colTot.map(v => `<td class="c b">${n(v)}</td>`).join('')}<td class="c b">${n(all)}</td></tr></tbody></table></div>
-      <p style="margin:12px 0 4px;font-size:13px">Year to date, the Support teams have handled ${n(all)} cases in these ${grid.length} categories.</p>
-      <ul style="margin:0;padding-left:20px;line-height:1.7;font-size:13px">${bullets.map(x => `<li>${x}</li>`).join('')}</ul></div>`);
+  // Annual heatmap: every issue category month by month, January to the month the Report period ends in.
+  const A = dated ? supAnnual(ANCHOR ? addDays(bounds(PERIOD, ANCHOR)[1], -1) : new Date(), () => true, Infinity) : null;
+  if(A && A.grid.length){
+    const n = v => v.toLocaleString('en-US'), max = Math.max(1, ...A.grid.flatMap(r => r.v));
+    const cell = v => `<td class="c" style="background:rgba(94,60,160,${(0.06 + 0.55 * Math.sqrt(v / max)).toFixed(2)})">${v ? n(v) : '–'}</td>`;
+    const T12 = supAnnual(A.last, r => supKind(r.label) === 'Technical', 12);
+    const kindTot = k => A.grid.filter(r => (supKind(r.label) || 'Not classified') === k).reduce((a, r) => a + r.tot, 0);
+    $('supStats').insertAdjacentHTML('beforeend', `<div class="sup-heat">
+      <h4 style="margin:22px 0 2px">${A.year} | Annual Issue Heatmap</h4><p class="sub" style="margin:0 0 10px">All ${A.grid.length} issue categories, ${A.range}. The newsletter PDF shows the top 12 Technical.</p>
+      <div class="table-wrap" style="border:none;max-height:560px;overflow:auto"><table class="data heat" style="min-width:760px;"><thead style="position:sticky;top:0;z-index:1"><tr><th>Issue Category</th><th>Type</th>${A.months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>
+      ${A.grid.map(r => `<tr><td>${esc(r.label)}</td><td class="dim">${supKind(r.label) || 'Not classified'}</td>${r.v.map(cell).join('')}<td class="c b">${n(r.tot)}</td></tr>`).join('')}
+      <tr class="tot"><td>Total Cases</td><td></td>${A.colTot.map(v => `<td class="c b">${n(v)}</td>`).join('')}<td class="c b">${n(A.all)}</td></tr></tbody></table></div>
+      <p style="margin:12px 0 4px;font-size:13px">Year to date, the Support teams have handled ${n(A.all)} cases: ${n(kindTot('Technical'))} Technical, ${n(kindTot('Regular'))} Regular${kindTot('Not classified') ? ` and ${n(kindTot('Not classified'))} not classified yet` : ''}.</p>
+      <ul style="margin:0;padding-left:20px;line-height:1.7;font-size:13px">${T12.bullets.map(x => `<li>${x}</li>`).join('')}</ul></div>`);
   }
   SUP_UNCLASSIFIED = none; renderSupCats();
   if(none.length && !SUP_SHOW_CATS) $('supStats').insertAdjacentHTML('beforeend', `<p class="sub" style="margin-top:10px">${none.length} issue categor${none.length === 1 ? 'y is' : 'ies are'} not classified yet: ${none.slice(0, 6).map(r => esc(r.label)).join(', ')}${none.length > 6 ? '…' : ''}. Open Categories to set ${none.length === 1 ? 'it' : 'them'}.</p>`);
@@ -2044,6 +2051,26 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
     <footer><span>Source: escalations closed, by ${unit} and by month. Issue category is the sub-issue type of each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
     </section>`;
   };
+  // iTero Support annual heatmap (Salesforce cases): top 12 Technical issue categories month by month, only when an export is uploaded.
+  const supportPage = () => {
+    if(!SUP_CASES.some(r => r._d)) return '';
+    const A = supAnnual(addDays(R.e, -1), r => supKind(r.label) === 'Technical', 12);
+    if(!A.grid.length) return '';
+    const n = v => v.toLocaleString('en-US'), max = Math.max(1, ...A.grid.flatMap(r => r.v));
+    const cell = v => `<td style="background:rgba(94,60,160,${(0.06 + 0.5 * v / max).toFixed(2)})">${v ? n(v) : '–'}</td>`;
+    return `<section class="page nl">
+    <header><img src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><div class="eyebrow">iTero Support</div><h1>${A.year} | Annual Issue Heatmap</h1><p>Top ${A.grid.length} Technical issue categories, ${esc(A.range)}</p></div><div class="issue">Year to date<br>${esc(A.months[A.months.length - 1].s.toLocaleDateString('en-US', { month:'long', year:'numeric' }))}</div></header>
+    <div class="body">
+      <table class="vt sup"><thead><tr><th class="cat">Issue Category</th>${A.months.map(m => `<th>${esc(m.label)}</th>`).join('')}<th class="t">Total</th></tr></thead><tbody>
+        ${A.grid.map(r => `<tr><td class="cat">${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="t">${n(r.tot)}</td></tr>`).join('')}
+        <tr class="tt"><td class="cat">Total Cases</td>${A.colTot.map(v => `<td>${n(v)}</td>`).join('')}<td class="t">${n(A.all)}</td></tr>
+      </tbody></table>
+      <p class="lead" style="margin-top:18px">Year to date, the Support teams have handled ${n(A.all)} cases in these ${A.grid.length} Technical categories.</p>
+      <ul class="supl">${A.bullets.map(x => `<li>${x}</li>`).join('')}</ul>
+    </div>
+    <footer><span>Source: Salesforce cases by Date/Time Opened and Sub-Issue Type; Technical per the iTero Support category list.</span><span>iTero Tech Support | Escalations team</span></footer>
+    </section>`;
+  };
   // Group, then origin, then the solutions provided on those same tickets.
   const breakdown = () => {
     if(!os.set) return `<div class="blk"><h2>Origins by group</h2><p class="dim">Origin not set on the tickets closed ${monthly ? 'this month' : 'in this period'}.</p></div>`;
@@ -2110,6 +2137,8 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
   .nl .vt th.t{ background:#18a99e; }
   .nl .vt tr.tt td{ font-weight:700; background:#e6f7f5; }
   .nl .vt tr.tt td.cat{ background:#3d3935; }
+  .nl .vt.sup th, .nl .vt.sup .cat, .nl .vt.sup tr.tt td.cat{ background:#4b2e83; } .nl .vt.sup th.t{ background:#4b2e83; } .nl .vt.sup td.t, .nl .vt.sup tr.tt td{ background:#efeaf7; }
+  .nl .supl{ margin:0; padding-left:18px; font-size:11px; line-height:1.7; color:#3d3935; }
   .nl .vnote{ font-size:8px; color:#9b958d; margin:8px 0 0; }
   .nl .ob{ width:100%; border-collapse:collapse; font-size:8.5px; }
   .nl .ob th{ text-align:left; font-size:7px; font-weight:600; letter-spacing:.9px; text-transform:uppercase; color:#9b958d; padding:0 6px 5px 0; }
@@ -2156,7 +2185,7 @@ function buildNewsletterHtml(autoDownload = false, pick = null){
     </div>
   </div>
   <footer><span>Source: escalations closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, uploaded to the Escalations tracker. Avoidable, root cause and origin are set on each ticket.</span><span>iTero Tech Support | Escalations team</span></footer>
-  </section>${volumePage()}`, autoDownload, true);
+  </section>${volumePage()}${supportPage()}`, autoDownload, true);
 }
 $('btnNewsletter').addEventListener('click', ()=> openReport(buildNewsletterHtml()));
 
