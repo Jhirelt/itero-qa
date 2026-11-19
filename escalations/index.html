@@ -1141,7 +1141,7 @@ function monthSpans(from, last, max = 12){
 const firstClosed = () => T.reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
 
 /* ---------- iTero Support (Report): Salesforce cases export, each issue category Technical or Regular ---------- */
-let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [];
+let SUP_CATS = new Map(), SUP_CASES = [], SUP_UPLOAD = null, SUP_SHOW_CATS = false, SUP_LOADED = false, SUP_UNCLASSIFIED = [], SUP_MONTHLY = null;
 const supKey = x => String(x ?? '').trim().toLowerCase();
 const supKind = cat => (SUP_CATS.get(supKey(cat)) || {}).kind || null;
 async function loadSupport(){
@@ -1179,16 +1179,42 @@ function renderSupport(){
   const all = supCount(rows), sum = list => list.reduce((a, r) => a + r.value, 0);
   const tech = all.filter(r => supKind(r.label) === 'Technical'), reg = all.filter(r => supKind(r.label) === 'Regular'), none = all.filter(r => !supKind(r.label));
   const tot = sum(all), pc = v => tot ? ` · ${Math.round(v / tot * 100)}%` : '';
-  $('supSub').textContent = `${tot} Salesforce cases ${when}, by issue category`;
+  $('supSub').textContent = `${tot.toLocaleString('en-US')} Salesforce cases ${when}, by issue category`;
   $('supStats').innerHTML = `<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px">
-      <span class="mini-stat" style="cursor:default"><span class="ms-label">Technical</span><span class="ms-value">${sum(tech)}</span><span class="ms-foot">${pc(sum(tech)).slice(3)}</span></span>
-      <span class="mini-stat" style="cursor:default"><span class="ms-label">Regular</span><span class="ms-value">${sum(reg)}</span><span class="ms-foot">${pc(sum(reg)).slice(3)}</span></span>
-      ${none.length ? `<span class="mini-stat" style="cursor:default" title="Categories not in the list yet. Set them in Categories."><span class="ms-label">Not classified</span><span class="ms-value">${sum(none)}</span><span class="ms-foot">${none.length} categor${none.length === 1 ? 'y' : 'ies'}</span></span>` : ''}
+      <span class="mini-stat" style="cursor:default"><span class="ms-label">Technical</span><span class="ms-value">${sum(tech).toLocaleString('en-US')}</span><span class="ms-foot">${pc(sum(tech)).slice(3)}</span></span>
+      <span class="mini-stat" style="cursor:default"><span class="ms-label">Regular</span><span class="ms-value">${sum(reg).toLocaleString('en-US')}</span><span class="ms-foot">${pc(sum(reg)).slice(3)}</span></span>
+      ${none.length ? `<span class="mini-stat" style="cursor:default" title="Categories not in the list yet. Set them in Categories."><span class="ms-label">Not classified</span><span class="ms-value">${sum(none).toLocaleString('en-US')}</span><span class="ms-foot">${none.length} categor${none.length === 1 ? 'y' : 'ies'}</span></span>` : ''}
     </div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:20px"><div><h4 style="margin:0 0 8px">Top 10 Technical issue categories</h4><div class="hbars" id="supTechBars"></div></div>
     <div><h4 style="margin:0 0 8px">Top 10 Regular issue categories</h4><div class="hbars" id="supRegBars"></div></div></div>`;
   renderHbars($('supTechBars'), tech, null, 10);
   renderHbars($('supRegBars'), reg, null, 10);
+  // Top 10 Technical month by month: January to the month the Report period ends in.
+  if(dated){
+    const last = ANCHOR ? addDays(bounds(PERIOD, ANCHOR)[1], -1) : new Date(), ys = new Date(last.getFullYear(), 0, 1);
+    const months = monthSpans(ys, last, 12).filter(m => SUP_CASES.some(r => r._d && inRange(r._d, m.s, m.e)));
+    const yRows = SUP_CASES.filter(r => r._d && inRange(r._d, ys, months.length ? months[months.length - 1].e : ys));
+    const top = supCount(yRows).filter(r => supKind(r.label) === 'Technical').slice(0, 10);
+    const grid = top.map(t => ({ label:t.label, tot:t.value, v: months.map(m => yRows.filter(r => supKey(r.issue_category) === supKey(t.label) && inRange(r._d, m.s, m.e)).reduce((a, r) => a + r.cases, 0)) }));
+    const max = Math.max(1, ...grid.flatMap(r => r.v));
+    const colTot = months.map((m, i) => grid.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
+    const n = v => v.toLocaleString('en-US');
+    const cell = v => `<td class="c" style="background:rgba(94,60,160,${(0.08 + 0.5 * v / max).toFixed(2)})">${v ? n(v) : '–'}</td>`;
+    // Spikes: a month at least 1.5 times the category's own monthly average (and 50+ cases over it).
+    const spikes = grid.map(r => { const avg = r.tot / Math.max(1, months.length); let bi = 0; r.v.forEach((v, i) => { if(v > r.v[bi]) bi = i; });
+      return { label:r.label, m: months[bi], v: r.v[bi], avg, up: r.v[bi] >= avg * 1.5 && r.v[bi] - avg >= 50 }; }).filter(x => x.up).sort((a, b) => b.v / b.avg - a.v / a.avg).slice(0, 3);
+    const fullM = m => m.s.toLocaleDateString('en-US', { month:'long' });
+    const bullets = grid.slice(0, 3).map((r, i) => i === 0 ? `${esc(r.label)} is the largest call driver at ${n(r.tot)} cases (${Math.round(r.tot / all * 100)}% of the volume).` : `${esc(r.label)} (${Math.round(r.tot / all * 100)}%).`)
+      .concat(spikes.map(x => `${esc(x.label)} spiked in ${fullM(x.m)} (${n(x.v)} cases, against ${n(Math.round(x.avg))} a month on average).`));
+    SUP_MONTHLY = { months, grid, colTot, year: last.getFullYear() };
+    if(grid.length) $('supStats').insertAdjacentHTML('beforeend', `<div class="sup-heat">
+      <h4 style="margin:22px 0 2px">${last.getFullYear()} | Annual Issue Heatmap</h4><p class="sub" style="margin:0 0 10px">Top 10 Technical issue categories, ${fullM(months[0])} to ${fullM(months[months.length - 1])}${months[months.length - 1].e > new Date() ? ' (month in progress)' : ''}.</p>
+      <div class="table-wrap" style="border:none;"><table class="data heat" style="min-width:640px;"><thead><tr><th>Issue Category</th>${months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>
+      ${grid.map(r => `<tr><td>${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="c b">${n(r.tot)}</td></tr>`).join('')}
+      <tr class="tot"><td>Total Cases</td>${colTot.map(v => `<td class="c b">${n(v)}</td>`).join('')}<td class="c b">${n(all)}</td></tr></tbody></table></div>
+      <p style="margin:12px 0 4px;font-size:13px">Year to date, the Support teams have handled ${n(all)} cases in these ${grid.length} categories.</p>
+      <ul style="margin:0;padding-left:20px;line-height:1.7;font-size:13px">${bullets.map(x => `<li>${x}</li>`).join('')}</ul></div>`);
+  }
   SUP_UNCLASSIFIED = none; renderSupCats();
   if(none.length && !SUP_SHOW_CATS) $('supStats').insertAdjacentHTML('beforeend', `<p class="sub" style="margin-top:10px">${none.length} issue categor${none.length === 1 ? 'y is' : 'ies are'} not classified yet: ${none.slice(0, 6).map(r => esc(r.label)).join(', ')}${none.length > 6 ? '…' : ''}. Open Categories to set ${none.length === 1 ? 'it' : 'them'}.</p>`);
 }
@@ -1214,6 +1240,14 @@ $('supCats').addEventListener('change', async e => {
   SUP_CATS.set(supKey(category), { category, kind }); toast(`${category} is ${kind}`); renderSupport();
 });
 $('btnSupUpload').addEventListener('click', ev => { ev.preventDefault(); $('supFile').value = ''; $('supFile').click(); });
+// Big Salesforce ".xls" (an HTML table, 60k rows) read with a plain scan instead of a DOM, which is too heavy at that size.
+function tableFromHtmlFast(text){
+  const ent = { amp:'&', lt:'<', gt:'>', quot:'"', apos:"'", nbsp:' ' };
+  const dec = x => x.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&(#x?[0-9a-f]+|[a-z]+);/gi, (m, c) => c[0] === '#' ? String.fromCharCode(c[1].toLowerCase() === 'x' ? parseInt(c.slice(2), 16) : +c.slice(1)) : (ent[c.toLowerCase()] ?? m)).trim();
+  const out = [], cellRe = /<t[dh][^>]*>([\s\S]*?)<\/t[dh]>/gi;
+  text.split(/<tr[\s>]/i).slice(1).forEach(tr => { const row = []; let m; cellRe.lastIndex = 0; while((m = cellRe.exec(tr))) row.push(dec(m[1])); if(row.length) out.push(row); });
+  return out;
+}
 // Excel to rows: the issue category column is the one whose values match the category list best.
 function supParse(tables){
   const known = new Set([...SUP_CATS.keys()]);
@@ -1225,18 +1259,21 @@ function supParse(tables){
   if(!best) return null;
   const head = best.tb[best.h].map(normHead);
   const find = res => { for(const re of res){ const i = head.findIndex(x => re.test(x)); if(i >= 0) return i; } return -1; };
-  const iDate = find([/opened/, /created/, /date/]), iCase = find([/^case number$/, /case num/, /^case$/]), iCnt = find([/record count/, /^count$/, /^cases$/, /^total$/]);
+  const iDate = find([/opened/, /created/, /date/]), iCnt = find([/record count/, /^count$/, /^cases$/, /^total$/]);
   const toDay = v => { if(v instanceof Date && !isNaN(v)) return v; const s = String(v ?? '').trim(); if(!s) return null; const iso = parseTs(s); if(iso) return iso;
     const m = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})/); if(m) return new Date(+m[3] < 100 ? 2000 + +m[3] : +m[3], +m[1] - 1, +m[2]); const d = new Date(s); return isNaN(d) ? null : d; };
   const ymd = d => d ? `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}` : null;
-  const rows = [];
+  // Stored as cases per day and category (60k tickets become about 10k rows); no ticket numbers or owners are kept.
+  const agg = new Map(); let tickets = 0;
   best.tb.slice(best.h + 1).forEach(r => {
     const cat = String(r[best.c] ?? '').trim();
     if(!cat || /^(sub)?total\b|^grand total/i.test(cat)) return;
-    const n = iCnt >= 0 ? parseInt(String(r[iCnt]).replace(/[^\d]/g, ''), 10) : 1;
-    rows.push({ issue_category: cat, case_number: iCase >= 0 ? String(r[iCase] ?? '').trim() || null : null, opened_on: iDate >= 0 ? ymd(toDay(r[iDate])) : null, cases: isNaN(n) ? 1 : n });
+    let n = iCnt >= 0 ? parseInt(String(r[iCnt]).replace(/[^\d]/g, ''), 10) : 1; if(isNaN(n)) n = 1;
+    const day = iDate >= 0 ? ymd(toDay(r[iDate])) : null, k = day + '|' + supKey(cat);
+    const cur = agg.get(k); if(cur) cur.cases += n; else agg.set(k, { issue_category: cat, opened_on: day, cases: n });
+    tickets += n;
   });
-  return { rows, catHead: best.tb[best.h][best.c], dateHead: iDate >= 0 ? best.tb[best.h][iDate] : null };
+  return { rows: [...agg.values()], tickets, catHead: best.tb[best.h][best.c], dateHead: iDate >= 0 ? best.tb[best.h][iDate] : null };
 }
 $('supFile').addEventListener('change', async () => {
   const file = $('supFile').files[0]; if(!file) return;
@@ -1244,15 +1281,16 @@ $('supFile').addEventListener('change', async () => {
     const buf = await file.arrayBuffer();
     const isHtml = new TextDecoder('latin1').decode(buf.slice(0, 512)).trimStart().startsWith('<');
     if(!isHtml && !window.XLSX){ toast('The Excel reader could not load. Check your connection and reload.'); return; }
-    const parsed = supParse(isHtml ? [tableFromHtml(new TextDecoder('windows-1252').decode(buf))] : tablesFromWorkbook(buf));
+    const parsed = supParse(isHtml ? [tableFromHtmlFast(new TextDecoder('windows-1252').decode(buf))] : tablesFromWorkbook(buf));
     if(!parsed || !parsed.rows.length){ toast('No issue category column found in this file.'); return; }
-    const total = parsed.rows.reduce((a, r) => a + r.cases, 0);
+    const total = parsed.tickets;
     if(!confirm(`${file.name}: ${total} cases, issue category from "${parsed.catHead}"${parsed.dateHead ? `, dates from "${parsed.dateHead}"` : ', no date column'}. This replaces the previous iTero Support upload. Continue?`)) return;
     toast('Uploading…');
     const { data: up, error: uErr } = await sb.from('support_case_uploads').insert({ file_name: file.name, row_count: parsed.rows.length, case_count: total }).select().single();
     if(uErr) throw uErr;
-    for(let i = 0; i < parsed.rows.length; i += 500){
-      const { error } = await sb.from('support_cases').insert(parsed.rows.slice(i, i + 500).map(r => ({ ...r, upload_id: up.id })));
+    for(let i = 0; i < parsed.rows.length; i += 1000){
+      toast(`Uploading… ${Math.round(i / parsed.rows.length * 100)}%`);
+      const { error } = await sb.from('support_cases').insert(parsed.rows.slice(i, i + 1000).map(r => ({ ...r, upload_id: up.id })));
       if(error){ await sb.from('support_case_uploads').delete().eq('id', up.id); throw error; }
     }
     await sb.from('support_case_uploads').delete().neq('id', up.id);
