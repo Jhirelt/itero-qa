@@ -243,6 +243,10 @@
   .more-stats summary h4{ margin:0; } .more-stats summary .sub{ margin:0; }
   .more-stats[open] summary{ margin-bottom:12px; }
   .more-stats .grid-3{ margin-bottom:0; }
+  .heat th.c, .heat td.c{ text-align:center; font-variant-numeric:tabular-nums; }
+  .heat td.c{ min-width:46px; color:var(--text); } .heat td.z{ color:var(--text-dim); opacity:.5; }
+  .heat td.g{ font-weight:700; white-space:nowrap; } .heat tr.gs td{ border-top:2px solid var(--border); }
+  .heat td.b, .heat tr.tot td{ font-weight:700; } .heat tr.tot td{ border-top:2px solid var(--border); }
   .more-stats .grid-3 > div h5{ margin:0 0 8px; font-size:12px; color:var(--text-dim); text-transform:uppercase; letter-spacing:.5px; }
   .list-head{ display:flex; align-items:center; gap:10px; margin:0 0 10px; flex-wrap:wrap; }
   .list-head .count{ font-size:12px; color:var(--text-dim); margin-right:auto; }
@@ -380,9 +384,8 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <button class="mini-stat" id="reincidence" title="Closed tickets in the period that had been closed before and came back (reopened). Click to see them."><span class="ms-label">Reincidence</span><span class="ms-value" id="reinValue">–</span><span class="ms-foot" id="reinFoot"></span></button>
       <button class="btn btn-ghost" id="btnSummary" title="A written summary of the selected period, ready to paste"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 10h14M5 14h9M5 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Summary</button>
       <button class="btn btn-ghost" id="btnPdfReport" title="A two-page report of the selected period, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13H7z M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Report</button>
-      <button class="btn btn-ghost" id="btnDownloadReport" title="Download the two-page report of the selected period as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Download</button>
       <button class="btn btn-ghost" id="btnMonthlyReport" title="Open a one-page report of the month: key numbers, top origins and the origin of each escalation"><svg viewBox="0 0 24 24" fill="none"><rect x="4" y="5" width="16" height="15" rx="2" stroke="currentColor" stroke-width="1.8"/><path d="M4 10h16M9 3v4M15 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Monthly</button>
-      <button class="btn btn-ghost" id="btnNewsletter" title="Download the one-page newsletter of the month as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11a2 2 0 0 1 2 2v13a1 1 0 0 0 2 0V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 4v15a1 1 0 0 0 1 1h13M8 8h6M8 12h6M8 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Newsletter</button>
+      <button class="btn btn-ghost" id="btnNewsletter" title="Open the newsletter of the month, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M5 4h11a2 2 0 0 1 2 2v13a1 1 0 0 0 2 0V8" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 4v15a1 1 0 0 0 1 1h13M8 8h6M8 12h6M8 16h3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Newsletter</button>
       <button class="btn btn-ghost" id="btnExportPeriod" title="Export the tickets closed in the period to Excel"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Excel</button>
     </div>
 
@@ -427,6 +430,11 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
     <details class="panel more-stats" id="moreStats">
       <summary><h4>More breakdowns</h4><span class="sub">Sub-issue type, ticket type, priority, requestor, avoidable and root cause, for the same period</span></summary>
       <div class="grid-3" id="moreBars"></div>
+    </details>
+    <details class="panel more-stats" id="heatPanel" style="margin-top:12px">
+      <summary><h4>Origins heatmap</h4><span class="sub" id="heatSub"></span></summary>
+      <div class="list-head" style="margin:0 0 8px"><span class="spacer"></span><button class="btn btn-ghost" id="btnHeatExport"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button></div>
+      <div class="table-wrap" style="border:none;"><table class="data heat" id="heatTable" style="min-width:640px;"></table></div>
     </details>
 
     <div class="panel">
@@ -528,7 +536,6 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
       <div class="spacer"></div>
       <button class="btn btn-ghost" id="btnWgSummary" title="A written summary of the selected period, ready to paste"><svg viewBox="0 0 24 24" fill="none"><path d="M5 6h14M5 10h14M5 14h9M5 18h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>Summary</button>
       <button class="btn btn-ghost" id="btnWgPdf" title="A one-page report of the selected period, to print or save as PDF"><svg viewBox="0 0 24 24" fill="none"><path d="M7 3h7l5 5v13H7z M14 3v5h5" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M10 13h6M10 17h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>PDF report</button>
-      <button class="btn btn-ghost" id="btnWgDownload" title="Download the one-page report of the selected period as a PDF file"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Download PDF</button>
       <button class="btn btn-ghost" id="btnWgExport"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v11m0 0-4-4m4 4 4-4M5 20h14" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Export Excel</button>
     </div>
 
@@ -797,12 +804,12 @@ const SCANNER_MODELS = ['Office PC', 'Lumina PC', 'Element 2', 'Element 2 5D', '
 const ORIGINS = ['RM replacement request', 'RM request', 'IL request', 'Management request', 'Internal team request',
   'Recurrent software issue', 'Outdated or wrong software version', 'Physical damage / out of warranty', 'Scan quality / lab rejection',
   'Customer dissatisfaction with process / delays', 'Admin / logistics request', 'Failed EFRA / reinstall', 'Replacement arrived faulty (DOA)',
-  'Hardware failure', 'Recurrent connectivity (network / wand)', 'Customer error / knowledge gap',
+  'Hardware failure', 'Recurrent network disconnections', 'Recurrent wand disconnections', 'Customer error / knowledge gap',
   'Not an escalation (already resolved / out of scope)', 'Internal process / documentation error'];
 // Groups for the origin statistics in the Monthly and Newsletter PDFs. An RM replacement request always ended in a part replacement, so it counts as hardware (user rule).
 const ORIGIN_GROUPS = [
   ['Internal requests', ['RM request', 'IL request', 'Management request', 'Internal team request']],
-  ['Software and connectivity', ['Recurrent software issue', 'Outdated or wrong software version', 'Failed EFRA / reinstall', 'Recurrent connectivity (network / wand)']],
+  ['Software and connectivity', ['Recurrent software issue', 'Outdated or wrong software version', 'Failed EFRA / reinstall', 'Recurrent network disconnections', 'Recurrent wand disconnections']],
   ['Hardware and scan quality', ['RM replacement request', 'Physical damage / out of warranty', 'Replacement arrived faulty (DOA)', 'Hardware failure', 'Scan quality / lab rejection']],
   ['Customer and process', ['Customer dissatisfaction with process / delays', 'Customer error / knowledge gap', 'Admin / logistics request', 'Internal process / documentation error', 'Not an escalation (already resolved / out of scope)']],
 ];
@@ -1105,6 +1112,45 @@ function renderOriginBars(closed, onClick){
   renderHbars($('originBars'), set ? (ORIGINS_EXPANDED ? all : top.slice(0, 5)) : [], (r => r.value && onClick(r)), ORIGINS.length);
 }
 $('btnOriginsToggle').addEventListener('click', ()=>{ ORIGINS_EXPANDED = !ORIGINS_EXPANDED; renderReport(); });
+// Months [start, end) from `from` to the month of `last`, at most `max` (the most recent ones).
+function monthSpans(from, last, max = 12){
+  const out = []; let d = new Date(from.getFullYear(), from.getMonth(), 1);
+  const stop = new Date(last.getFullYear(), last.getMonth(), 1);
+  while(d <= stop){ const nx = new Date(d.getFullYear(), d.getMonth() + 1, 1); out.push({ s:d, e:nx, label: d.toLocaleDateString('en-US', { month:'short' }) + (d.getFullYear() !== last.getFullYear() ? ` ${String(d.getFullYear()).slice(2)}` : '') }); d = nx; }
+  return out.slice(-max);
+}
+const firstClosed = () => T.reduce((m, t) => t._c && (!m || t._c < m) ? t._c : m, null);
+
+/* ---------- Origins heatmap (Report, collapsed): origin by month, grouped, with Excel export ---------- */
+let HEAT = null;   // { head, rows } as exported
+function renderHeatmap(){
+  const end = addDays(bounds(PERIOD, ANCHOR)[1], -1), first = firstClosed();
+  if(!first){ $('heatTable').innerHTML = ''; HEAT = null; return; }
+  const months = monthSpans(first > addDays(end, -366) ? first : new Date(end.getFullYear() - 1, end.getMonth() + 1, 1), end);
+  const inM = (t, m) => inRange(t._c, m.s, m.e);
+  const rows = [];
+  ORIGIN_GROUPS.forEach(([g, list]) => list.forEach(o => {
+    const ts = T.filter(t => t._sp.details.origin === o);
+    const v = months.map(m => ts.filter(t => inM(t, m)).length), tot = v.reduce((a, x) => a + x, 0);
+    if(tot) rows.push({ g, o, v, tot });
+  }));
+  const max = Math.max(1, ...rows.flatMap(r => r.v));
+  const colTot = months.map((m, i) => rows.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
+  const cell = v => v ? `<td class="c" style="background:rgba(44,191,180,${(0.12 + 0.78 * v / max).toFixed(2)})">${v}</td>` : '<td class="c z">–</td>';
+  $('heatSub').textContent = `Tickets by origin and group, by the month they were closed (${months[0].label} to ${months[months.length - 1].label})`;
+  $('heatTable').innerHTML = rows.length ? `<thead><tr><th>Group</th><th>Origin</th>${months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${
+    rows.map((r, i) => `<tr${i && rows[i - 1].g !== r.g ? ' class="gs"' : ''}><td class="g">${i && rows[i - 1].g === r.g ? '' : esc(r.g)}</td><td>${esc(r.o)}</td>${r.v.map(cell).join('')}<td class="c b">${r.tot}</td></tr>`).join('')
+  }<tr class="tot"><td>Total</td><td></td>${colTot.map(v => `<td class="c b">${v}</td>`).join('')}<td class="c b">${all}</td></tr></tbody>` : '<tbody><tr><td class="empty">No origin set on these months.</td></tr></tbody>';
+  HEAT = { head: ['Group', 'Origin', ...months.map(m => m.s.toLocaleDateString('en-US', { month:'short', year:'numeric' })), 'Total'],
+    rows: rows.map(r => [r.g, r.o, ...r.v, r.tot]).concat([['Total', '', ...colTot, all]]) };
+}
+$('btnHeatExport').addEventListener('click', ev => {
+  ev.preventDefault();
+  if(!HEAT) return;
+  if(!window.XLSX){ toast('Excel export could not load. Check your connection.'); return; }
+  const ws = XLSX.utils.aoa_to_sheet([HEAT.head, ...HEAT.rows]); ws['!cols'] = [{ wch:26 }, { wch:44 }, ...HEAT.head.slice(2).map(()=>({ wch:10 }))];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Origins heatmap'); XLSX.writeFile(wb, 'Origins heatmap.xlsx');
+});
 function deltaText(cur, prev){
   const d = cur - prev;
   return d === 0 ? `Same as previous ${PERIOD_WORD[PERIOD]}` : `${d > 0 ? '+' : '−'}${Math.abs(d)} vs previous ${PERIOD_WORD[PERIOD]} (${prev})`;
@@ -1160,6 +1206,7 @@ function renderReport(){
   renderHbars($('solutionBars'), countBy(closed, t=>t._sol), toTickets('tSolution'));
   renderHbars($('issueBars'), countBy(closed, t=>t.issue_type), toTickets('tIssue'));
   renderMoreStats(closed, durs, toTickets);
+  renderHeatmap();
   renderHbars($('scannerBars'), countBy(closed, t=>t._sp.details.scanner));
   renderOriginBars(closed, toTickets('tOrigin'));
   const BUCKETS = [['Same day',0,1],['1–3 days',1,3],['3–7 days',3,7],['1–2 weeks',7,14],['2–4 weeks',14,28],['Over 4 weeks',28,Infinity]];
@@ -1738,6 +1785,35 @@ function buildNewsletterHtml(autoDownload = false){
     return `<div class="blk"><h2>Closed per week</h2><div class="wk">${out.map(w => `<div><b>${w.v}</b><i style="height:${Math.max(2, w.v / top * 56)}px;${w.v ? '' : 'background:#e4e0db'}"></i>${esc(w.label)}</div>`).join('')}</div></div>`;
   };
   const os = originStats(R.closed), range = `${fmtLong(R.s)} to ${fmtLong(R.range.last)}, ${R.range.last.getFullYear()}`;
+  // Page 2: issue category (sub-issue type) month by month, January (or the first month with data) to this month.
+  const volumePage = () => {
+    const first = firstClosed(), jan = new Date(R.s.getFullYear(), 0, 1);
+    const months = monthSpans(first && first > jan ? first : jan, R.s);
+    const rows = reportBase().filter(t => inRange(t._c, months[0].s, R.e));
+    const cats = countBy(rows, t => t.sub_issue_type).slice(0, 10);
+    const val = (label, m) => rows.filter(t => inRange(t._c, m.s, m.e) && String(t.sub_issue_type || '').trim().toLowerCase() === label.toLowerCase()).length;
+    const grid = cats.map(c => ({ label:c.label, v: months.map(m => val(c.label, m)) }));
+    const max = Math.max(1, ...grid.flatMap(r => r.v));
+    const tot = months.map(m => rows.filter(t => inRange(t._c, m.s, m.e)).length);
+    const cell = v => `<td style="${v ? `background:rgba(44,191,180,${(0.1 + 0.7 * v / max).toFixed(2)})` : 'color:#c9c4bd'}">${v}</td>`;
+    // What moved: the categories that rose the most against last month.
+    const li = months.length - 1;
+    const ups = li > 0 ? grid.map(r => ({ label:r.label, d: r.v[li] - r.v[li - 1], now: r.v[li] })).filter(x => x.d > 0).sort((a, b) => b.d - a.d).slice(0, 3) : [];
+    const dTot = li > 0 ? tot[li] - tot[li - 1] : null;
+    const why = li > 0 ? `${month.split(' ')[0]} closed ${tot[li]} escalations, ${dTot === 0 ? 'the same as' : `${Math.abs(dTot)} ${dTot > 0 ? 'more than' : 'fewer than'}`} ${pmName}.${ups.length ? ` The biggest increases were ${ups.map(x => `${x.label} (+${x.d}, ${x.now} this month)`).join(', ').replace(/, ([^,]*)$/, ' and $1')}.` : ' No issue category grew against last month.'}`
+      : `${month.split(' ')[0]} is the first month with data in the tracker, so there is no earlier month to compare with.`;
+    return `<section class="page nl">
+    <header><img src="${REPORT_LOGO}" alt="iTero Escalations"><div class="ht"><div class="eyebrow">CSC Escalations</div><h1>Volume by Issue Category</h1><p>Top ${cats.length} sub-issue types, ${esc(months[0].label)} to ${esc(months[li].label)} ${R.s.getFullYear()}</p></div><div class="issue">Monthly<br>${esc(month)}</div></header>
+    <div class="body">
+      <p class="lead">${esc(why)}</p>
+      ${cats.length ? `<table class="vt"><thead><tr><th class="cat">Issue Category</th>${months.map(m => `<th>${esc(m.label)}</th>`).join('')}<th class="t">Total</th></tr></thead><tbody>
+        ${grid.map(r => `<tr><td class="cat">${esc(r.label)}</td>${r.v.map(cell).join('')}<td class="t">${r.v.reduce((a, x) => a + x, 0)}</td></tr>`).join('')}
+        <tr class="tt"><td class="cat">Total Cases</td>${tot.map(v => `<td>${v}</td>`).join('')}<td class="t">${tot.reduce((a, x) => a + x, 0)}</td></tr>
+      </tbody></table><p class="vnote">Total Cases counts every escalation closed in the month, including sub-issue types outside the top ${cats.length}.</p>` : '<p class="dim">No sub-issue types on the tickets closed in these months.</p>'}
+    </div>
+    <footer><span>Source: escalations closed from ${esc(fmtLong(months[0].s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, by the month they were closed. Issue category is the sub-issue type of each ticket.</span><span>iTero Technical Support</span></footer>
+    </section>`;
+  };
   // Group, then origin, then the solutions provided on those same tickets.
   const breakdown = () => {
     if(!os.set) return '<div class="blk"><h2>Origins by group</h2><p class="dim">Origin not set on the tickets closed this month.</p></div>';
@@ -1793,6 +1869,16 @@ function buildNewsletterHtml(autoDownload = false){
   .nl .cols > div:nth-child(2) .fl{ background:#2cbfb4; }
   .nl .bn{ text-align:right; font-weight:600; white-space:nowrap; }
   .nl .bn span{ font-weight:400; color:#9b958d; margin-left:5px; display:inline-block; width:24px; }
+  .nl .vt{ width:100%; border-collapse:separate; border-spacing:2px; font-size:9px; margin-top:4px; }
+  .nl .vt th{ background:#3d3935; color:#fff; font-weight:600; padding:7px 4px; text-align:center; font-size:8.5px; }
+  .nl .vt td{ text-align:center; padding:7px 4px; background:#f6f4f1; font-variant-numeric:tabular-nums; }
+  .nl .vt .cat{ background:#3d3935; color:#fff; text-align:left; padding-left:10px; font-weight:500; width:30%; }
+  .nl .vt th.cat{ font-weight:600; }
+  .nl .vt td.t{ font-weight:700; background:#e6f7f5; }
+  .nl .vt th.t{ background:#18a99e; }
+  .nl .vt tr.tt td{ font-weight:700; background:#e6f7f5; }
+  .nl .vt tr.tt td.cat{ background:#3d3935; }
+  .nl .vnote{ font-size:8px; color:#9b958d; margin:8px 0 0; }
   .nl .ob{ width:100%; border-collapse:collapse; font-size:8.5px; }
   .nl .ob th{ text-align:left; font-size:7px; font-weight:600; letter-spacing:.9px; text-transform:uppercase; color:#9b958d; padding:0 6px 5px 0; }
   .nl .ob td{ padding:3.5px 6px 3.5px 0; vertical-align:top; border-top:1px solid #f0ede9; line-height:1.4; }
@@ -1838,9 +1924,9 @@ function buildNewsletterHtml(autoDownload = false){
     </div>
   </div>
   <footer><span>Source: escalations closed from ${esc(fmtLong(R.s))} to ${esc(fmtLong(R.range.last))}, ${R.range.last.getFullYear()}, uploaded to the Escalations tracker. Avoidable, root cause and origin are set on each ticket.</span><span>iTero Technical Support</span></footer>
-  </section>`, autoDownload, true);
+  </section>${volumePage()}`, autoDownload, true);
 }
-$('btnNewsletter').addEventListener('click', ()=> downloadReport($('btnNewsletter'), ()=> buildNewsletterHtml(true)));
+$('btnNewsletter').addEventListener('click', ()=> openReport(buildNewsletterHtml()));
 
 function openReport(html){
   const w = window.open('', '_blank');
@@ -1848,24 +1934,7 @@ function openReport(html){
   w.document.open(); w.document.write(html); w.document.close();
 }
 // Download: the same report drawn in a hidden frame and saved as a PDF, without opening it.
-function downloadReport(btn, build){
-  if(btn.disabled) return;
-  btn.disabled = true; toast('Preparing the PDF…');
-  const f = document.createElement('iframe');
-  f.setAttribute('aria-hidden', 'true');
-  f.style.cssText = 'position:fixed;left:-12000px;top:0;width:1100px;height:900px;border:0;';
-  const done = ev => {
-    if(ev.source !== f.contentWindow || !ev.data || !ev.data.reportPdf) return;
-    window.removeEventListener('message', done);
-    if(ev.data.reportPdf === 'error') toast('Could not create the PDF. Use PDF report and print it instead.');
-    setTimeout(()=> f.remove(), 1000); btn.disabled = false;
-  };
-  window.addEventListener('message', done);
-  document.body.appendChild(f);
-  f.contentDocument.open(); f.contentDocument.write(build()); f.contentDocument.close();
-}
 $('btnPdfReport').addEventListener('click', ()=> openReport(buildReportHtml()));
-$('btnDownloadReport').addEventListener('click', ()=> downloadReport($('btnDownloadReport'), ()=> buildReportHtml(true)));
 
 /* ---------- Export ---------- */
 function exportRows(rows, name){
@@ -2139,7 +2208,6 @@ function buildWgReportHtml(autoDownload = false){
   return reportDoc(`${PERIOD_ADJ[WGP.period]}White Glove ${range.replace(/[\/\\:,]/g, '')}`, page, autoDownload);
 }
 $('btnWgPdf').addEventListener('click', ()=>{ if(WG) openReport(buildWgReportHtml()); });
-$('btnWgDownload').addEventListener('click', ()=>{ if(WG) downloadReport($('btnWgDownload'), ()=> buildWgReportHtml(true)); });
 
 /* ---------- White Glove summary text ---------- */
 const listText = a => a.length <= 1 ? (a[0] || '') : a.slice(0, -1).join(', ') + ' and ' + a[a.length - 1];
