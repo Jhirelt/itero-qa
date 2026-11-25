@@ -840,10 +840,8 @@ function originStats(rows){
 const DETAIL_FIELDS = [
   { key:'avoidable',   col:'avoidable',         label:'Avoidable', options:['Yes','No'] },
   { key:'scanner',     col:'scanner_model',     label:'Scanner model', options:SCANNER_MODELS },
-  { key:'rootcause',   col:'root_cause',        label:'Root cause', hint:'Short title, e.g. Incomplete network troubleshooting' },
   { key:'origin',      col:'origin',            label:'Origin of the escalation', options:ORIGINS },
-  { key:'prevtickets', col:'previous_tickets',  label:'Previous tickets' },
-  { key:'handlers',    col:'previous_handlers', label:'Previous case handlers' },
+  { key:'calledbefore', col:'called_before',    label:'Had they called before about this error or related errors?', options:['Yes','No'] },
 ];
 let OPEN = [];             // escalation_open_tickets rows (entered on the page)
 let DETAILS = new Map();   // ticket_number -> escalation_ticket_details row
@@ -851,6 +849,8 @@ function applyDetails(t){
   const d = DETAILS.get(t.ticket_number) || {};
   t._sp = { solution: solutionText(t.solution_provided), notes: '', details: {} };
   DETAIL_FIELDS.forEach(f => { const v = (d[f.col] || '').trim(); if(v) t._sp.details[f.key] = v; });
+  // Root cause is the ticket's issue category (sub-issue type), not typed in.
+  const rc = String(t.sub_issue_type || t.issue_type || '').trim(); if(rc) t._sp.details.rootcause = rc;
   return t;
 }
 
@@ -2205,6 +2205,7 @@ function exportRows(rows, name){
     o['Reopened'] = t.reopen_count ? 'Yes' : '';
     o['Customer satisfaction'] = isCsat(t) ? 'Yes' : 'No';
     o['Solution'] = t._sp.solution;
+    o['Root cause'] = t._sp.details.rootcause || '';
     DETAIL_FIELDS.forEach(f => { o[f.label] = t._sp.details[f.key] || ''; });
     Object.entries(t.extra || {}).forEach(([k,v]) => { o[k] = v; });
     return o;
