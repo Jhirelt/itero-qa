@@ -1097,9 +1097,18 @@
     color:var(--text-dim); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
   }
   .sum-only-btn.on{ border-color:var(--yes); background:var(--yes-soft); color:var(--yes); }
+  .cfg-del-btn{
+    flex:none; height:26px; min-width:26px; padding:0 6px; border-radius:var(--radius-sm); border:1px solid var(--border);
+    background:transparent; color:var(--text-faint); cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    font-size:11px; font-weight:700;
+  }
+  .cfg-del-btn svg{ width:14px; height:14px; }
+  .cfg-del-btn:hover{ color:var(--no); border-color:var(--no); }
+  .cfg-del-btn.confirm{ color:#fff; background:var(--no); border-color:var(--no); }
   .cfg-item-top .sum-only-btn{ height:26px; padding:0 9px; font-size:11px; margin-left:auto; flex:none; }
   .bonus-strip{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
   .bonus-strip:empty{ display:none; }
+  .bonus-cap{ font-size:9.5px; font-weight:800; letter-spacing:.5px; text-transform:uppercase; color:var(--yes); align-self:center; margin-right:2px; }
   .bonus-chip{
     display:inline-flex; align-items:center; gap:4px; max-width:100%; padding:2px 8px; border-radius:999px; cursor:pointer;
     font-size:10.5px; font-weight:700; border:1px dashed var(--border); background:transparent; color:var(--text-dim);
@@ -2934,6 +2943,7 @@ const DEFAULT_ROLES = [
 
 let CONFIG = null;
 let ANSWERS = {};
+let REMOVED_RUBRICS = new Set();
 let LAST_STATE = { score: 100, earned: 0, possible: 0, zeroTriggered: false, zeroReasons: [] };
 
 // Once the evaluator types in the summary box, rubric/scenario changes must
@@ -3425,6 +3435,7 @@ async function loadConfig(){
     monthlyTargets: {},
   };
 
+  REMOVED_RUBRICS = new Set();
   if(stored){
     try{
       // Restore any custom (non-factory) items first, so they aren't dropped
@@ -3448,6 +3459,8 @@ async function loadConfig(){
           if(!CONFIG.items[id]) return; // drop unknown/stale ids from old versions
           const cur = CONFIG.items[id];
           const src = stored.items[id] || {};
+          // A built-in rubric deleted in Config stays deleted (kept as { removed: true }).
+          if(src.removed === true){ removeRubricFromConfig(id); REMOVED_RUBRICS.add(id); return; }
           const allowed = cur.zeroType ? ['label','reason'] : ['label','yes','no'];
           allowed.forEach(k=>{ if(typeof src[k] === 'string' && src[k].length) cur[k] = src[k]; });
           // A saved subtitle wins, even an empty one (cleared on purpose).
@@ -3526,6 +3539,28 @@ function withoutScoreLine(tpl){
     .replace(/^[ \t]*Score:[^\n]*\{\{score\}\}[^\n]*\n?/gm, '');
 }
 
+// Deleted rubrics: built-in ones come back from the code on every load unless
+// the saved items carry a { removed: true } marker for them (REMOVED_RUBRICS).
+function isFactoryRubric(id){ return SECTIONS.some(sec=> (sec.items || []).some(it=> it[0] === id)); }
+function itemsForSave(){
+  const out = Object.assign({}, CONFIG.items);
+  REMOVED_RUBRICS.forEach(id=>{ if(!out[id]) out[id] = { removed: true }; });
+  return out;
+}
+function removeRubricFromConfig(id){
+  delete CONFIG.items[id];
+  Object.keys(CONFIG.order).forEach(k=>{ CONFIG.order[k] = CONFIG.order[k].filter(x=> x !== id); });
+  if(CONFIG.scenarios && CONFIG.scenarios.items) Object.values(CONFIG.scenarios.items).forEach(sc=>{ if(sc.applicability) delete sc.applicability[id]; });
+}
+function deleteRubric(id){
+  removeRubricFromConfig(id);
+  if(isFactoryRubric(id)) REMOVED_RUBRICS.add(id);
+  delete ANSWERS[id];
+  delete CHOICES[id];
+  if(typeof RUBRIC_NOTES === 'object' && RUBRIC_NOTES) delete RUBRIC_NOTES[id];
+  ACCOMPLISHMENTS = ACCOMPLISHMENTS.filter(x=> x !== id);
+}
+
 async function saveConfig(){
   if(!supabaseClient) return false;
   if(!isStaffUser()) return false;
@@ -3538,13 +3573,14 @@ async function saveConfig(){
     if(!isAdminUser()){
       // Evaluators change the rubrics and focus points; the rest stays as the admin left it.
       const { error } = await supabaseClient.rpc('save_shared_rubrics', { patch: {
-        items: CONFIG.items, order: CONFIG.order, focusPoints: CONFIG.focusPoints, criteriaSeed: CONFIG.criteriaSeed,
+        items: itemsForSave(), order: CONFIG.order, focusPoints: CONFIG.focusPoints, criteriaSeed: CONFIG.criteriaSeed,
       } });
       if(error) throw error;
       CONFIG_SAVED_SNAPSHOT = configSnapshot();
       return true;
     }
     const { names, ...toSave } = CONFIG; // names live in the agents table, not here
+    toSave.items = itemsForSave();
     // Task settings are edited on the Tasks tab by everyone; keep whatever is saved now.
     try{
       const { data } = await supabaseClient.from('app_config').select('data').eq('id', 1).maybeSingle();
@@ -3743,7 +3779,8 @@ function renderSections(){
 function renderBonusStrip(){
   const strip = document.getElementById('bonusStrip');
   if(!strip) return;
-  strip.innerHTML = sumOnlyIds().map(id=>{
+  const ids = sumOnlyIds();
+  strip.innerHTML = (ids.length ? '<span class="bonus-cap">Sum only</span>' : '') + ids.map(id=>{
     const cfg = CONFIG.items[id];
     const on = ANSWERS[id] === 'yes';
     return '<button type="button" class="bonus-chip' + (on ? ' on' : '') + '" data-bonus="' + escapeHtml(id) + '" title="' +
@@ -4786,6 +4823,7 @@ function buildCfgItem(id, secKey){
       </span>
       <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
       <input class="cfg-label" data-id="${id}" value="${escapeHtml(cfg.label)}">
+      <button type="button" class="cfg-del-btn" data-del-rubric title="Delete this rubric (click twice)" aria-label="Delete rubric"><svg viewBox="0 0 24 24" fill="none"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       ${cfg.zeroType ? '' : '<button type="button" class="sum-only-btn' + (cfg.sumOnly ? ' on' : '') + '" data-sum-only title="Sum only: when met it adds its points; when not met nothing is taken off. Shown as a small button under the score.">' + (cfg.sumOnly ? '\u2713 Sum only' : '+ Sum only') + '</button>'}
     </div>
     ${cfg.zeroType ? '' : '<div class="cfg-subtitle"><label>Subtitle (in the summary, above the chosen text)</label><textarea data-id="' + id + '" data-field="subtitle" placeholder="No subtitle">' + escapeHtml(cfg.subtitle || '') + '</textarea></div>'}
@@ -4793,6 +4831,23 @@ function buildCfgItem(id, secKey){
   `;
 
   box.querySelector('.cfg-label').addEventListener('input', (e)=>{ cfg.label = e.target.value; });
+  const delBtn = box.querySelector('[data-del-rubric]');
+  delBtn.addEventListener('click', ()=>{
+    if(!delBtn.classList.contains('confirm')){
+      const icon = delBtn.innerHTML;
+      delBtn.classList.add('confirm');
+      delBtn.textContent = 'Delete?';
+      setTimeout(()=>{ if(delBtn.classList.contains('confirm')){ delBtn.classList.remove('confirm'); delBtn.innerHTML = icon; } }, 4000);
+      return;
+    }
+    const label = cfg.label;
+    deleteRubric(id);
+    box.remove();
+    renderSections();
+    refreshEval();
+    if(typeof refreshScenarioUI === 'function') refreshScenarioUI();
+    showToast('"' + label + '" deleted. Click Save changes to keep it.');
+  });
   const sumBtn = box.querySelector('[data-sum-only]');
   if(sumBtn) sumBtn.addEventListener('click', ()=>{
     if(cfg.sumOnly) delete cfg.sumOnly; else cfg.sumOnly = true;
