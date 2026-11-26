@@ -3452,6 +3452,8 @@ async function loadConfig(){
           allowed.forEach(k=>{ if(typeof src[k] === 'string' && src[k].length) cur[k] = src[k]; });
           // A saved subtitle wins, even an empty one (cleared on purpose).
           if(!cur.zeroType && typeof src.subtitle === 'string') cur.subtitle = src.subtitle;
+          // Sum only survives a reload (it used to be dropped here).
+          if(!cur.zeroType){ if(src.sumOnly === true) cur.sumOnly = true; else delete cur.sumOnly; }
           // Configs saved before the criteria sheet keep their own options and
           // get the sheet's texts appended; newer ones are taken as saved.
           const seeded = Number(stored.criteriaSeed) >= CRITERIA_SEED;
