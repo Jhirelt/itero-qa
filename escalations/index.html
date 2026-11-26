@@ -1345,7 +1345,10 @@ $('supFile').addEventListener('change', async () => {
 });
 
 /* ---------- Origins heatmap (Report, collapsed): origin by month, grouped, with Excel export ---------- */
-let HEAT = null;   // { head, rows } as exported
+let HEAT = null;   // { head, rows, rma } as exported
+// RMA: any part replacement (DOA, PPC, Wand, PPC & Wand or another part), user rule.
+const isRma = t => /^part replacement/i.test(t._sp.solution || '');
+const rmaType = t => (t._sp.solution || '').replace(/^part replacement\s*[–-]?\s*/i, '').replace(/\s*\|.*$/, '').trim() || 'Part';
 function renderHeatmap(){
   const end = addDays(bounds(PERIOD, ANCHOR)[1], -1), first = firstClosed();
   if(!first){ $('heatTable').innerHTML = ''; HEAT = null; return; }
@@ -1355,7 +1358,8 @@ function renderHeatmap(){
   ORIGIN_GROUPS.forEach(([g, list]) => list.forEach(o => {
     const ts = T.filter(t => t._sp.details.origin === o);
     const v = months.map(m => ts.filter(t => inM(t, m)).length), tot = v.reduce((a, x) => a + x, 0);
-    if(tot) rows.push({ g, o, v, tot });
+    const rma = ts.filter(t => isRma(t) && months.some(m => inM(t, m)));
+    if(tot) rows.push({ g, o, v, tot, rma });
   }));
   const max = Math.max(1, ...rows.flatMap(r => r.v));
   const colTot = months.map((m, i) => rows.reduce((a, r) => a + r.v[i], 0)), all = colTot.reduce((a, x) => a + x, 0);
@@ -1364,8 +1368,12 @@ function renderHeatmap(){
   $('heatTable').innerHTML = rows.length ? `<thead><tr><th>Group</th><th>Origin</th>${months.map(m => `<th class="c">${esc(m.label)}</th>`).join('')}<th class="c">Total</th></tr></thead><tbody>${
     rows.map((r, i) => `<tr${i && rows[i - 1].g !== r.g ? ' class="gs"' : ''}><td class="g">${i && rows[i - 1].g === r.g ? '' : esc(r.g)}</td><td>${esc(r.o)}</td>${r.v.map(cell).join('')}<td class="c b">${r.tot}</td></tr>`).join('')
   }<tr class="tot"><td>Total</td><td></td>${colTot.map(v => `<td class="c b">${v}</td>`).join('')}<td class="c b">${all}</td></tr></tbody>` : '<tbody><tr><td class="empty">No origin set on these months.</td></tr></tbody>';
-  HEAT = { head: ['Group', 'Origin', ...months.map(m => m.s.toLocaleDateString('en-US', { month:'short', year:'numeric' })), 'Total'],
-    rows: rows.map(r => [r.g, r.o, ...r.v, r.tot]).concat([['Total', '', ...colTot, all]]) };
+  const rmaAll = rows.reduce((a, r) => a + r.rma.length, 0);
+  HEAT = { head: ['Group', 'Origin', ...months.map(m => m.s.toLocaleDateString('en-US', { month:'short', year:'numeric' })), 'Total', 'With RMA'],
+    rows: rows.map(r => [r.g, r.o, ...r.v, r.tot, r.rma.length]).concat([['Total', '', ...colTot, all, rmaAll]]),
+    // Second sheet: each ticket with an RMA, newest first.
+    rma: rows.flatMap(r => r.rma.map(t => ({ t, r }))).sort((a, b) => (b.t._c || 0) - (a.t._c || 0))
+      .map(({ t, r }) => [t.ticket_number, t._c ? fmtDate(t._c) : '', r.g, r.o, rmaType(t), t._sp.details.rootcause || '']) };
 }
 $('btnHeatExport').addEventListener('click', ev => {
   ev.preventDefault();
@@ -1373,8 +1381,11 @@ $('btnHeatExport').addEventListener('click', ev => {
   if(!window.XLSX){ toast('Excel export could not load. Check your connection.'); return; }
   const ws = XLSX.utils.aoa_to_sheet([HEAT.head, ...HEAT.rows]); ws['!cols'] = [{ wch:26 }, { wch:44 }, ...HEAT.head.slice(2).map(()=>({ wch:10 }))];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, 'Origins heatmap');
-  // Excel's own green-yellow-red color scale (conditional formatting) on the month cells, without the totals.
-  const lastCol = XLSX.utils.encode_col(HEAT.head.length - 2), lastRow = HEAT.rows.length;   // header is row 1, total row is left out
+  const ws2 = XLSX.utils.aoa_to_sheet([['Ticket', 'Closed', 'Group', 'Origin', 'Replaced', 'Root cause'], ...HEAT.rma]);
+  ws2['!cols'] = [{ wch:12 }, { wch:14 }, { wch:26 }, { wch:44 }, { wch:14 }, { wch:30 }];
+  XLSX.utils.book_append_sheet(wb, ws2, 'RMA tickets');
+  // Excel's own green-yellow-red color scale (conditional formatting) on the month cells, without Total, With RMA and the total row.
+  const lastCol = XLSX.utils.encode_col(HEAT.head.length - 3), lastRow = HEAT.rows.length;   // header is row 1, total row is left out
   const range = `C2:${lastCol}${lastRow}`;
   try{
     const zip = XLSX.CFB.read(new Uint8Array(XLSX.write(wb, { type:'array', bookType:'xlsx' })), { type:'array' });
