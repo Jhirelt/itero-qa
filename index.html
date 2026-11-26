@@ -1010,6 +1010,13 @@
   .grid-month-nav button:hover:not(:disabled){ border-color:var(--accent); color:var(--accent); }
   .grid-month-nav button:disabled{ opacity:.35; cursor:default; }
   .grid-month-nav svg{ width:15px; height:15px; }
+  .eval-target-btn{ display:flex; align-items:center; gap:6px; height:30px; padding:0 10px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2); color:var(--text-dim); font:inherit; font-size:11.5px; font-weight:700; cursor:pointer; }
+  .eval-target-btn b{ color:var(--text); font-size:12.5px; }
+  .eval-target-btn svg{ width:13px; height:13px; transition:transform .15s; }
+  .eval-target-btn:hover:not(:disabled), .eval-target-btn.open{ border-color:var(--accent); color:var(--accent); }
+  .eval-target-btn.open svg{ transform:rotate(180deg); }
+  .eval-target-btn:disabled{ cursor:default; }
+  .eval-target-btn:disabled svg{ display:none; }
   .monthly-head .grid-sort + .bulk-start-btn{ margin-left:0; }
   .role-move{ background:none; border:none; color:var(--text-faint); cursor:pointer; padding:0 2px; font-size:12px; }
   .role-move:hover{ color:var(--accent); }
@@ -1759,6 +1766,9 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
             <svg viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
           </button>
         </div>
+        <button type="button" class="eval-target-btn" id="btnEvalTarget" title="Evaluations each agent gets this month">Evaluations <b id="evalTargetValue">4</b>
+          <svg viewBox="0 0 24 24" fill="none"><path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        </button>
         <label class="grid-sort">Sort by
           <select id="gridSort">
             <option value="name">Name (A–Z)</option>
@@ -3390,6 +3400,7 @@ async function loadConfig(){
     focusPoints: FOCUS_POINT_OPTIONS.slice(),
     taskActions: [],
     taskPeople: [],
+    monthlyTargets: {},
   };
 
   if(stored){
@@ -3473,6 +3484,7 @@ async function loadConfig(){
       ['taskActions', 'taskPeople'].forEach(k=>{
         if(Array.isArray(stored[k])) CONFIG[k] = stored[k].filter(x=> typeof x === 'string' && x.trim());
       });
+      CONFIG.monthlyTargets = cleanMonthlyTargets(stored.monthlyTargets);
       if(stored.features && typeof stored.features === 'object'){
         CONFIG.features.quickNotes = !!stored.features.quickNotes;
         CONFIG.features.agentPortal = !!stored.features.agentPortal;
@@ -3515,6 +3527,7 @@ async function saveConfig(){
       ['taskActions', 'taskPeople'].forEach(k=>{
         if(data && data.data && Array.isArray(data.data[k])) toSave[k] = CONFIG[k] = data.data[k];
       });
+      if(data && data.data) toSave.monthlyTargets = CONFIG.monthlyTargets = cleanMonthlyTargets(data.data.monthlyTargets);
     }catch(e){}
     const { error } = await supabaseClient.from('app_config').upsert({
       id: 1,
@@ -5982,7 +5995,7 @@ async function saveEvaluationToDatabase(){
   const shown = SCHEDULE;
   const schedule = await refreshScheduleBanner();
   if(schedule && schedule.state === 'full'){
-    showToast('This agent already received their ' + MONTHLY_EVAL_TARGET + ' evaluations for ' + monthLabel(schedule.month) + '. Delete one of them to add a new one.');
+    showToast('This agent already received their ' + monthTarget(schedule.month) + ' evaluations for ' + monthLabel(schedule.month) + '. Delete one of them to add a new one.');
     return;
   }
   if(schedule && schedule.state === 'other'){
@@ -6367,7 +6380,25 @@ function renderRanking(evals){
 }
 
 /* ---------- Monthly scores grid ---------- */
-const MONTHLY_EVAL_TARGET = 4;
+// Evaluations per agent per month: 4 at most; a month can be set lower (1-4)
+// from the Evaluations menu on the monthly table. Slots past a month's number
+// don't exist that month, so they never show as missing.
+const MONTHLY_EVAL_MAX = 4;
+function cleanMonthlyTargets(raw){
+  const out = {};
+  if(raw && typeof raw === 'object' && !Array.isArray(raw)){
+    Object.keys(raw).forEach(k=>{
+      const n = Number(raw[k]);
+      if(/^\d{4}-\d{2}$/.test(k) && Number.isInteger(n) && n >= 1 && n <= MONTHLY_EVAL_MAX) out[k] = n;
+    });
+  }
+  return out;
+}
+function monthTarget(month){
+  const key = (month || currentMonthValue()).slice(0, 7);
+  const n = CONFIG && CONFIG.monthlyTargets ? CONFIG.monthlyTargets[key] : null;
+  return n >= 1 && n <= MONTHLY_EVAL_MAX ? n : MONTHLY_EVAL_MAX;
+}
 const MONTH_NAMES = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
 function scoreClass(score){
@@ -6681,7 +6712,7 @@ async function loadSchedule(agentId, month){
   const next = open.find(isMyAssignment) || open[0] || null;
   return {
     agentId, month, done: evals.length, position: evals.length + 1, assignment: next,
-    state: evals.length >= MONTHLY_EVAL_TARGET ? 'full' : !next ? 'none' : isMyAssignment(next) ? 'mine' : 'other',
+    state: evals.length >= monthTarget(month) ? 'full' : !next ? 'none' : isMyAssignment(next) ? 'mine' : 'other',
     openBy: await fetchOpenBy(agentId, month),
   };
 }
@@ -6807,7 +6838,7 @@ function renderScheduleBanner(){
   lock.classList.toggle('show', locked);
   if(!s){ box.className = 'sched-banner'; box.innerHTML = ''; return; }
 
-  const nth = 'Evaluation ' + s.position + ' of ' + MONTHLY_EVAL_TARGET + ' · ' + monthLabel(s.month);
+  const nth = 'Evaluation ' + s.position + ' of ' + monthTarget(s.month) + ' · ' + monthLabel(s.month);
   const kind = s.assignment ? '<span class="kind kind-' + s.assignment.kind + '">' + kindLabel(s.assignment.kind) + '</span>' : '';
   let html = '';
   if(s.state === 'mine'){
@@ -6820,7 +6851,7 @@ function renderScheduleBanner(){
       '<button type="button" class="btn btn-primary" id="btnTakeAssignment">Assign to me</button>';
     lock.innerHTML = 'This evaluation is assigned to <b>' + who + '</b>. Press <b>Assign to me</b> on the right to start it.';
   }else if(s.state === 'full'){
-    html = '<div class="sched-title">' + MONTHLY_EVAL_TARGET + ' of ' + MONTHLY_EVAL_TARGET + ' done</div>' + fullMonthMessage(s);
+    html = '<div class="sched-title">' + monthTarget(s.month) + ' of ' + monthTarget(s.month) + ' done</div>' + fullMonthMessage(s);
     lock.innerHTML = fullMonthMessage(s);
   }else{
     html = '<div class="sched-title">Not scheduled</div>' +
@@ -6833,7 +6864,7 @@ function renderScheduleBanner(){
 }
 
 function fullMonthMessage(s){
-  return 'This agent already received their <b>' + MONTHLY_EVAL_TARGET + ' evaluations</b> for ' + monthLabel(s.month) +
+  return 'This agent already received their <b>' + monthTarget(s.month) + ' evaluation' + (monthTarget(s.month) === 1 ? '' : 's') + '</b> for ' + monthLabel(s.month) +
     '. A new one can\'t be added unless you delete one of the existing ones from their profile in the Agents tab.';
 }
 
@@ -7286,7 +7317,7 @@ function planCopyAssign(){
     const { evals, open } = monthPlaces(agent.id);
     const remove = mode === 'reset' ? open : [];
     const kept = evals.length + open.length - remove.length;
-    const add = src.slice(kept, MONTHLY_EVAL_TARGET);
+    const add = src.slice(kept, monthTarget(target));
     if(!add.length && !remove.length) return;
     const taken = new Set(LAST_GRID.assignments.filter(a=> a.agent_id === agent.id && !remove.includes(a)).map(a=> a.slot));
     const nextSlot = want=>{ const n = pickSlot(taken, want); taken.add(n); return n; };
@@ -7409,7 +7440,7 @@ function updateGridHeading(scope){
     ? (meta.canAssign
       ? meta.openTotal + ' open assignment' + (meta.openTotal === 1 ? '' : 's') + ' · ' + meta.myOpen + ' for you · use + Assign on an empty slot'
       : 'Assignments are not available for this period')
-    : meta.complete + ' of ' + meta.total + ' agents have their ' + MONTHLY_EVAL_TARGET + ' evaluations · click an agent to open their details';
+    : meta.complete + ' of ' + meta.total + ' agents have their ' + monthTarget(scope.month) + ' evaluation' + (monthTarget(scope.month) === 1 ? '' : 's') + ' · click an agent to open their details';
 }
 
 function scoreCellHtml(sl, e){
@@ -7433,6 +7464,8 @@ function renderMonthlyGrid(evals, scope, assignments){
   if(!canAssign && BULK.active){ BULK.active = false; BULK.kind = null; BULK.picked.clear(); updateBulkBar(); }
   const picking = BULK.active && !!BULK.kind;
   const renderedBulkKeys = new Set();
+  const target = monthTarget(scope.month);
+  syncEvalTargetButton(scope);
 
   const agents = teamAgents();
   const byAgent = {};
@@ -7458,7 +7491,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   const openSlots = Object.values(slotsByAgent).flat().filter(sl=> sl.type === 'assignment');
   LAST_GRID.meta = {
     canAssign, total: agents.length,
-    complete: agents.filter(a=> (byAgent[a.id] || []).length >= MONTHLY_EVAL_TARGET).length,
+    complete: agents.filter(a=> (byAgent[a.id] || []).length >= target).length,
     openTotal: openSlots.length,
     myOpen: CURRENT_USER ? openSlots.filter(sl=> isMyAssignment(sl.assignment)).length : 0,
   };
@@ -7472,8 +7505,8 @@ function renderMonthlyGrid(evals, scope, assignments){
       '<tr data-agent="' + escapeHtml(agent.id) + '"' + (agent.id === selectedId ? ' class="selected"' : '') + '>' +
       '<td><button type="button" class="agent-link" data-agent="' + escapeHtml(agent.id) + '">' + agentNameHtml(agent) + '</button></td>';
   };
-  const doneCell = list=> '<td class="cell-progress' + (list.length >= MONTHLY_EVAL_TARGET ? ' complete' : '') + '">' +
-    Math.min(list.length, MONTHLY_EVAL_TARGET) + ' / ' + MONTHLY_EVAL_TARGET + '</td>';
+  const doneCell = list=> '<td class="cell-progress' + (list.length >= target ? ' complete' : '') + '">' +
+    Math.min(list.length, target) + ' / ' + target + '</td>';
 
   // Both tables share one column layout: an evaluation saved against an
   // assignment stays in that assignment's column, so "Eval 2" is the same
@@ -7482,7 +7515,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   agents.forEach(a=>{ placed[a.id] = positionSlots(slotsByAgent[a.id] || []); });
 
   // --- Scores: only finished evaluations, each in its slot's column.
-  const cols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(placed).map(l=> l.length));
+  const cols = Math.max(target, ...Object.values(placed).map(l=> l.length));
   let html = '<div class="monthly-scroll"><table class="monthly-table scores-table"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= cols; i++) html += '<th>Eval ' + i + '</th>';
   html += '<th>Done</th><th>Average</th></tr></thead><tbody>';
@@ -7515,7 +7548,7 @@ function renderMonthlyGrid(evals, scope, assignments){
   root.innerHTML = html;
 
   // --- Assignments: each slot of the month, who has it, and empty slots to assign.
-  const acols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(placed).map(l=> l.length));
+  const acols = Math.max(target, ...Object.values(placed).map(l=> l.length));
   let ahtml = '<div class="monthly-scroll"><table class="monthly-table assign-table' + (BULK.active ? ' bulk-mode' : '') + '"><thead><tr><th>Agent</th>';
   for(let i = 1; i <= acols; i++) ahtml += '<th>Eval ' + i + '</th>';
   ahtml += '<th>Done</th><th>Open</th><th>Average</th></tr></thead><tbody>';
@@ -7523,6 +7556,9 @@ function renderMonthlyGrid(evals, scope, assignments){
     const list = byAgent[agent.id] || [];
     const slots = slotsByAgent[agent.id];
     const cols = placed[agent.id];
+    // What counts is how many, not which column: once evaluations plus open
+    // assignments reach the month's number, the empty columns aren't offered.
+    const roomLeft = slots.length < target;
     ahtml += rowStart(agent, acols + 4);
     for(let i = 0; i < acols; i++){
       const sl = cols[i];
@@ -7539,11 +7575,11 @@ function renderMonthlyGrid(evals, scope, assignments){
           '<span class="assign-chip"><span class="kind kind-' + a.kind + '">' + (a.kind === 'call' ? 'Call' : 'Ticket') + '</span>' + escapeHtml(who) + '</span>' +
           (canRemoveAssignment(a) ? '<button type="button" class="assign-remove" data-assignment="' + escapeHtml(a.id) + '" title="Remove assignment">×</button>' : '') +
           '</td>';
-      }else if(canAssign && picking && i < MONTHLY_EVAL_TARGET){
+      }else if(canAssign && picking && roomLeft && i < target){
         const key = agent.id + '|' + i;
         renderedBulkKeys.add(key);
         ahtml += '<td class="cell-empty bulk-cell' + (BULK.picked.has(key) ? ' picked' : '') + '" data-bulk-key="' + escapeHtml(key) + '" title="Select to assign"><span class="bulk-box"></span></td>';
-      }else if(canAssign && i < MONTHLY_EVAL_TARGET){
+      }else if(canAssign && roomLeft && i < target){
         ahtml += '<td class="cell-empty"><button type="button" class="assign-btn" data-assign-agent="' + escapeHtml(agent.id) + '" data-assign-slot="' + (i + 1) + '">+ Assign</button></td>';
       }else{
         ahtml += '<td class="cell-empty">—</td>';
@@ -7688,12 +7724,14 @@ function populateMonthSelect(){
   populateGridMonthSelect();
 }
 
-// Months for the table picker: this month first, back to January of last year.
+// Months for the table picker: next month (to schedule ahead), this month,
+// then back to January of last year.
 function populateGridMonthSelect(){
   const sel = document.getElementById('gridMonth');
   const keep = sel.value;
   const now = new Date();
-  let opts = '';
+  const next = addMonths(currentMonthValue() + '-01', 1).slice(0, 7);
+  let opts = '<option value="' + next + '">' + MONTH_NAMES[Number(next.slice(5, 7)) - 1] + ' ' + next.slice(0, 4) + ' (next)</option>';
   for(let y = now.getFullYear(); y >= now.getFullYear() - 1; y--){
     for(let m = 12; m >= 1; m--){
       if(y === now.getFullYear() && m > now.getMonth() + 1) continue;
@@ -7730,6 +7768,76 @@ document.getElementById('btnGridNextMonth').addEventListener('click', ()=>{
   const sel = document.getElementById('gridMonth');
   if(sel.selectedIndex > 0){ sel.selectedIndex--; syncGridMonthArrows(); refreshAgentsView(); }
 });
+
+/* ---------- Evaluations per agent for the table's month (1-4) ---------- */
+function canSetEvalTarget(){
+  return !!CURRENT_USER && isStaffUser() && !CURRENT_USER.shared_account;
+}
+function syncEvalTargetButton(scope){
+  const btn = document.getElementById('btnEvalTarget');
+  const month = scope && scope.month;
+  btn.style.display = month ? '' : 'none';
+  if(!month) return;
+  document.getElementById('evalTargetValue').textContent = monthTarget(month);
+  btn.disabled = !canSetEvalTarget();
+  btn.title = 'Evaluations each agent gets in ' + monthLabel(month) + (btn.disabled ? '' : ' · click to change');
+}
+const EVAL_TARGET_POP = document.createElement('div');
+EVAL_TARGET_POP.className = 'task-pop';
+EVAL_TARGET_POP.id = 'evalTargetPop';
+document.body.appendChild(EVAL_TARGET_POP);
+function closeEvalTargetPop(){
+  EVAL_TARGET_POP.classList.remove('show');
+  document.getElementById('btnEvalTarget').classList.remove('open');
+}
+function openEvalTargetPop(){
+  const btn = document.getElementById('btnEvalTarget');
+  if(EVAL_TARGET_POP.classList.contains('show')){ closeEvalTargetPop(); return; }
+  if(!LAST_GRID || !LAST_GRID.scope.month || !canSetEvalTarget()) return;
+  const month = LAST_GRID.scope.month;
+  const cur = monthTarget(month);
+  const opts = [];
+  for(let n = MONTHLY_EVAL_MAX; n >= 1; n--) opts.push({ value: String(n), html: n + ' evaluation' + (n === 1 ? '' : 's') });
+  EVAL_TARGET_POP.innerHTML = '<div class="tp-title">' + escapeHtml(monthLabel(month)) + '</div><div class="tp-list">' + taskOptionsHtml(opts, String(cur)) + '</div>';
+  btn.classList.add('open');
+  const r = btn.getBoundingClientRect();
+  EVAL_TARGET_POP.style.minWidth = Math.max(r.width, 170) + 'px';
+  EVAL_TARGET_POP.classList.add('show');
+  const w = EVAL_TARGET_POP.offsetWidth, h = EVAL_TARGET_POP.offsetHeight;
+  EVAL_TARGET_POP.style.left = Math.max(8, Math.min(r.left, window.innerWidth - w - 8)) + 'px';
+  EVAL_TARGET_POP.style.top = (r.bottom + 6 + h <= window.innerHeight - 8 ? r.bottom + 6 : Math.max(8, r.top - h - 6)) + 'px';
+  EVAL_TARGET_POP.dataset.month = month;
+}
+async function setEvalTarget(month, n){
+  const key = month.slice(0, 7);
+  // Start from what is saved now, so two people changing months at once don't undo each other.
+  let saved = CONFIG.monthlyTargets || {};
+  try{
+    const { data } = await supabaseClient.from('app_config').select('data').eq('id', 1).maybeSingle();
+    if(data && data.data) saved = cleanMonthlyTargets(data.data.monthlyTargets);
+  }catch(e){}
+  const next = Object.assign({}, saved);
+  if(n >= MONTHLY_EVAL_MAX) delete next[key]; else next[key] = n;
+  const { error } = await supabaseClient.rpc('save_shared_rubrics', { patch: { monthlyTargets: next } });
+  if(error){
+    if(error.code !== 'VIEW_AS') showToast('Could not save the number of evaluations. Try again.');
+    return;
+  }
+  CONFIG.monthlyTargets = next;
+  showToast(monthLabel(month) + ': ' + n + ' evaluation' + (n === 1 ? '' : 's') + ' per agent');
+  rerenderGrid();
+}
+document.getElementById('btnEvalTarget').addEventListener('click', (e)=>{ e.stopPropagation(); openEvalTargetPop(); });
+EVAL_TARGET_POP.addEventListener('click', (e)=>{
+  e.stopPropagation();
+  const b = e.target.closest('.tp-item');
+  if(!b) return;
+  const month = EVAL_TARGET_POP.dataset.month;
+  closeEvalTargetPop();
+  if(month && Number(b.dataset.value) !== monthTarget(month)) setEvalTarget(month, Number(b.dataset.value));
+});
+document.addEventListener('click', ()=>{ if(EVAL_TARGET_POP.classList.contains('show')) closeEvalTargetPop(); });
+window.addEventListener('scroll', ()=>{ if(EVAL_TARGET_POP.classList.contains('show')) closeEvalTargetPop(); }, true);
 
 document.getElementById('agentsSelect').addEventListener('change', refreshAgentsView);
 document.getElementById('agentsMonth').addEventListener('change', ()=>{
@@ -9573,7 +9681,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
   const slotsByAgent = {};
   // Same columns as the app tables: each evaluation in its assignment's slot.
   agents.forEach(a=>{ slotsByAgent[a.id] = positionSlots(buildAgentSlots(byAgent[a.id] || [], assignments.filter(x=> x.agent_id === a.id))); });
-  const cols = Math.max(MONTHLY_EVAL_TARGET, ...Object.values(slotsByAgent).map(l=> l.length));
+  const cols = Math.max(monthTarget(scope.month), ...Object.values(slotsByAgent).map(l=> l.length));
 
   const header = ['Agent', 'Role', 'Supervisor'];
   for(let i = 1; i <= cols; i++) header.push('Eval ' + i, 'Evaluated by', 'Date');
@@ -9619,7 +9727,7 @@ function buildScoresSheet(wb, evals, scope, assignments){
       }
     });
     while(values.length < 3 + cols * 3) values.push('');
-    values.push(Math.min(list.length, MONTHLY_EVAL_TARGET) + ' / ' + MONTHLY_EVAL_TARGET, list.length ? weightedAvg(list) / 100 : '');
+    values.push(Math.min(list.length, monthTarget(scope.month)) + ' / ' + monthTarget(scope.month), list.length ? weightedAvg(list) / 100 : '');
     const row = ws.addRow(values);
     if(roleHex){
       row.getCell(1).font = { bold: true, color: { argb: 'FF' + roleHex } };
