@@ -1090,6 +1090,23 @@
 
   .new-rubric-grid{ display:grid; grid-template-columns: 2fr 1fr 100px; gap:10px; margin-bottom:10px; }
   .new-rubric-grid:last-of-type{ grid-template-columns: 1fr 1fr; }
+  .new-rubric-grid.top{ grid-template-columns: 2fr 1fr 100px auto; }
+  /* Sum only: a met rubric adds points, a missed one takes nothing off. */
+  .sum-only-btn{
+    height:36px; padding:0 12px; border-radius:var(--radius-sm); border:1px solid var(--border); background:var(--bg-elev-2);
+    color:var(--text-dim); font-size:12px; font-weight:700; cursor:pointer; white-space:nowrap;
+  }
+  .sum-only-btn.on{ border-color:var(--yes); background:var(--yes-soft); color:var(--yes); }
+  .cfg-item-top .sum-only-btn{ height:26px; padding:0 9px; font-size:11px; margin-left:auto; flex:none; }
+  .bonus-strip{ display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+  .bonus-strip:empty{ display:none; }
+  .bonus-chip{
+    display:inline-flex; align-items:center; gap:4px; max-width:100%; padding:2px 8px; border-radius:999px; cursor:pointer;
+    font-size:10.5px; font-weight:700; border:1px dashed var(--border); background:transparent; color:var(--text-dim);
+  }
+  .bonus-chip span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:150px; }
+  .bonus-chip b{ color:var(--yes); }
+  .bonus-chip.on{ border-style:solid; border-color:var(--yes); background:var(--yes-soft); color:var(--text); }
   .new-rubric-field label{ display:block; font-size:10.5px; text-transform:uppercase; letter-spacing:.5px; font-weight:700; color:var(--text-dim); margin-bottom:4px; }
   .new-rubric-field label.y{ color:var(--yes); }
   .new-rubric-field label.n{ color:var(--no); }
@@ -1649,6 +1666,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         <div class="panel" id="extrasPanel">
           <div class="score-big"><b id="statScore">100</b><span>/ 100</span></div>
           <div class="score-bar"><div id="statBar" style="width:100%"></div></div>
+          <div class="bonus-strip" id="bonusStrip"></div>
           <div style="display:none;">
             <div class="stat-row"><span>Points earned</span><b id="statEarned">0</b></div>
             <div class="stat-row"><span>Points possible</span><b id="statPossible">0</b></div>
@@ -2140,7 +2158,7 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
 
     <div class="cfg-block">
       <h4>Add a custom rubric</h4>
-      <div class="new-rubric-grid">
+      <div class="new-rubric-grid top">
         <div class="new-rubric-field new-rubric-wide">
           <label>Rubric name</label>
           <input id="newRubricLabel" placeholder="Short rubric name">
@@ -2152,6 +2170,10 @@ iVBORw0KGgoAAAANSUhEUgAAAgAAAADaCAYAAADQQvqaAAAfH0lEQVR4nO3deZRkVZXv8e+uYiommYtJ
         <div class="new-rubric-field new-rubric-pts">
           <label>Points</label>
           <input id="newRubricPts" type="number" min="0" step="1" placeholder="0">
+        </div>
+        <div class="new-rubric-field">
+          <label>Type</label>
+          <button type="button" class="sum-only-btn" id="newRubricSumOnly" aria-pressed="false" title="Sum only: when met it adds its points to the score; when not met nothing is taken off">+ Sum only</button>
         </div>
       </div>
       <div class="new-rubric-grid" id="newRubricTextsRow">
@@ -3346,7 +3368,7 @@ function applyScenario(scenarioId){
   SECTIONS.forEach(sec=>{
     if(sec.key === 'zero') return;
     CONFIG.order[sec.key].forEach(id=>{
-      if(scenario.applicability[id]) ANSWERS[id] = 'yes';
+      if(scenario.applicability[id] && !isSumOnly(id)) ANSWERS[id] = 'yes';
     });
     sortByApplicability(sec.key);
   });
@@ -3357,7 +3379,7 @@ function resetAnswersToDefault(){
   ANSWERS = {};
   SECTIONS.forEach(sec=>{
     if(sec.key === 'zero') return;
-    CONFIG.order[sec.key].forEach(id=>{ if(CONFIG.items[id] && !CONFIG.items[id].zeroType) ANSWERS[id] = 'yes'; });
+    CONFIG.order[sec.key].forEach(id=>{ if(CONFIG.items[id] && !CONFIG.items[id].zeroType && !isSumOnly(id)) ANSWERS[id] = 'yes'; });
   });
 }
 
@@ -3607,7 +3629,7 @@ function renderSections(){
   SECTIONS.forEach((sec, idx)=>{
     const card = document.createElement('div');
     card.className = 'section-card';
-    const total = CONFIG.order[sec.key].length;
+    const total = CONFIG.order[sec.key].filter(id=> !isSumOnly(id)).length;
 
     const holdToggle = sec.key === 'mgmt' ? `
       <button class="replacement-toggle ${isHoldActive() ? 'on' : ''}" id="btnHoldToggle" title="Turn all hold/mute rubrics on or off for this call">
@@ -3642,7 +3664,7 @@ function renderSections(){
     CONFIG.order[sec.key].forEach(id=>{
       try{
         const cfg = CONFIG.items[id];
-        if(!cfg) return;
+        if(!cfg || isSumOnly(id)) return; // sum-only rubrics live in the small strip under the score
         const row = document.createElement('div');
         row.className = 'item-card' + (!cfg.zeroType && !ANSWERS[id] ? ' not-applicable' : '');
         row.dataset.id = id;
@@ -3714,6 +3736,26 @@ function renderSections(){
   applyRubricSearch();
 }
 
+// Sum-only rubrics: small chips under the score. Tapping one adds its points
+// and writes its text into the summary; tapping again removes it.
+function renderBonusStrip(){
+  const strip = document.getElementById('bonusStrip');
+  if(!strip) return;
+  strip.innerHTML = sumOnlyIds().map(id=>{
+    const cfg = CONFIG.items[id];
+    const on = ANSWERS[id] === 'yes';
+    return '<button type="button" class="bonus-chip' + (on ? ' on' : '') + '" data-bonus="' + escapeHtml(id) + '" title="' +
+      escapeHtml((on ? 'Added: ' : 'Tap to add: ') + (cfg.yes || cfg.label)) + '"><b>+' + escapeHtml(String(cfg.pts)) + '</b><span>' + escapeHtml(cfg.label) + '</span></button>';
+  }).join('');
+}
+document.addEventListener('click', e=>{
+  const chip = e.target.closest && e.target.closest('#bonusStrip .bonus-chip');
+  if(!chip) return;
+  const id = chip.dataset.bonus;
+  if(ANSWERS[id] === 'yes') delete ANSWERS[id]; else ANSWERS[id] = 'yes';
+  refreshEval();
+});
+
 function refreshEval(){
   const agentInput = document.getElementById('fAgent');
   agentInput.parentElement.classList.toggle('has-value', !!agentInput.value && !agentInput.readOnly);
@@ -3722,9 +3764,10 @@ function refreshEval(){
   renderExtras();
   SECTIONS.forEach(sec=>{
     let answered = 0;
-    CONFIG.order[sec.key].forEach(id=>{ if(ANSWERS[id]) answered++; });
+    const ids = CONFIG.order[sec.key].filter(id=> !isSumOnly(id));
+    ids.forEach(id=>{ if(ANSWERS[id]) answered++; });
     const el = document.querySelector(`[data-count="${sec.key}"]`);
-    if(el) el.textContent = `${answered} / ${CONFIG.order[sec.key].length}`;
+    if(el) el.textContent = `${answered} / ${ids.length}`;
   });
   document.querySelectorAll('.pill').forEach(btn=>{
     const id = btn.dataset.id, val = btn.dataset.val;
@@ -3755,12 +3798,13 @@ function refreshEval(){
     row.classList.toggle('not-applicable', !val);
   });
 
-  let earned = 0, possible = 0, count = 0, total = 0, zeroTriggered = false;
+  let earned = 0, possible = 0, count = 0, total = 0, zeroTriggered = false, bonus = 0;
   let zeroReasons = [];
   SECTIONS.forEach(sec=>{
     CONFIG.order[sec.key].forEach(id=>{
-      total++;
       const cfg = CONFIG.items[id];
+      if(isSumOnly(id)){ if(ANSWERS[id] === 'yes') bonus += Number(cfg.pts) || 0; return; }
+      total++;
       if(!cfg) return;
       const val = ANSWERS[id];
       if(val) count++;
@@ -3773,10 +3817,11 @@ function refreshEval(){
       // 'feedback' or unanswered items stay outside the pool entirely
     });
   });
-  let score = scoreFromLost(possible - earned);
+  let score = scoreFromLost(possible - earned, bonus);
   if(zeroTriggered) score = 0;
+  renderBonusStrip();
 
-  LAST_STATE = { score, earned, possible, zeroTriggered, zeroReasons: zeroReasons.slice() };
+  LAST_STATE = { score, earned, possible, bonus, zeroTriggered, zeroReasons: zeroReasons.slice() };
 
   document.getElementById('statScore').textContent = score;
   document.getElementById('statEarned').textContent = earned;
@@ -3795,6 +3840,7 @@ function refreshEval(){
 
 // Only lost points are shown; met rubrics and feedback carry no points.
 function ptsSuffix(cfg, kind){
+  if(kind === 'bonus') return ' (+' + cfg.pts + 'pts)';
   if(kind !== 'no') return '';
   return cfg.zeroType ? ' (Auto-Zero)' : ' (-' + cfg.pts + 'pts)';
 }
@@ -3866,7 +3912,10 @@ function buildOutput(score, earned, possible, zeroTriggered){
     ...sec.feedbacks.map(d=> ({ ...d, icon: '\u26A0\uFE0F', kind: 'feedback' })),
     ...sec.zeroFeedback.map(d=> ({ ...d, icon: '\u26A0\uFE0F', kind: 'feedback' })),
   ]);
-  const accompBlocks = sectionGroups(sec => sec.accomplishments.map(d=> ({ ...d, icon: '\u2705', kind: 'yes' })));
+  const accompBlocks = sectionGroups(sec => [
+    ...sec.accomplishments.map(d=> ({ ...d, icon: '\u2705', kind: 'yes' })),
+    ...(sec.bonuses || []).map(d=> ({ ...d, icon: '\u2795', kind: 'bonus' })),
+  ]);
 
   function namedBlock(title, blocks){
     if(!blocks.length) return '';
@@ -4281,18 +4330,33 @@ function withEvalState(answers, choices, accomplishments, fn){
 }
 
 // Score = 100 minus the points lost in failed rubrics (simple subtraction, never below 0).
-function scoreFromLost(lost){
-  return Math.max(0, Math.round(100 - (Number(lost) || 0)));
+// Sum-only rubrics that were used give points back, never above 100.
+function scoreFromLost(lost, bonus){
+  return Math.max(0, Math.min(100, Math.round(100 - (Number(lost) || 0) + (Number(bonus) || 0))));
+}
+// A sum-only rubric only adds: met gives its points, otherwise nothing is taken off.
+function isSumOnly(id){
+  const cfg = CONFIG.items[id];
+  return !!(cfg && cfg.sumOnly && !cfg.zeroType);
+}
+function sumOnlyIds(){
+  const ids = [];
+  SECTIONS.forEach(sec=> (CONFIG.order[sec.key] || []).forEach(id=>{ if(isSumOnly(id)) ids.push(id); }));
+  return ids;
+}
+// Bonus points from saved answers (a saved evaluation's details.answers).
+function bonusFromAnswers(answers){
+  return sumOnlyIds().reduce((t, id)=> t + (answers && answers[id] === 'yes' ? Number(CONFIG.items[id].pts) || 0 : 0), 0);
 }
 
 function scoreFromSections(sections){
-  let earned = 0, possible = 0, zero = false;
+  let earned = 0, possible = 0, zero = false, bonus = 0;
   sections.forEach(sec=>{
     if(sec.isZeroSection){ if(sec.zeroList.length) zero = true; return; }
-    earned += sec.earned; possible += sec.possible;
+    earned += sec.earned; possible += sec.possible; bonus += sec.bonus || 0;
   });
-  const score = zero ? 0 : scoreFromLost(possible - earned);
-  return { score, earned, possible, zero };
+  const score = zero ? 0 : scoreFromLost(possible - earned, bonus);
+  return { score, earned, possible, zero, bonus };
 }
 
 function sectionAndDeductionRows(sections){
@@ -4346,9 +4410,9 @@ function renderDisputeRubrics(){
     if(!ids.length) return;
     html += '<div class="dispute-sec"><h4>' + escapeHtml(sec.title) + '</h4>' + ids.map(id=>{
       const cfg = CONFIG.items[id];
-      const vals = cfg.zeroType ? ['no', 'feedback'] : ['yes', 'no', 'feedback'];
+      const vals = cfg.zeroType ? ['no', 'feedback'] : isSumOnly(id) ? ['yes'] : ['yes', 'no', 'feedback'];
       return '<div class="dispute-row' + (A[id] !== O[id] ? ' changed' : '') + '"><span class="lbl">' + escapeHtml(cfg.label) + '</span>' +
-        '<span class="pts">' + (cfg.zeroType ? 'auto-0' : cfg.pts + 'pt') + '</span>' +
+        '<span class="pts">' + (cfg.zeroType ? 'auto-0' : isSumOnly(id) ? '+' + cfg.pts + 'pt' : cfg.pts + 'pt') + '</span>' +
         vals.map(v=> '<button type="button" class="pill ' + (v === 'feedback' ? 'warn' : v) + (A[id] === v ? ' active' : '') + '" data-id="' + id + '" data-val="' + v + '" title="' + (v === 'yes' ? 'Met' : v === 'no' ? 'Not met' : 'Feedback') + '">' +
           (v === 'yes' ? '<svg viewBox="0 0 24 24" fill="none"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
             : v === 'no' ? '<svg viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6L6 18" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>'
@@ -4709,6 +4773,7 @@ function buildCfgItem(id, secKey){
 
   const textsHtml = '<div class="cfg-texts">' + (cfg.zeroType
     ? cfgTextColumn(id, cfg, 'reason', 'n', 'Reason (shown when triggered)', 'Add reason option', true)
+    : cfg.sumOnly ? cfgTextColumn(id, cfg, 'yes', 'y', 'Text added to the summary when used', 'Add text option')
     : cfgTextColumn(id, cfg, 'yes', 'y', 'Met (yes) text', 'Add yes option') +
       cfgTextColumn(id, cfg, 'no', 'n', 'Not met (no) text', 'Add no option')) + '</div>';
 
@@ -4719,12 +4784,22 @@ function buildCfgItem(id, secKey){
       </span>
       <span class="pts" style="color:var(--text-faint); font-size:11px;">${id}</span>
       <input class="cfg-label" data-id="${id}" value="${escapeHtml(cfg.label)}">
+      ${cfg.zeroType ? '' : '<button type="button" class="sum-only-btn' + (cfg.sumOnly ? ' on' : '') + '" data-sum-only title="Sum only: when met it adds its points; when not met nothing is taken off. Shown as a small button under the score.">' + (cfg.sumOnly ? '\u2713 Sum only' : '+ Sum only') + '</button>'}
     </div>
     ${cfg.zeroType ? '' : '<div class="cfg-subtitle"><label>Subtitle (in the summary, above the chosen text)</label><textarea data-id="' + id + '" data-field="subtitle" placeholder="No subtitle">' + escapeHtml(cfg.subtitle || '') + '</textarea></div>'}
     ${textsHtml}
   `;
 
   box.querySelector('.cfg-label').addEventListener('input', (e)=>{ cfg.label = e.target.value; });
+  const sumBtn = box.querySelector('[data-sum-only]');
+  if(sumBtn) sumBtn.addEventListener('click', ()=>{
+    if(cfg.sumOnly) delete cfg.sumOnly; else cfg.sumOnly = true;
+    // Sum-only starts unused; a normal rubric starts met, as when it is added.
+    if(cfg.sumOnly) delete ANSWERS[id]; else ANSWERS[id] = 'yes';
+    rebuild();
+    renderSections();
+    refreshEval();
+  });
   box.querySelectorAll('textarea[data-field]').forEach(ta=>{
     ta.addEventListener('input', ()=>{ cfg[ta.dataset.field] = ta.value; });
   });
@@ -4959,10 +5034,16 @@ function computeSectionBreakdown(){
     const feedbacks = [];
     const zeroList = [];
     const zeroFeedback = [];
+    const bonuses = [];
+    let bonus = 0;
     CONFIG.order[sec.key].forEach(id=>{
       const cfg = CONFIG.items[id];
       if(!cfg) return;
       const val = ANSWERS[id];
+      if(isSumOnly(id)){
+        if(val === 'yes'){ bonus += Number(cfg.pts) || 0; bonuses.push({ id, label: cfg.label, text: chosenText(id, cfg, 'yes'), pts: cfg.pts }); }
+        return;
+      }
       if(cfg.zeroType){
         if(val === 'no') zeroList.push({ id, label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
         else if(val === 'feedback') zeroFeedback.push({ id, label: cfg.label, text: chosenText(id, cfg, 'no'), pts: cfg.pts });
@@ -4976,7 +5057,7 @@ function computeSectionBreakdown(){
       else if(val === 'feedback'){ feedbacks.push({ id, label: cfg.label, subtitle: cfg.subtitle, text: chosenText(id, cfg, 'no'), pts: cfg.pts }); }
     });
     return {
-      key: sec.key, title: sec.title, earned, possible,
+      key: sec.key, title: sec.title, earned, possible, bonus, bonuses,
       deductions, accomplishments, feedbacks, zeroList, zeroFeedback,
       isZeroSection: sec.key === 'zero',
     };
@@ -5532,10 +5613,20 @@ async function init(){
   const newRubricSectionSel = document.getElementById('newRubricSection');
   newRubricSectionSel.innerHTML = SECTIONS.map(sec=>`<option value="${sec.key}">${sec.title}</option>`).join('');
 
+  const sumOnlyBtn = document.getElementById('newRubricSumOnly');
+  let newRubricSumOnly = false;
+  sumOnlyBtn.addEventListener('click', ()=>{ newRubricSumOnly = !newRubricSumOnly; syncNewRubricFormToCategory(); });
   function syncNewRubricFormToCategory(){
     const isZero = newRubricSectionSel.value === 'zero';
+    const sumOnly = newRubricSumOnly && !isZero;
+    sumOnlyBtn.closest('.new-rubric-field').style.display = isZero ? 'none' : '';
+    sumOnlyBtn.classList.toggle('on', sumOnly);
+    sumOnlyBtn.setAttribute('aria-pressed', String(sumOnly));
+    sumOnlyBtn.textContent = sumOnly ? '\u2713 Sum only' : '+ Sum only';
     document.getElementById('newRubricPts').closest('.new-rubric-field').style.display = isZero ? 'none' : '';
     document.getElementById('newRubricYes').closest('.new-rubric-field').style.display = isZero ? 'none' : '';
+    document.getElementById('newRubricNo').closest('.new-rubric-field').style.display = sumOnly ? 'none' : '';
+    document.getElementById('newRubricYesLabel').textContent = sumOnly ? 'Text added to the summary when used' : 'Met (yes) text';
     document.getElementById('newRubricNoLabel').textContent = isZero ? 'Reason (violation description)' : 'Not met (no) text';
   }
   newRubricSectionSel.addEventListener('change', syncNewRubricFormToCategory);
@@ -5544,14 +5635,15 @@ async function init(){
   document.getElementById('btnAddRubric').addEventListener('click', ()=>{
     const sectionKey = newRubricSectionSel.value;
     const isZero = sectionKey === 'zero';
+    const sumOnly = newRubricSumOnly && !isZero;
     const label = document.getElementById('newRubricLabel').value.trim();
     const yesText = document.getElementById('newRubricYes').value.trim();
     const noText = document.getElementById('newRubricNo').value.trim();
     const ptsRaw = document.getElementById('newRubricPts').value;
 
     if(!label){ showToast('Enter a rubric name'); return; }
-    if(!isZero && !yesText){ showToast('Enter the Met (yes) text'); return; }
-    if(!noText){ showToast(isZero ? 'Enter the reason text' : 'Enter the Not met (no) text'); return; }
+    if(!isZero && !yesText){ showToast(sumOnly ? 'Enter the text for the summary' : 'Enter the Met (yes) text'); return; }
+    if(!noText && !sumOnly){ showToast(isZero ? 'Enter the reason text' : 'Enter the Not met (no) text'); return; }
     const ptsNum = Number(ptsRaw);
     if(!isZero && (!ptsRaw || !Number.isInteger(ptsNum) || ptsNum < 1 || ptsNum > 100)){
       showToast('Points must be a whole number from 1 to 100'); return;
@@ -5566,13 +5658,16 @@ async function init(){
 
     CONFIG.items[id] = isZero
       ? { label, pts: 0, reason: noText, zeroType: true }
+      : sumOnly ? { label, pts, yes: yesText, no: '', zeroType: false, sumOnly: true }
       : { label, pts, yes: yesText, no: noText, zeroType: false };
     CONFIG.order[sectionKey].push(id);
 
-    if(!isZero){
+    if(!isZero && !sumOnly){
       CONFIG.scenarios.order.forEach(sid=>{ CONFIG.scenarios.items[sid].applicability[id] = true; });
       ANSWERS[id] = 'yes';
     }
+    newRubricSumOnly = false;
+    syncNewRubricFormToCategory();
 
     document.getElementById('newRubricLabel').value = '';
     document.getElementById('newRubricPts').value = '';
@@ -5854,6 +5949,7 @@ function buildDetailItems(){
       if(!cfg || !val) return;
       items.push({
         id, section: sec.key, sectionTitle: sec.title, label: cfg.label, pts: cfg.pts, zero: !!cfg.zeroType,
+        sumOnly: isSumOnly(id) || undefined,
         result: val, text: chosenText(id, cfg, val === 'yes' ? 'yes' : 'no'),
       });
       const note = rubricNote(id);
@@ -6089,7 +6185,7 @@ function buildEmailBody(){
   if(!anyDeduction) lines.push('(None marked.)', '');
 
   lines.push('____________________________');
-  lines.push('Score: ' + LAST_STATE.score + ' / 100  (100 - ' + (LAST_STATE.possible - LAST_STATE.earned) + ' pts lost)');
+  lines.push('Score: ' + LAST_STATE.score + ' / 100  (100 - ' + (LAST_STATE.possible - LAST_STATE.earned) + ' pts lost' + (LAST_STATE.bonus ? ' + ' + LAST_STATE.bonus + ' pts added' : '') + ')');
   if(LAST_STATE.zeroTriggered) lines.push('AUTOMATIC ZERO — zero call driver triggered.');
   lines.push('', SUMMARY_CLOSING);
 
@@ -6928,13 +7024,14 @@ async function openViewEvalModal(evalId, fromProfile){
         let g = groups.find(x=> x.key === it.section);
         if(!g){ g = { key: it.section, title: it.sectionTitle || it.section, rows: [], earned: 0, possible: 0 }; groups.push(g); }
         g.rows.push(it);
+        if(it.sumOnly) return;
         if(!it.zero && it.result === 'yes'){ g.earned += it.pts; g.possible += it.pts; }
         if(!it.zero && it.result === 'no') g.possible += it.pts;
       });
       sectionsHtml = groups.map(g=>
         '<div class="ve-section"><h4>' + escapeHtml(g.title) + '<span>' + (g.possible ? g.earned + ' / ' + g.possible + ' pts' : '') + '</span></h4>' +
         g.rows.map(it=>{
-          const pts = it.zero ? (it.result === 'no' ? 'Auto-Zero' : '') : (it.result === 'no' ? '-' + it.pts + 'pts' : it.result === 'yes' ? it.pts + 'pts' : 'feedback');
+          const pts = it.zero ? (it.result === 'no' ? 'Auto-Zero' : '') : it.sumOnly ? '+' + it.pts + 'pts' : (it.result === 'no' ? '-' + it.pts + 'pts' : it.result === 'yes' ? it.pts + 'pts' : 'feedback');
           return '<div class="ve-row res-' + it.result + '"><span class="ic">' + (RESULT_ICON[it.result] || '') + '</span><div>' +
             '<span class="lbl">' + escapeHtml(it.label) + '</span> <span class="pts">' + escapeHtml(pts) + '</span>' +
             (it.text ? '<span class="txt">' + escapeHtml(it.text) + '</span>' : '') +
@@ -8092,7 +8189,7 @@ async function removeDeductionFromEvaluation(deductionId, deduction){
 
     const newScore = stillZeroTriggered
       ? 0
-      : scoreFromLost(Number(EDITING_EVAL_ROW.points_possible || 0) - Number(newEarned || 0));
+      : scoreFromLost(Number(EDITING_EVAL_ROW.points_possible || 0) - Number(newEarned || 0), bonusFromAnswers(EDITING_EVAL_ROW.details && EDITING_EVAL_ROW.details.answers));
 
     const { error: evalUpdErr } = await supabaseClient.from('evaluations').update({
       points_earned: newEarned,
